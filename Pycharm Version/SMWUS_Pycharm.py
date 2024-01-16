@@ -4,7 +4,7 @@ dt = 0.1
 eta = 0.01
 beta = 0.1
 N = 128
-state = 'Rate control'
+state = 'Decorrelation'
 
 # time scales for lowpass filter signals (x_bar and y)
 tau = 50
@@ -23,7 +23,7 @@ y = np.copy(x)
 phi0 = 2*np.random.rand(N, 1) - 1
 
 
-def update_network(b: np.ndarray):
+def update_network(b: np.ndarray = 0):
     global x, W, eta, dt, tau, y, tau_x, x_bar
 
     def phi():
@@ -38,6 +38,7 @@ def update_network(b: np.ndarray):
         return phi()
 
     def learning_rate():
+        global y
         return np.matmul(phi(), y.T) - np.matmul(y, phi().T)
 
     def fluctuation_rate():
@@ -62,3 +63,21 @@ def update_network(b: np.ndarray):
     W = W + dw*dt
     y = y + dy*dt
     x_bar = x_bar + dx_bar*dt
+
+
+save_w = []
+time = np.arange(2000)*dt
+for i in range(len(time)):
+    update_network(b=np.zeros([N, 1]))
+    save_w.append(W)
+
+import matplotlib.pyplot as plt
+save_w = np.array(save_w)
+for i in range(2):
+    for j in range(2):
+        plt.plot(time, save_w[:, i, j], label=str(i+1) + ',' + str(j+1))
+plt.title(state)
+plt.xlabel("time")
+plt.ylabel("W_ij")
+plt.legend()
+plt.show()
