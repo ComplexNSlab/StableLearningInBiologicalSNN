@@ -4,7 +4,7 @@ dt = 0.1
 eta = 0.01
 beta = 0.1
 N = 128
-state = 'Decorrelation'
+state = 'Dissipation'
 
 # time scales for lowpass filter signals (x_bar and y)
 tau = 50
@@ -66,7 +66,7 @@ def update_network(b: np.ndarray = 0):
 
 
 save_w = []
-time = np.arange(2000)*dt
+time = np.arange(20000)*dt
 for i in range(len(time)):
     update_network(b=np.zeros([N, 1]))
     save_w.append(W)
