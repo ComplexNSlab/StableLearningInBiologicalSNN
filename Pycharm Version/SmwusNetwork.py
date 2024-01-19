@@ -32,7 +32,7 @@ class SmwusNetwork:
         # desired rate for 'Rate control' state
         self.phi0 = 2 * np.random.rand(n, 1) - 1
 
-        self.kisi = np.random.normal(loc=0, scale=1 / self.N, size=(self.N, self.N))
+        self.kisi = np.random.normal(loc=0, scale=1 / np.sqrt(self.N), size=(self.N, self.N))
 
         self.time = 0
 
@@ -77,7 +77,7 @@ class SmwusNetwork:
         elif self.homeostasis_state == 'Rate control':
             self._fluctuation_rate = self.kisi + np.matmul(self.phi0 - self.phi, self.phi.T) * self.W
         elif self.homeostasis_state == 'Decorrelation':
-            self._fluctuation_rate = self.kisi + np.identity(self.N) - np.matmul(self.phi_post, self.phi_pre.T)
+            self._fluctuation_rate = self.kisi + 0.5*np.identity(self.N) - np.matmul(self.phi_post, self.phi_pre.T)
         else:
             raise Exception("The state of network has been changed and is invalid!")
 

@@ -4,7 +4,7 @@ dt = 0.1
 eta = 0.01
 beta = 0.1
 N = 128
-state = 'Dissipation'
+state = 'Decorrelation'
 
 # time scales for lowpass filter signals (x_bar and y)
 tau = 50
