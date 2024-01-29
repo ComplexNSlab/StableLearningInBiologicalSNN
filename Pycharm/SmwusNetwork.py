@@ -75,7 +75,7 @@ class SmwusNetwork:
         if self.homeostasis_state == 'Dissipation':
             self._fluctuation_rate = self.kisi - beta * self.W
         elif self.homeostasis_state == 'Rate control':
-            self._fluctuation_rate = self.kisi + np.matmul(self.phi0 - self.phi, self.phi.T) * self.W
+            self._fluctuation_rate = self.kisi + np.matmul(np.matmul(self.phi0 - self.phi, self.phi.T), self.W)
         elif self.homeostasis_state == 'Decorrelation':
             self._fluctuation_rate = self.kisi + 0.5*np.identity(self.N) - np.matmul(self.phi_post, self.phi_pre.T)
         else:
@@ -95,8 +95,8 @@ class SmwusNetwork:
 
         dx = -self.x + np.matmul(self.W, self.phi) + b
         dw = eta * (self.fluctuation_rate + self.learning_rate)
-        dy = (self.x - self.y) / tau
-        dx_bar = (self.x - self.x_bar) / tau_x
+        dy = (self.phi - self.y) / tau
+        dx_bar = (100*self.x - self.x_bar) / tau_x
 
         self.x = self.x + dx * SmwusNetwork.dt
         self.W = self.W + dw * SmwusNetwork.dt

@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from Izhikevich_Spiking_Neuron import IzhikevichNetwork
+from Izhikevich import IzhikevichNetwork
 
 network = IzhikevichNetwork(n=1000)
 network.simulate(T=1000)
