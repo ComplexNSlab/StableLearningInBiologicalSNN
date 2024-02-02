@@ -2,6 +2,10 @@ import numpy as np
 
 
 class IzhikevichNetwork:
+    # synaptic plasticity rate
+    alpha = 0.05
+    tau = 10000
+
     def __init__(self, n):
         """
         Parameters
@@ -22,13 +26,19 @@ class IzhikevichNetwork:
         self.ne = ne
         self.ni = ni
 
+        # initializing average activities parameters
+        self.A_goal = np.array([1]*ne + [2]*ni).reshape([ne + ni, 1])
+        self.A = np.zeros([ne + ni, 1])
+
         # initializing W
         self.W = np.zeros((ne + ni, ne + ni))
         self.W[:, :ne] = 0.5 * np.random.rand(ne + ni, ne)
         self.W[:, ne:ne + ni] = -1 * np.random.rand(ne + ni, ni)
+        np.fill_diagonal(self.W, 0)
 
         # creation of cells and totalTime
         self.cells = []
+        self.w_save = []
         self.totalTime = 0
 
         # creation of cells and addition to the cells attribute
@@ -37,12 +47,13 @@ class IzhikevichNetwork:
         for i in range(ni):
             self.cells.append(IzhikevichSpikingNeuron(inhibitory=False))
 
-    def simulate(self, T):
+    def simulate(self, T, plasticity = True):
         """
         simulation of network for a given time in mS
         Parameters
         ----------
         T : time period for simulation (mS)
+        plasticity : whether plasticity rule is active or not on W synaptic matrix
 
         """
 
@@ -63,6 +74,18 @@ class IzhikevichNetwork:
             for cell_index, cell in enumerate(self.cells):
                 cell.update(thalamic_input[cell_index] + synaptic_input[cell_index])
 
+            if plasticity:
+                self._update_synapses()
+                self._update_A()
+                self.w_save.append(self.W)
+
+    def _update_synapses(self):
+        self.W = self.W + self.alpha * np.multiply(np.matmul(self.A, (self.A_goal - self.A).T), self.W)
+
+    def _update_A(self):
+        self.A += (np.array([cell.v for cell in self.cells]).reshape(self.n, 1) - self.A) * IzhikevichSpikingNeuron.dt / self.tau
+
+    @property
     def get_spike_raster(self):
         spike_raster = []
         for cell in self.cells:
@@ -70,6 +93,7 @@ class IzhikevichNetwork:
 
         return spike_raster
 
+    @property
     def get_potential_traces(self):
         trace = np.zeros([self.ne + self.ni, int(self.cells[0].t / IzhikevichSpikingNeuron.dt)])
         for cell_index, cell in enumerate(self.cells):
@@ -77,6 +101,7 @@ class IzhikevichNetwork:
 
         return trace
 
+    @property
     def get_axon_current_traces(self):
         trace = np.zeros([self.ne + self.ni, int(self.cells[0].t / IzhikevichSpikingNeuron.dt)])
         for cell_index, cell in enumerate(self.cells):
@@ -113,8 +138,8 @@ class IzhikevichSpikingNeuron:
     """
 
     threshold = 30  # mV
-    dt = 0.1  # mS
-    spike_current_amplitude = 0.25
+    dt = 0.5  # mS
+    spike_current_amplitude = 0.20
     axon_decay = 5  # mS
 
     def __init__(self, inhibitory: 'inhibitory cell' = True):

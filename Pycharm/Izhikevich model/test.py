@@ -1,16 +1,35 @@
 import matplotlib.pyplot as plt
-
+import matplotlib; matplotlib.use("TkAgg")
+from matplotlib.animation import FuncAnimation
 from Izhikevich import *
 
-network = IzhikevichNetwork(n=1000)
-network.simulate(T=1000)
 
-plt.eventplot(network.get_spike_raster(), colors='k')
+network = IzhikevichNetwork(n=1000)
+network.simulate(T=300)
+
+plt.eventplot(network.get_spike_raster, colors='k')
 plt.xlabel('time (mS)')
 plt.ylabel('cell index')
 plt.hlines(xmin=0, xmax=network.totalTime, y=800, colors='k', linewidth = 0.5)
 plt.title('Izhikevich model spike raster')
 plt.show()
+
+array = np.array(network.w_save)
+print(array.shape)
+
+
+def animate(frame):
+    global array
+    plt.clf()  # Clear the previous frame
+    plt.imshow(array[frame, :, :], cmap='viridis')
+    plt.colorbar(orientation='horizontal')
+    plt.title(f'Frame {frame*IzhikevichSpikingNeuron.dt} mS')
+
+
+anim = FuncAnimation(plt.figure(), animate, frames=1000, interval=0.5)
+
+plt.show()
+
 
 # traces = network.get_potential_traces()
 # plt.plot(traces[0, :])
