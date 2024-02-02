@@ -4,7 +4,7 @@ import numpy as np
 class IzhikevichNetwork:
     # synaptic plasticity rate
     alpha = 0.05
-    tau = 10000
+    tau = 1
 
     def __init__(self, n):
         """
@@ -28,7 +28,7 @@ class IzhikevichNetwork:
 
         # initializing average activities parameters
         self.A_goal = np.array([1]*ne + [2]*ni).reshape([ne + ni, 1])
-        self.A = np.zeros([ne + ni, 1])
+        self.A = np.zeros([ne + ni, 1]) - 65
 
         # initializing W
         self.W = np.zeros((ne + ni, ne + ni))
@@ -39,6 +39,7 @@ class IzhikevichNetwork:
         # creation of cells and totalTime
         self.cells = []
         self.w_save = []
+        self.A_save = []
         self.totalTime = 0
 
         # creation of cells and addition to the cells attribute
@@ -75,15 +76,24 @@ class IzhikevichNetwork:
                 cell.update(thalamic_input[cell_index] + synaptic_input[cell_index])
 
             if plasticity:
-                self._update_synapses()
+                # self._update_synapses()
                 self._update_A()
                 self.w_save.append(self.W)
+                self.A_save.append(self.A)
 
     def _update_synapses(self):
         self.W = self.W + self.alpha * np.multiply(np.matmul(self.A, (self.A_goal - self.A).T), self.W)
 
     def _update_A(self):
         self.A += (np.array([cell.v for cell in self.cells]).reshape(self.n, 1) - self.A) * IzhikevichSpikingNeuron.dt / self.tau
+
+    @property
+    def get_A_history(self):
+        return np.array(self.A_save)
+
+    @property
+    def get_W_history(self):
+        return np.array(self.w_save)
 
     @property
     def get_spike_raster(self):
