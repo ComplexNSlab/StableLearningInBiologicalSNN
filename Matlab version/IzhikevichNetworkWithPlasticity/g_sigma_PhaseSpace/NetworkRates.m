@@ -34,6 +34,6 @@ function [e_rate, i_rate] = NetworkRates(g, sigma)
     end
     
     
-    e_rate = sum(firings(:, 2) <= 800)/(T/1000)/800; % Hz
-    i_rate = sum(firings(:, 2) > 800)/(T/1000)/200; % Hz
+    e_rate = sum(firings(:, 2) <= Ne)/(T/1000)/Ne; % Hz
+    i_rate = sum(firings(:, 2) > Ne)/(T/1000)/Ni; % Hz
 end

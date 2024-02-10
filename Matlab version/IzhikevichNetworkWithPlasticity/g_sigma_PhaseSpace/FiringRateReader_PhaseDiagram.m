@@ -1,6 +1,6 @@
-% This codes enable us to read average firing rates of (Inh, Exc) cells in g_sigma phase diagram 
+%% This codes enable us to read average firing rates of (Inh, Exc) cells in g_sigma phase diagram 
 
-load('/Users/arshia/Desktop/StableMemories/Matlab version/IzhikevichNetworkWithPlasticity/g_sigma_PhaseSpace/HighResolutionWorkSpaceData.mat');
+load("./HighResolutionWorkSpaceData.mat", 'i_rates', 'e_rates', 'g', 'sigma');
 
 data1 = transpose(e_rates); 
 data2 = transpose(i_rates);
