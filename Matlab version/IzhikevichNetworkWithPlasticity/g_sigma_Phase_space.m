@@ -1,5 +1,5 @@
-g = 0:0.05:1;
-sigma = 0:0.1:15;
+g = 0:0.01:1;
+sigma = 0:0.05:15;
 
 e_rates = zeros(length(g), length(sigma));
 i_rates = zeros(length(g), length(sigma));
