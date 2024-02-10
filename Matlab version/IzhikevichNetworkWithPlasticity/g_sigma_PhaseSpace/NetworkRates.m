@@ -15,7 +15,7 @@ function [e_rate, i_rate] = NetworkRates(g, sigma)
     
     firings=[]; % spike timings
     dt = 0.1;
-    T = 1000; 
+    T = 2000; 
     
     for t=0:dt:T % simulation of 1000 ms
         I_syn = I_syn - I_syn*dt/tau_syn + current_jump*(v >=30);
