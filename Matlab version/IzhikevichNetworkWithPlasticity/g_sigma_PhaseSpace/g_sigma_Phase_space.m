@@ -1,4 +1,6 @@
-g = 0:0.01:1.2;
+%% The code that runs for a long time to get a high resolution phase diagram
+
+g = 0:0.01:1;
 sigma = 0:0.05:15;
 
 e_rates = zeros(length(g), length(sigma));
@@ -18,9 +20,9 @@ end
 close(f)
 delete(f)
 
-%% 
-g = 0:0.05:1;
-sigma = 0:0.1:15;
+%% visualization of the phase diagram
+g = 0:0.01:1;
+sigma = 0:0.05:15;
 figure('Name', 'Excitatory firing rates');
 im = image([g(1) g(end)], [sigma(1) sigma(end)], transpose(e_rates));
 im.CDataMapping = 'scaled';
