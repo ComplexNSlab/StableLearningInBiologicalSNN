@@ -1,6 +1,6 @@
 %% This codes enable us to read average firing rates of (Inh, Exc) cells in g_sigma phase diagram 
 
-load("./HighResolutionWorkSpaceData.mat", 'i_rates', 'e_rates', 'g', 'sigma');
+load("./HighResolutionWorkSpaceData2.mat", 'i_rates', 'e_rates', 'g', 'sigma');
 
 data1 = transpose(e_rates); 
 data2 = transpose(i_rates);
@@ -8,6 +8,26 @@ data2 = transpose(i_rates);
 % Define custom x and y axis values
 x_values = g; % Replace with your actual x axis values
 y_values = sigma; % Replace with your actual y axis values
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% plot 3D surf of rates Vs. g-sigma plane
+figure('Name', 'Excitatory cells firing rates');
+surf(g, sigma, data1);
+xlabel('g');
+ylabel('sigma');
+zlabel('rate (Hz)');
+title('Excitatory cells');
+
+figure('Name', 'Inhibitory cells firing rates');
+surf(g, sigma, data2);
+xlabel('g');
+ylabel('sigma');
+zlabel('rate (Hz)');
+title('Inhibitory cells');
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot heatmap with custom axis values
