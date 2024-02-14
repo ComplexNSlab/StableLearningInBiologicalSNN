@@ -2,26 +2,32 @@
 
 load("./HighResolutionWorkSpaceData2.mat", 'i_rates', 'e_rates', 'g', 'sigma');
 
-data1 = transpose(e_rates); 
-data2 = transpose(i_rates);
+g_max = 1;
+sigma_max = 15;
+
+g_max = find(g == g_max);
+sigma_max = find(sigma == sigma_max);
+
+data1 = transpose(e_rates(1:g_max, 1:sigma_max)); 
+data2 = transpose(i_rates(1:g_max, 1:sigma_max));
 
 % Define custom x and y axis values
-x_values = g; % Replace with your actual x axis values
-y_values = sigma; % Replace with your actual y axis values
+x_values = g(1:g_max); % Replace with your actual x axis values
+y_values = sigma(1:sigma_max); % Replace with your actual y axis values
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot 3D surf of rates Vs. g-sigma plane
 figure('Name', 'Excitatory cells firing rates');
-surf(g, sigma, data1);
+surf(x_values, y_values, data1);
 xlabel('g');
 ylabel('sigma');
 zlabel('rate (Hz)');
 title('Excitatory cells');
 
 figure('Name', 'Inhibitory cells firing rates');
-surf(g, sigma, data2);
+surf(x_values, y_values, data2);
 xlabel('g');
 ylabel('sigma');
 zlabel('rate (Hz)');
