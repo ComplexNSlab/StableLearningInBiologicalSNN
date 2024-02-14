@@ -46,7 +46,7 @@ title('Inhibitory firing rates');
 set(gca,'YDir','normal')
 
 %% % Excitatory neurons Inhibitory neurons
-g = 0; sigma = 40;
+g = 0.4; sigma = 5;
 
 Ne=800; Ni=200;
 a=[0.02*ones(Ne,1); 0.1*ones(Ni,1)];
@@ -55,7 +55,7 @@ c=[-65*ones(Ne,1); -65*ones(Ni,1)];
 d=[8*ones(Ne,1); 2*ones(Ni,1)];
 W=[g*rand(Ne+Ni,Ne), -2*g*rand(Ne+Ni,Ni)];
 
-v=-65*ones(Ne+Ni,1); % Initial values of v
+v=-65*ones(Ne+Ni,1) + 10*randn(Ne+Ni, 1); % Initial values of v
 u=b.*v; % Initial values of u
 I_syn = zeros(Ne+Ni,1);
 tau_syn = 5; %ms
