@@ -1,5 +1,6 @@
 function [e_rate, i_rate] = NetworkRates(g, sigma)
-    % Excitatory neurons Inhibitory neurons
+    %% This function run the Izhikevich network for a geiven (g, sigma) and returns the average firing rate of the network per neuron and persecond (Hz)
+
     Ne=800; Ni=200;
     a=[0.02*ones(Ne,1); 0.1*ones(Ni,1)];
     b=[0.2*ones(Ne,1); 0.2*ones(Ni,1)];
