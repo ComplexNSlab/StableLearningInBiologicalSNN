@@ -27,8 +27,8 @@ function [e_rate, i_rate] = NetworkRates(g, sigma)
         v(fired)=c(fired);
         u(fired)=u(fired)+d(fired);
         
-        I=[sigma*randn(Ne,1);0.4*sigma*randn(Ni,1)]/sqrt(dt); % thalamic input
-        I = I + W*I_syn;
+        I = [sigma*randn(Ne,1); 0.4*sigma*randn(Ni,1)]/sqrt(dt); % thalamic input
+        I = I + W * I_syn;
         
         v=v+dt*(0.04*v.^2+5*v+140-u+I); 
         u=u+a.*(b.*v-u)*dt; 
