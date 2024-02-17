@@ -1,8 +1,8 @@
-load("/Users/arshia/Desktop/StableMemories/Matlab version/IzhikevichNetworkWithPlasticity/g_sigma_PhaseSpace/HighResolutionWorkSpaceData.mat", 'i_rates', 'e_rates', 'g', 'sigma');
+%load("/Users/arshia/Desktop/StableMemories/Matlab version/IzhikevichNetworkWithPlasticity/g_sigma_PhaseSpace/HighResolutionWorkSpaceData2.mat", 'i_rates', 'e_rates', 'g', 'sigma');
 
-
+[ge, gi] = myfunc(0.5);
 %%
-function myfunc(g0)
+function [ge, gi] = myfunc(g0)
     % Excitatory neurons Inhibitory neurons
     Ne=800; Ni=200;
     a=[0.02*ones(Ne,1); 0.1*ones(Ni,1)];
@@ -11,7 +11,7 @@ function myfunc(g0)
     d=[8*ones(Ne,1); 2*ones(Ni,1)];
     
     dt = 0.5;
-    T = 200000; 
+    T = 50000; 
     n_t = T/dt;
     
     A_save = zeros(Ne+Ni, n_t);

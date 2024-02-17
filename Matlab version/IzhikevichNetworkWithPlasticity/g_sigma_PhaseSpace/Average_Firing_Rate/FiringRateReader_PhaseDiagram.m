@@ -3,7 +3,7 @@
 load("./HighResolutionWorkSpaceData.mat", 'i_rates', 'e_rates', 'g', 'sigma');
 
 g_max = 1;
-sigma_max = 15;
+sigma_max = 10;
 
 g_max = find(g == g_max);
 sigma_max = find(sigma == sigma_max);
@@ -19,21 +19,7 @@ y_values = sigma(1:sigma_max); % Replace with your actual y axis values
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % plot 3D surf of rates Vs. g-sigma plane
-<<<<<<< HEAD
-% figure('Name', 'Excitatory cells firing rates');
-% surf(g, sigma, data1);
-% xlabel('g');
-% ylabel('sigma');
-% zlabel('rate (Hz)');
-% title('Excitatory cells');
-% 
-% figure('Name', 'Inhibitory cells firing rates');
-% surf(g, sigma, data2);
-% xlabel('g');
-% ylabel('sigma');
-% zlabel('rate (Hz)');
-% title('Inhibitory cells');
-=======
+
 figure('Name', 'Excitatory cells firing rates');
 surf(x_values, y_values, data1);
 xlabel('g');
@@ -47,9 +33,6 @@ xlabel('g');
 ylabel('sigma');
 zlabel('rate (Hz)');
 title('Inhibitory cells');
->>>>>>> 37e32a4fe508a41de540af57eaf6ec9004691b38
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot heatmap with custom axis values
