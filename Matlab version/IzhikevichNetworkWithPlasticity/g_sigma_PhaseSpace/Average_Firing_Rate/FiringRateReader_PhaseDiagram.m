@@ -1,6 +1,6 @@
 %% This codes enable us to read average firing rates of (Inh, Exc) cells in g_sigma phase diagram 
 
-load("./HighResolutionWorkSpaceData.mat", 'i_rates', 'e_rates', 'g', 'sigma');
+load("./HighResolutionWorkSpaceData2.mat", 'i_rates', 'e_rates', 'g', 'sigma');
 
 g_max = 1;
 sigma_max = 10;
