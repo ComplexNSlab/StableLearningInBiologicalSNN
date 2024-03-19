@@ -1,0 +1,182 @@
+clear;
+clc; 
+mynet = IzhikevichNetwork(400);
+mynet.run(1000);
+
+
+data = mynet.Data;
+
+%% a single cell voltage trace with syanptic inputs
+
+cell_number = 390;
+
+% ax1 = subplot(2, 1, 1);
+plot(data.time, data.v(cell_number, :))
+
+hold on
+% ax2 = subplot(2, 1, 2);
+plot(data.time, 1 * data.I_syn(cell_number, :))
+
+hold off
+% linkaxes([ax1, ax2], 'x')
+
+%% dynamic of synaptic weights in time
+x = (1:size(data.w, 3))*mynet.dt*mynet.sampling_rate;  % Assuming meanValues is your array of mean values
+
+data1 = reshape(data.w(1:mynet.Ne, 1:mynet.Ne, :), mynet.Ne*mynet.Ne, length(x));
+data2 = reshape(data.w(1:mynet.Ne, mynet.Ne+1:end, :), mynet.Ne*mynet.Ni, length(x));
+data3 = reshape(data.w(mynet.Ne+1:end, 1:mynet.Ne, :), mynet.Ni*mynet.Ne, length(x));
+data1(data1 == 0) = nan;    
+data2(data2 == 0) = nan;
+data3(data3 == 0) = nan;
+
+meanLine1 = squeeze(nanmean(data1, 1));     % Mean values
+meanLine2 = squeeze(nanmean(data2, 1));
+meanLine3 = squeeze(nanmean(data3, 1));
+stdDev1 = squeeze(nanstd(data1, 1));        % Standard deviation values
+stdDev2 = squeeze(nanstd(data2, 1)); 
+stdDev3 = squeeze(nanstd(data3, 1)); 
+
+% Calculate the upper and lower bounds
+upperBound1 = meanLine1 + stdDev1;
+lowerBound1 = meanLine1 - stdDev1;
+upperBound2 = meanLine2 + stdDev2;
+lowerBound2 = meanLine2 - stdDev2;
+upperBound3 = meanLine3 + stdDev3;
+lowerBound3 = meanLine3 - stdDev3;
+
+% Concatenate the upper bound and reversed lower bound
+xPolygon = [x, fliplr(x)];  % x coordinates for the polygon
+yPolygon1 = [upperBound1, fliplr(lowerBound1)];  % y coordinates for the polygon
+yPolygon2 = [upperBound2, fliplr(lowerBound2)];  % y coordinates for the polygon
+yPolygon3 = [upperBound3, fliplr(lowerBound3)];  % y coordinates for the polygon
+
+figure()
+% Plot the mean lines
+plot(x, meanLine1, 'k', 'LineWidth', 2); 
+hold on;
+plot(x, meanLine2, 'b', 'LineWidth', 2)
+plot(x, meanLine3, 'r', 'LineWidth', 2)
+
+% Shade the area between upper and lower bounds
+% fillColor = [0.8, 0.8, 0.8]; % Light gray fill
+% plot(x, upperBound1, 'k')
+% plot(x, lowerBound1, 'k')
+% 
+% plot(x, upperBound2, 'b')
+% plot(x, lowerBound2, 'b')
+% 
+% plot(x, upperBound3, 'r')
+% plot(x, lowerBound3, 'r')
+
+fill(xPolygon, yPolygon1, 'k', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+hold on
+fill(xPolygon, yPolygon2, 'b', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+fill(xPolygon, yPolygon3, 'r', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+
+% Additional plot adjustments
+xlabel('time (ms)');
+ylabel('W');
+title('population average of w Vs. time');
+legend('Ex -> Ex', 'Ex -> Inh', 'Inh -> Ex')
+hold off;
+
+%% dynamic of synaptic weights histogram
+
+fig = figure('name', 'Weights Histogram');
+for i = 1:1:size(data.w, 3)
+    clf; % Clear the figure for the next histogram
+    % Update figure title dynamically
+    set(fig, 'Name', sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
+    
+    histogram(nonzeros(data.w(:, :, i)), 400);
+    % hold on 
+    % histogram(nonzeros(data.w(1:mynet.Ne, mynet.Ne+1:end, i)), 'Normalization', 'probability');
+    % histogram(nonzeros(data.w(mynet.Ne+1:end, 1:mynet.Ne, i)), 'Normalization', 'probability');
+    % legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
+
+    pause(0.1); % Pause to view the histogram
+end
+%% Correlation between smoothed spike trains
+
+kernelWidth = 1; % Width of the kernel in number of samples
+kernel = normpdf(-3*kernelWidth:3*kernelWidth, 0, kernelWidth);
+
+numNeurons = size(data.spike_train, 1);
+T = size(data.spike_train, 2); % Total time points or length of each spike train
+
+% Preallocate a matrix to hold the smoothed spike trains
+smoothedSpikeTrains = zeros(numNeurons, T);
+
+% Smooth each spike train
+for i = 1:numNeurons
+    % Convolve and keep the central part of the result to match the original length
+    smoothed = conv(data.spike_train(i, :), kernel, 'same');
+    smoothedSpikeTrains(i, :) = smoothed;
+end
+
+% Calculate pairwise correlation efficiently on smoothed data
+correlationMatrix = corr(smoothedSpikeTrains');
+for i = 1:size(correlationMatrix, 1)
+    correlationMatrix(i, i) = 0;
+end
+
+clf;
+% For the histogram
+figure(1);
+histogram(correlationMatrix);
+
+% For the imshow
+figure(2);
+imshow(correlationMatrix);
+colormap(jet(256)); % Apply colormap to the current figure (figure 2)
+clim([-0.3, 0.4]); % Set color limits for the current axes
+colorbar; 
+
+% Add a colorbar to the current figure (figure 2)
+% clim([-1 1]); % Fixing the color scale to range from -1 to 1
+% colorbar; % Show colorbar
+%% population average A Vs. time
+
+x = data.time;  % Assuming meanValues is your array of mean values
+meanLine1 = mean(data.A(1:mynet.Ne, :), 1);     % Mean values
+meanLine2 = mean(data.A(mynet.Ne+1:end, :), 1);   
+stdDev1 = std(data.A(1:mynet.Ne, :), 1);        % Standard deviation values
+stdDev2 = std(data.A(mynet.Ne+1:end, :), 1); 
+
+% Calculate the upper and lower bounds
+upperBound1 = meanLine1 + stdDev1;
+lowerBound1 = meanLine1 - stdDev1;
+upperBound2 = meanLine2 + stdDev2;
+lowerBound2 = meanLine2 - stdDev2;
+
+% Concatenate the upper bound and reversed lower bound
+xPolygon = [x, fliplr(x)];  % x coordinates for the polygon
+yPolygon1 = [upperBound1, fliplr(lowerBound1)];  % y coordinates for the polygon
+yPolygon2 = [upperBound2, fliplr(lowerBound2)];  % y coordinates for the polygon
+
+figure()
+% Plot the mean lines
+plot(data.time, meanLine1, 'k', 'LineWidth', 2); 
+hold on;
+plot(data.time, meanLine2, 'b', 'LineWidth', 2);
+
+% Shade the area between upper and lower bounds
+% fillColor = [0.8, 0.8, 0.8]; % Light gray fill
+fill(xPolygon, yPolygon1, 'k', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+hold on
+fill(xPolygon, yPolygon2, 'b', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+
+% Additional plot adjustments
+xlabel('time (ms)');
+ylabel('A (KHz)');
+title('Plot with Shaded Std Dev');
+legend('Ex', 'In')
+hold off;
+%% gif of w histogram movie
+
+%%
+% 
+% $$e^{\pi i} + 1 = 0$$
+% 
+
