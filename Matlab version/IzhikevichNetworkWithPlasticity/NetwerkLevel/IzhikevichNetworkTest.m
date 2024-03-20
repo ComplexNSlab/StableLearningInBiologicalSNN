@@ -1,20 +1,21 @@
 clear;
 clc; 
 mynet = IzhikevichNetwork(400);
-mynet.run(1000);
+mynet.noise = false;
+mynet.run(10000);
 
 
 data = mynet.Data;
 
 %% a single cell voltage trace with syanptic inputs
 
-cell_number = 390;
+cell_number = 11;
 
 % ax1 = subplot(2, 1, 1);
 plot(data.time, data.v(cell_number, :))
 
 hold on
-% ax2 = subplot(2, 1, 2);
+% ax2 = subplot(2, 1, 2);   
 plot(data.time, 1 * data.I_syn(cell_number, :))
 
 hold off
@@ -84,7 +85,7 @@ hold off;
 %% dynamic of synaptic weights histogram
 
 fig = figure('name', 'Weights Histogram');
-for i = 1:1:size(data.w, 3)
+for i = 1:4:size(data.w, 3)
     clf; % Clear the figure for the next histogram
     % Update figure title dynamically
     set(fig, 'Name', sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
@@ -95,7 +96,7 @@ for i = 1:1:size(data.w, 3)
     % histogram(nonzeros(data.w(mynet.Ne+1:end, 1:mynet.Ne, i)), 'Normalization', 'probability');
     % legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
 
-    pause(0.1); % Pause to view the histogram
+    pause(0.0001); % Pause to view the histogram
 end
 %% Correlation between smoothed spike trains
 
@@ -124,6 +125,7 @@ end
 clf;
 % For the histogram
 figure(1);
+
 histogram(correlationMatrix);
 
 % For the imshow
@@ -139,8 +141,8 @@ colorbar;
 %% population average A Vs. time
 
 x = data.time;  % Assuming meanValues is your array of mean values
-meanLine1 = mean(data.A(1:mynet.Ne, :), 1);     % Mean values
-meanLine2 = mean(data.A(mynet.Ne+1:end, :), 1);   
+meanLine1 = mean(1000*data.A(1:mynet.Ne, :), 1);     % Mean values
+meanLine2 = mean(1000*data.A(mynet.Ne+1:end, :), 1);   
 stdDev1 = std(data.A(1:mynet.Ne, :), 1);        % Standard deviation values
 stdDev2 = std(data.A(mynet.Ne+1:end, :), 1); 
 
@@ -169,14 +171,46 @@ fill(xPolygon, yPolygon2, 'b', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
 
 % Additional plot adjustments
 xlabel('time (ms)');
-ylabel('A (KHz)');
+ylabel('A (Hz)');
 title('Plot with Shaded Std Dev');
 legend('Ex', 'In')
 hold off;
-%% gif of w histogram movie
+%% Raster plot
+plot(mynet.firings(:, 1), mynet.firings(:, 2), 'k.')
 
-%%
-% 
-% $$e^{\pi i} + 1 = 0$$
-% 
+%% Rater plot of last trial
+trial_number = 6;
 
+indices = (mynet.firings(:, 1) > mynet.t - trial_number * 1000) & (mynet.firings(:, 1) < mynet.t - (trial_number-1) * 1000);
+spike_times = mynet.firings(indices, 1) - (mynet.t - trial_number*1000);
+neuron_indices = mynet.firings(indices, 2);
+
+% plot(spike_times, neuron_indices, 'k.')
+% plot(mynet.firings(1:500, 1), mynet.firings(1:500, 2), '.')
+
+counter = 1;
+for i=1:length(neuron_indices)
+    if neuron_indices(i) <= mynet.Ne
+        plot(spike_times(i), counter, 'k.');
+        counter = counter + 1;
+        hold on 
+    end
+end
+
+counter = mynet.Ne + 1;
+
+for i=1:length(neuron_indices)
+    if neuron_indices(i) > mynet.Ne
+        if neuron_indices(i) >= counter
+            plot(spike_times(i), counter, 'k.');
+            counter = counter + 1;
+        else
+            plot(spike_times(i), neuron_indices(i), 'r.');
+        end
+        hold on 
+    end
+end
+
+xlabel('time (ms)')
+ylabel('neuron index')
+title('Last trial raster plot')

@@ -19,7 +19,7 @@ classdef IzhikevichNetwork < handle
        plasticity = false % a logical variable, whether plasticity is on or off
        sampling = false % a logical variable, whether sampling is on or off
        noise = true
-       firings
+       firings = []
    end
 
    methods
@@ -64,7 +64,7 @@ classdef IzhikevichNetwork < handle
 
           % obj.run(2000);
           % obj.A_goal = obj.A;
-          obj.A_goal = [0.0085*ones(Ne, 1); 0.00575*ones(Ni, 1)];
+          obj.A_goal = [0.001*ones(Ne, 1); 0.002*ones(Ni, 1)];
           obj.plasticity = true;
       end
 
@@ -84,7 +84,6 @@ classdef IzhikevichNetwork < handle
                 end
                 I_syn_save = zeros(obj.Ne+obj.Ni, n_t);
                 v_save = zeros(obj.Ne+obj.Ni, n_t);
-                obj.firings=[]; % spike timings
                 A_save = zeros(obj.Ne+obj.Ni, n_t);
             end
 
@@ -103,7 +102,7 @@ classdef IzhikevichNetwork < handle
                 
                 % finding fired cells
                 fired = find(obj.v >= 30); % indices of spikes
-                obj.firings = [obj.firings; i*obj.dt + 0*fired,fired];
+                obj.firings = [obj.firings; obj.t + 0*fired,fired];
                 spike_trains(obj.v >= 30, i) = 1/obj.dt;
                 
                 obj.I_syn = obj.I_syn - obj.I_syn*obj.dt/obj.tau_syn + obj.current_jump*(obj.v >= 30);
@@ -112,16 +111,13 @@ classdef IzhikevichNetwork < handle
                 obj.u(fired) = obj.u(fired)+obj.d(fired);
                 
                 % thalamic (noisy) input + synaptic input
-                I_thalamic = [obj.sigma*randn(obj.Ne,1);0.4*obj.sigma*randn(obj.Ni,1)]/sqrt(obj.dt);
+                I_thalamic = [obj.sigma*randn(obj.Ne,1);0.4*obj.sigma*randn(obj.Ni,1)]*obj.noise/sqrt(obj.dt);
                 
-                if obj.noise
-                    I = I_thalamic + obj.w * obj.I_syn;
-                else
-                    I = obj.w * obj.I_syn;
-                end
                 
-                if mod(round(obj.t), 10000) <= 100
-                    I = I + 20*[ones(40, 1); zeros(360, 1)];
+                I = I_thalamic + obj.w * obj.I_syn;
+              
+                if mod(round(obj.t), 1000) <= 10
+                    I = I + 5*[ones(10, 1); zeros(obj.N-10, 1)];
                 end
 
                 I_syn_save(:, i) = I - I_thalamic;
@@ -129,7 +125,7 @@ classdef IzhikevichNetwork < handle
                 % updating system
                 obj.A = obj.A + (-obj.A + spike_trains(:, i))*obj.dt/obj.tau_A;
                 if obj.plasticity
-                    obj.w = obj.w + (obj.A_goal - obj.A)*transpose(obj.A) .* obj.w * obj.dt;
+                    obj.w = obj.w + 10*(obj.A_goal - obj.A)*transpose(obj.A) .* obj.w * obj.dt;
                 end
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
                 obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;
