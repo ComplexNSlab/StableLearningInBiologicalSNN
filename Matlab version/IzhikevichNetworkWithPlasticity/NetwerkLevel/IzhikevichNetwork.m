@@ -125,7 +125,7 @@ classdef IzhikevichNetwork < handle
                 % updating system
                 obj.A = obj.A + (-obj.A + spike_trains(:, i))*obj.dt/obj.tau_A;
                 if obj.plasticity
-                    obj.w = obj.w + 10*(obj.A_goal - obj.A)*transpose(obj.A) .* obj.w * obj.dt;
+                    obj.w = obj.w + 500*(obj.A_goal - obj.A)*transpose(obj.A) .* obj.w * obj.dt;
                 end
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
                 obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;

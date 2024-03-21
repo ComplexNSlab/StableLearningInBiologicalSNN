@@ -2,7 +2,7 @@ clear;
 clc; 
 mynet = IzhikevichNetwork(400);
 mynet.noise = false;
-mynet.run(10000);
+mynet.run(100000);
 
 
 data = mynet.Data;
@@ -179,38 +179,56 @@ hold off;
 plot(mynet.firings(:, 1), mynet.firings(:, 2), 'k.')
 
 %% Rater plot of last trial
-trial_number = 6;
 
-indices = (mynet.firings(:, 1) > mynet.t - trial_number * 1000) & (mynet.firings(:, 1) < mynet.t - (trial_number-1) * 1000);
-spike_times = mynet.firings(indices, 1) - (mynet.t - trial_number*1000);
-neuron_indices = mynet.firings(indices, 2);
+figure();
 
-% plot(spike_times, neuron_indices, 'k.')
-% plot(mynet.firings(1:500, 1), mynet.firings(1:500, 2), '.')
+for trial_number = 89
+    clf;
 
-counter = 1;
-for i=1:length(neuron_indices)
-    if neuron_indices(i) <= mynet.Ne
-        plot(spike_times(i), counter, 'k.');
-        counter = counter + 1;
-        hold on 
-    end
-end
-
-counter = mynet.Ne + 1;
-
-for i=1:length(neuron_indices)
-    if neuron_indices(i) > mynet.Ne
-        if neuron_indices(i) >= counter
+    indices = (mynet.firings(:, 1) > mynet.t - trial_number * 1000) & (mynet.firings(:, 1) < mynet.t - (trial_number-1) * 1000);
+    spike_times = mynet.firings(indices, 1) - (mynet.t - trial_number*1000);
+    neuron_indices = mynet.firings(indices, 2);
+    
+    % plot(spike_times, neuron_indices, 'k.')
+    % plot(mynet.firings(1:500, 1), mynet.firings(1:500, 2), '.')
+    
+    counter = 1;
+    for i=1:length(neuron_indices)
+        if neuron_indices(i) > mynet.Ne
+            if neuron_indices(i) >= counter
+                plot(spike_times(i), counter, 'k.');
+                counter = counter + 1;
+            else
+                plot(spike_times(i), neuron_indices(i), 'r.');
+            end
+            hold on 
+        end
+        if neuron_indices(i) <= mynet.Ne
             plot(spike_times(i), counter, 'k.');
             counter = counter + 1;
-        else
-            plot(spike_times(i), neuron_indices(i), 'r.');
+            hold on 
         end
-        hold on 
     end
+    
+    counter = mynet.Ne + 1;
+    
+    for i=1:length(neuron_indices)
+        if neuron_indices(i) > mynet.Ne
+            if neuron_indices(i) >= counter
+                plot(spike_times(i), counter, 'k.');
+                counter = counter + 1;
+            else
+                plot(spike_times(i), neuron_indices(i), 'r.');
+            end
+            hold on 
+        end
+    end
+    hold off
+
+    xlabel('time (ms)')
+    ylabel('neuron index')
+    title(sprintf('%d trial raster plot', trial_number))
+
+    pause(0.01)
 end
 
-xlabel('time (ms)')
-ylabel('neuron index')
-title('Last trial raster plot')
