@@ -17,9 +17,11 @@ classdef IzhikevichNetwork < handle
         
        Data = struct('time', [], 'v', [], 'A', [], 'I_syn', [], 'spike_train', [], 'w', []) % saved data points
        plasticity = false % a logical variable, whether plasticity is on or off
-       sampling = false % a logical variable, whether sampling is on or off
+       sampling = true % a logical variable, whether sampling is on or off
        noise = true
-       
+       input = true
+
+       alpha = 50 % rate-control plasticity rete
        firings = []
    end
 
@@ -126,7 +128,7 @@ classdef IzhikevichNetwork < handle
                 obj.A(fired) = obj.A(fired) + 1/obj.tau_A; 
 
                 if obj.plasticity
-                    dw = 20*(obj.A_goal - obj.A)*transpose(obj.A) .* [obj.w(:, 1:obj.Ne), -obj.w(:, obj.Ne+1:end)];
+                    dw = obj.alpha *(obj.A_goal - obj.A)*transpose(obj.A) .* [obj.w(:, 1:obj.Ne), -obj.w(:, obj.Ne+1:end)];
                     obj.w = obj.w + dw * obj.dt;
                 end
                 

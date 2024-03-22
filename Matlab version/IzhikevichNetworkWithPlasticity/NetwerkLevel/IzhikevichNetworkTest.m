@@ -83,21 +83,23 @@ legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
 hold off;
 
 %% dynamic of synaptic weights histogram
-pause(10);
+pause(5)
 
 fig = figure('name', 'Weights Histogram');
-for i = 1:1:size(data.w, 3)
+for i = 1:4:size(data.w, 3)
     clf; % Clear the figure for the next histogram
     % Update figure title dynamically
     set(fig, 'Name', sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
     
-    histogram(nonzeros(data.w(:, :, i)), 400);
-    % hold on 
-    % histogram(nonzeros(data.w(1:mynet.Ne, mynet.Ne+1:end, i)), 'Normalization', 'probability');
-    % histogram(nonzeros(data.w(mynet.Ne+1:end, 1:mynet.Ne, i)), 'Normalization', 'probability');
-    % legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
+    
+    histogram(nonzeros(data.w(1:mynet.Ne, 1:mynet.Ne, i)), Normalization="pdf");
+    title(sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
+    hold on 
+    histogram(nonzeros(data.w(1:mynet.Ne, mynet.Ne+1:end, i)), 60, Normalization="pdf");
+    histogram(nonzeros(data.w(mynet.Ne+1:end, 1:mynet.Ne, i)), 60, Normalization="pdf");
+    legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
 
-    pause(0.1); % Pause to view the histogram
+    pause(0.0001); % Pause to view the histogram
 end
 %% Correlation between smoothed spike trains
 
@@ -176,13 +178,31 @@ ylabel('A (Hz)');
 title('Plot with Shaded Std Dev');
 legend('Ex', 'In')
 hold off;
+%% dynamic of A histogram
+% pause(5)
+
+fig = figure('name', 'A Histogram');
+for i = 1:1:size(data.A, 2)
+    clf; % Clear the figure for the next histogram
+    % Update figure title dynamically
+    set(fig, 'Name', sprintf('A Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
+    
+    
+    histogram(1000*data.A(1:mynet.Ne, i), 320, Normalization="pdf");
+    title(sprintf('A Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
+    hold on 
+    histogram(1000*data.A(mynet.Ne+1:end, i), 80, Normalization="pdf");
+    legend('Ex', 'Inh')
+    xlim([0, 3])
+    pause(0.0001); % Pause to view the histogram
+end
 %% Raster plot
 plot(mynet.firings(:, 1), mynet.firings(:, 2), 'k.')
 
 %% Rater plot of last trial
 
 figure();
-pause(10);
+
 for trial_number = 1:round(mynet.t/1000)
     clf;
     check_flag = zeros(1, mynet.N);
