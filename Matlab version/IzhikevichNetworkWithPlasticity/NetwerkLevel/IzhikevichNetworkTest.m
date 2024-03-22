@@ -2,7 +2,7 @@ clear;
 clc; 
 mynet = IzhikevichNetwork(400);
 mynet.noise = false;
-mynet.run(100000);
+mynet.run(200000);
 
 
 data = mynet.Data;
@@ -79,13 +79,14 @@ fill(xPolygon, yPolygon3, 'r', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
 xlabel('time (ms)');
 ylabel('W');
 title('population average of w Vs. time');
-legend('Ex -> Ex', 'Ex -> Inh', 'Inh -> Ex')
+legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
 hold off;
 
 %% dynamic of synaptic weights histogram
+pause(10);
 
 fig = figure('name', 'Weights Histogram');
-for i = 1:4:size(data.w, 3)
+for i = 1:1:size(data.w, 3)
     clf; % Clear the figure for the next histogram
     % Update figure title dynamically
     set(fig, 'Name', sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
@@ -96,7 +97,7 @@ for i = 1:4:size(data.w, 3)
     % histogram(nonzeros(data.w(mynet.Ne+1:end, 1:mynet.Ne, i)), 'Normalization', 'probability');
     % legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
 
-    pause(0.0001); % Pause to view the histogram
+    pause(0.1); % Pause to view the histogram
 end
 %% Correlation between smoothed spike trains
 
@@ -140,7 +141,7 @@ colorbar;
 % colorbar; % Show colorbar
 %% population average A Vs. time
 
-x = data.time;  % Assuming meanValues is your array of mean values
+x = (1:size(data.A, 2))*mynet.dt*mynet.sampling_rate;  % Assuming meanValues is your array of mean values
 meanLine1 = mean(1000*data.A(1:mynet.Ne, :), 1);     % Mean values
 meanLine2 = mean(1000*data.A(mynet.Ne+1:end, :), 1);   
 stdDev1 = std(data.A(1:mynet.Ne, :), 1);        % Standard deviation values
@@ -159,9 +160,9 @@ yPolygon2 = [upperBound2, fliplr(lowerBound2)];  % y coordinates for the polygon
 
 figure()
 % Plot the mean lines
-plot(data.time, meanLine1, 'k', 'LineWidth', 2); 
+plot(x, meanLine1, 'k.-', 'LineWidth', 2); 
 hold on;
-plot(data.time, meanLine2, 'b', 'LineWidth', 2);
+plot(x, meanLine2, 'b.-', 'LineWidth', 2);
 
 % Shade the area between upper and lower bounds
 % fillColor = [0.8, 0.8, 0.8]; % Light gray fill
@@ -181,54 +182,52 @@ plot(mynet.firings(:, 1), mynet.firings(:, 2), 'k.')
 %% Rater plot of last trial
 
 figure();
-
-for trial_number = 89
+pause(10);
+for trial_number = 1:round(mynet.t/1000)
     clf;
-
-    indices = (mynet.firings(:, 1) > mynet.t - trial_number * 1000) & (mynet.firings(:, 1) < mynet.t - (trial_number-1) * 1000);
-    spike_times = mynet.firings(indices, 1) - (mynet.t - trial_number*1000);
+    check_flag = zeros(1, mynet.N);
+    
+    indices = (mynet.firings(:, 1) > (trial_number-1) * 1000) & (mynet.firings(:, 1) <= trial_number * 1000);
+    spike_times = mynet.firings(indices, 1) - (trial_number-1)*1000;
     neuron_indices = mynet.firings(indices, 2);
     
-    % plot(spike_times, neuron_indices, 'k.')
-    % plot(mynet.firings(1:500, 1), mynet.firings(1:500, 2), '.')
-    
-    counter = 1;
-    for i=1:length(neuron_indices)
-        if neuron_indices(i) > mynet.Ne
-            if neuron_indices(i) >= counter
-                plot(spike_times(i), counter, 'k.');
-                counter = counter + 1;
-            else
-                plot(spike_times(i), neuron_indices(i), 'r.');
-            end
-            hold on 
-        end
+    counter_ex = 1;
+    counter_inh = mynet.Ne+1;
+    for i = 1:length(spike_times)
         if neuron_indices(i) <= mynet.Ne
-            plot(spike_times(i), counter, 'k.');
-            counter = counter + 1;
-            hold on 
-        end
-    end
-    
-    counter = mynet.Ne + 1;
-    
-    for i=1:length(neuron_indices)
-        if neuron_indices(i) > mynet.Ne
-            if neuron_indices(i) >= counter
-                plot(spike_times(i), counter, 'k.');
-                counter = counter + 1;
+            if check_flag(neuron_indices(i)) == 0
+                plot(spike_times(i), counter_ex, 'k.');
+                hold on
+                check_flag(neuron_indices(i)) = counter_ex;
+                counter_ex = counter_ex + 1;
             else
-                plot(spike_times(i), neuron_indices(i), 'r.');
+                plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+                hold on 
             end
-            hold on 
+        else
+            if check_flag(neuron_indices(i)) == 0
+                plot(spike_times(i), counter_inh, 'k.');
+                hold on
+                check_flag(neuron_indices(i)) = counter_inh;
+                counter_inh = counter_inh + 1;
+            else
+                plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+                hold on 
+            end
         end
-    end
-    hold off
 
+    end
+    xlim([0, 50]);
     xlabel('time (ms)')
     ylabel('neuron index')
-    title(sprintf('%d trial raster plot', trial_number))
-
-    pause(0.01)
+    title(sprintf('trial number %d raster plot', trial_number))
+    
+    pause(0.1)
 end
+
+    
+
+
+
+
 

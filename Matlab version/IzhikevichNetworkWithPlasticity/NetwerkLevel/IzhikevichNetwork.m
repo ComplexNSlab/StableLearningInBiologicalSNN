@@ -8,7 +8,7 @@ classdef IzhikevichNetwork < handle
        u, v, A, w, I_syn
        a, b, c, d  
        A_goal, tau_A = 6000 % ms
-       sampling_rate = 300 % sampling rate of slow variables (w)
+       sampling_rate = 2000 % sampling rate of slow variables (w, A)
        
        sigma = 6; % white noise strength 
 
@@ -19,6 +19,7 @@ classdef IzhikevichNetwork < handle
        plasticity = false % a logical variable, whether plasticity is on or off
        sampling = false % a logical variable, whether sampling is on or off
        noise = true
+       
        firings = []
    end
 
@@ -28,7 +29,8 @@ classdef IzhikevichNetwork < handle
          
           Ne = round(Ex_ratio * N);
           Ni = round((1 - Ex_ratio) * N);
-        
+          obj.Ne = Ne; obj.Ni = Ni; obj.N = N;
+
           % network initialization
           obj.w = zeros(N, N);
           for i = 1:Ne
@@ -43,10 +45,7 @@ classdef IzhikevichNetwork < handle
             obj.w(i, randperm(Ne, 5)) = 2 + sqrt(0.05*2)*randn(1, 5);
           end
             
-          obj.Ne = Ne;
-          obj.Ni = Ni;
-          obj.N = N;
-
+          
           % Excitatory neurons Inhibitory neurons (Izhikevich neurons)
           obj.a=[0.02*ones(obj.Ne,1); 0.1*ones(obj.Ni,1)];
           obj.b=[0.2*ones(obj.Ne,1); 0.2*ones(obj.Ni,1)];
@@ -70,21 +69,17 @@ classdef IzhikevichNetwork < handle
 
       function run(obj,T)
            % rng('default')
-           obj.dt = 0.1; % ms 
-           
-    
-            n_t = T/obj.dt; % total integration steps
+            n_t = round(T/obj.dt); % total integration steps
 
             % variables to save in simulation
-            spike_trains = zeros(obj.Ne+obj.Ni, n_t);
+            % spike_trains = zeros(obj.Ne+obj.Ni, n_t);
             if obj.sampling
-                
                 if obj.plasticity
-                    w_save = zeros(obj.Ne+obj.Ni, obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));
+                    w_save = zeros(obj.Ne+obj.Ni, obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));             
                 end
-                I_syn_save = zeros(obj.Ne+obj.Ni, n_t);
-                v_save = zeros(obj.Ne+obj.Ni, n_t);
-                A_save = zeros(obj.Ne+obj.Ni, n_t);
+                % I_syn_save = zeros(obj.Ne+obj.Ni, n_t);
+                % v_save = zeros(obj.Ne+obj.Ni, n_t);
+                A_save = zeros(obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));
             end
 
             f = waitbar(0,'Please wait...');
@@ -94,16 +89,19 @@ classdef IzhikevichNetwork < handle
                 % sampling variables
                 
                 obj.v(obj.v > 30) = 30;
-                v_save(:, i) = obj.v;
-                A_save(:, i) = obj.A;
-                if mod(i, obj.sampling_rate) == 0 && obj.plasticity  
-                     w_save(:, :, i/obj.sampling_rate) = obj.w;
+                % v_save(:, i) = obj.v;
+               
+                if mod(i, obj.sampling_rate) == 0   
+                    A_save(:, i/obj.sampling_rate) = obj.A;
+                    if obj.plasticity
+                        w_save(:, :, i/obj.sampling_rate) = obj.w;
+                    end
                 end
                 
                 % finding fired cells
                 fired = find(obj.v >= 30); % indices of spikes
                 obj.firings = [obj.firings; obj.t + 0*fired,fired];
-                spike_trains(obj.v >= 30, i) = 1/obj.dt;
+                % spike_trains(obj.v >= 30, i) = 1/obj.dt;
                 
                 obj.I_syn = obj.I_syn - obj.I_syn*obj.dt/obj.tau_syn + obj.current_jump*(obj.v >= 30);
                 
@@ -120,13 +118,18 @@ classdef IzhikevichNetwork < handle
                     I = I + 5*[ones(10, 1); zeros(obj.N-10, 1)];
                 end
 
-                I_syn_save(:, i) = I - I_thalamic;
+                % I_syn_save(:, i) = I - I_thalamic;
 
                 % updating system
-                obj.A = obj.A + (-obj.A + spike_trains(:, i))*obj.dt/obj.tau_A;
+
+                obj.A = obj.A + -obj.A *obj.dt/obj.tau_A;
+                obj.A(fired) = obj.A(fired) + 1/obj.tau_A; 
+
                 if obj.plasticity
-                    obj.w = obj.w + 500*(obj.A_goal - obj.A)*transpose(obj.A) .* obj.w * obj.dt;
+                    dw = 20*(obj.A_goal - obj.A)*transpose(obj.A) .* [obj.w(:, 1:obj.Ne), -obj.w(:, obj.Ne+1:end)];
+                    obj.w = obj.w + dw * obj.dt;
                 end
+                
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
                 obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;
                 
@@ -137,19 +140,20 @@ classdef IzhikevichNetwork < handle
             
             if obj.sampling
                 waitbar(1, f, 'saving the samples ...');
-                obj.Data.v = [obj.Data.v, v_save];
-                obj.Data.A = [obj.Data.A, A_save];
-                obj.Data.I_syn = [obj.Data.I_syn, I_syn_save];
-                obj.Data.spike_train = [obj.Data.spike_train, spike_trains];
-                if obj.plasticity 
-                    obj.Data.w = cat(3, obj.Data.w, w_save);
-                end
-            
                 if ~ isempty(obj.Data.time)
                     obj.Data.time = [obj.Data.time, obj.Data.time(end) + (1:n_t)*obj.dt];
                 else
                     obj.Data.time = (1:n_t)*obj.dt;
                 end
+
+                % obj.Data.v = [obj.Data.v, v_save];
+                obj.Data.A = [obj.Data.A, A_save];
+                % obj.Data.I_syn = [obj.Data.I_syn, I_syn_save];
+                % obj.Data.spike_train = [obj.Data.spike_train, spike_trains];
+                if obj.plasticity 
+                    obj.Data.w = cat(3, obj.Data.w, w_save);
+                end
+     
             end
 
             delete(f)
