@@ -7,12 +7,14 @@ classdef IzhikevichNetwork < handle
        Ne, Ni, N 
        u, v, A, w, I_syn
        a, b, c, d  
+      
        A_goal, tau_A = 6000 % ms
+       
        sampling_rate = 2000 % sampling rate of slow variables (w, A)
        
-       sigma = 6; % white noise strength 
+       sigma = 3; % white noise strength 
 
-       current_jump = 2 
+       current_jump = 5
        tau_syn = 5 % ms
         
        Data = struct('time', [], 'v', [], 'A', [], 'I_syn', [], 'spike_train', [], 'w', []) % saved data points
@@ -21,7 +23,7 @@ classdef IzhikevichNetwork < handle
        noise = true
        input = true
 
-       alpha = 50 % rate-control plasticity rete
+       alpha = 1 % rate-control plasticity rete
        firings = []
    end
 
@@ -40,7 +42,7 @@ classdef IzhikevichNetwork < handle
             randomChoices = array(randperm(length(array), 20));
 
             obj.w(i, randomChoices) = abs(0.5 + sqrt(0.05*0.5)*randn(1, 20));
-            obj.w(i, Ne + randperm(Ni, 5)) = -8.92 + sqrt(0.05*8.92)*randn(1, 5);
+            obj.w(i, Ne + randperm(Ni, 5)) = -8 + sqrt(0.05*8)*randn(1, 5);
           end
 
           for i = Ne+1:N
@@ -61,11 +63,9 @@ classdef IzhikevichNetwork < handle
           obj.A = [0.00825* ones(Ne, 1); 0.00575* ones(Ni, 1)]*0;
           obj.I_syn = zeros(Ne+Ni, 1); % Initial values of synaptic current 
 
+          obj.A_goal = [0.001*ones(Ne, 1); 0.002*ones(Ni, 1)];
           obj.sampling = true;
 
-          % obj.run(2000);
-          % obj.A_goal = obj.A;
-          obj.A_goal = [0.001*ones(Ne, 1); 0.002*ones(Ni, 1)];
           obj.plasticity = true;
       end
 
@@ -115,23 +115,25 @@ classdef IzhikevichNetwork < handle
                 
                 
                 I = I_thalamic + obj.w * obj.I_syn;
-              
-                if mod(round(obj.t), 1000) <= 10
-                    I = I + 5*[ones(10, 1); zeros(obj.N-10, 1)];
+                
+                if obj.input 
+                    if mod(round(obj.t), 1000) <= 10
+                        I = I + 5*[ones(10, 1); zeros(obj.N-10, 1)];
+                    end
                 end
 
                 % I_syn_save(:, i) = I - I_thalamic;
 
                 % updating system
 
-                obj.A = obj.A + -obj.A *obj.dt/obj.tau_A;
+                obj.A = obj.A - obj.A *obj.dt/obj.tau_A;
                 obj.A(fired) = obj.A(fired) + 1/obj.tau_A; 
 
                 if obj.plasticity
                     dw = obj.alpha *(obj.A_goal - obj.A)*transpose(obj.A) .* [obj.w(:, 1:obj.Ne), -obj.w(:, obj.Ne+1:end)];
                     obj.w = obj.w + dw * obj.dt;
                 end
-                
+
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
                 obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;
                 

@@ -1,8 +1,10 @@
 clear;
 clc; 
 mynet = IzhikevichNetwork(400);
-mynet.noise = false;
-mynet.run(200000);
+mynet.input = false;
+mynet.noise = true;
+
+mynet.run(5000);
 
 
 data = mynet.Data;
@@ -83,14 +85,13 @@ legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
 hold off;
 
 %% dynamic of synaptic weights histogram
-pause(5)
+% pause(5)
 
 fig = figure('name', 'Weights Histogram');
 for i = 1:4:size(data.w, 3)
     clf; % Clear the figure for the next histogram
     % Update figure title dynamically
     set(fig, 'Name', sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
-    
     
     histogram(nonzeros(data.w(1:mynet.Ne, 1:mynet.Ne, i)), Normalization="pdf");
     title(sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
@@ -193,18 +194,20 @@ for i = 1:1:size(data.A, 2)
     hold on 
     histogram(1000*data.A(mynet.Ne+1:end, i), 80, Normalization="pdf");
     legend('Ex', 'Inh')
-    xlim([0, 3])
+    xlim([0, 10])
     pause(0.0001); % Pause to view the histogram
 end
 %% Raster plot
 plot(mynet.firings(:, 1), mynet.firings(:, 2), 'k.')
 
-%% Rater plot of last trial
+%% Rater plot of trials in time
 
 figure();
 
+check_flagFull = [];
 for trial_number = 1:round(mynet.t/1000)
-    clf;
+    cla;
+    hold on
     check_flag = zeros(1, mynet.N);
     
     indices = (mynet.firings(:, 1) > (trial_number-1) * 1000) & (mynet.firings(:, 1) <= trial_number * 1000);
@@ -217,27 +220,25 @@ for trial_number = 1:round(mynet.t/1000)
         if neuron_indices(i) <= mynet.Ne
             if check_flag(neuron_indices(i)) == 0
                 plot(spike_times(i), counter_ex, 'k.');
-                hold on
+                
                 check_flag(neuron_indices(i)) = counter_ex;
                 counter_ex = counter_ex + 1;
             else
                 plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
-                hold on 
             end
         else
             if check_flag(neuron_indices(i)) == 0
                 plot(spike_times(i), counter_inh, 'k.');
-                hold on
                 check_flag(neuron_indices(i)) = counter_inh;
                 counter_inh = counter_inh + 1;
             else
                 plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
-                hold on 
             end
         end
 
     end
-    xlim([0, 50]);
+    check_flagFull = [check_flagFull; check_flag];
+    xlim([0, 1000]);
     xlabel('time (ms)')
     ylabel('neuron index')
     title(sprintf('trial number %d raster plot', trial_number))
@@ -245,9 +246,74 @@ for trial_number = 1:round(mynet.t/1000)
     pause(0.1)
 end
 
+%% Similarity analysis
+finalOrder = check_flagFull(end, :);
+%%
+
+figure();
+
+check_flagFull = [];
+for trial_number = 1:round(mynet.t/1000)
+    cla;
+    hold on
+    check_flag = zeros(1, mynet.N);
     
+    indices = (mynet.firings(:, 1) > (trial_number-1) * 1000) & (mynet.firings(:, 1) <= trial_number * 1000);
+    spike_times = mynet.firings(indices, 1) - (trial_number-1)*1000;
+    neuron_indices = mynet.firings(indices, 2);
+    
+    counter_ex = 1;
+    counter_inh = mynet.Ne+1;
+    for i = 1:length(spike_times)
+        if neuron_indices(i) <= mynet.Ne
+            if check_flag(neuron_indices(i)) == 0
+                plot(spike_times(i), finalOrder(neuron_indices(i)), 'k.');
+                
+                check_flag(neuron_indices(i)) = counter_ex;
+                counter_ex = counter_ex + 1;
+            else
+                plot(spike_times(i), finalOrder(neuron_indices(i)), 'r.');
+            end
+        else
+            if check_flag(neuron_indices(i)) == 0
+                plot(spike_times(i), finalOrder(neuron_indices(i)), 'k.');
+                check_flag(neuron_indices(i)) = counter_inh;
+                counter_inh = counter_inh + 1;
+            else
+                plot(spike_times(i), finalOrder(neuron_indices(i)), 'r.');
+            end
+        end
 
+    end
+    check_flagFull = [check_flagFull; check_flag];
+    xlim([0, 100]);
+    xlabel('time (ms)')
+    ylabel('neuron index')
+    title(sprintf('trial number %d raster plot. Total: %d', trial_number, max(check_flag(check_flag < 320))))
+    
+    pause(0.1)
+end
 
-
-
-
+%%
+newmat = check_flagFull(40:end,1:320);
+%newmat(newmat == 0) = nan;
+%pd=pdist(newmat,'@naneucdist');
+pd=pdist(newmat,'spearman');
+y=linkage(pd);
+figure;[~,~,perm]=dendrogram(y,0);
+c=squareform(pd);
+figure;
+imagesc(c);
+% figure;
+% imagesc(c(perm,perm));
+% set(gca,'xtick',1:length(perm));
+% set(gca,'xticklabel',perm);
+% set(gca,'ytick',1:length(perm));
+% set(gca,'yticklabel',perm);
+% 
+% 
+% 
+% 
+% 
+% 
+% 
