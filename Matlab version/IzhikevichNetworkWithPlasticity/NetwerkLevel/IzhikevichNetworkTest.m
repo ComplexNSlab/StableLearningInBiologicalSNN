@@ -1,11 +1,17 @@
 clear;
 clc; 
 mynet = IzhikevichNetwork(400);
-mynet.input = false;
-mynet.noise = true;
 
-mynet.run(5000);
+mynet.noise = false;
+mynet.sigma = 2;
 
+mynet.input = true;
+
+mynet.plasticity = true;
+mynet.alpha = 20;
+
+
+mynet.run(200000);
 
 data = mynet.Data;
 
@@ -17,6 +23,7 @@ cell_number = 11;
 plot(data.time, data.v(cell_number, :))
 
 hold on
+
 % ax2 = subplot(2, 1, 2);   
 plot(data.time, 1 * data.I_syn(cell_number, :))
 
@@ -56,10 +63,10 @@ yPolygon3 = [upperBound3, fliplr(lowerBound3)];  % y coordinates for the polygon
 
 figure()
 % Plot the mean lines
-plot(x, meanLine1, 'k', 'LineWidth', 2); 
+plot(x/1000, meanLine1, 'k', 'LineWidth', 2); 
 hold on;
-plot(x, meanLine2, 'b', 'LineWidth', 2)
-plot(x, meanLine3, 'r', 'LineWidth', 2)
+plot(x/1000, meanLine2, 'b.-', 'LineWidth', 2)
+plot(x/1000, meanLine3, 'r', 'LineWidth', 2)
 
 % Shade the area between upper and lower bounds
 % fillColor = [0.8, 0.8, 0.8]; % Light gray fill
@@ -72,76 +79,38 @@ plot(x, meanLine3, 'r', 'LineWidth', 2)
 % plot(x, upperBound3, 'r')
 % plot(x, lowerBound3, 'r')
 
-fill(xPolygon, yPolygon1, 'k', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+fill(xPolygon/1000, yPolygon1, 'k', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
 hold on
-fill(xPolygon, yPolygon2, 'b', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
-fill(xPolygon, yPolygon3, 'r', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+fill(xPolygon/1000, yPolygon2, 'b', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+fill(xPolygon/1000, yPolygon3, 'r', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
 
 % Additional plot adjustments
-xlabel('time (ms)');
+xlabel('time (s)');
 ylabel('W');
 title('population average of w Vs. time');
 legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
+ylim([-20, 5])
 hold off;
 
 %% dynamic of synaptic weights histogram
-% pause(5)
+
 
 fig = figure('name', 'Weights Histogram');
-for i = 1:4:size(data.w, 3)
+for i = 1:10:size(data.w, 3)
     clf; % Clear the figure for the next histogram
     % Update figure title dynamically
     set(fig, 'Name', sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
     
-    histogram(nonzeros(data.w(1:mynet.Ne, 1:mynet.Ne, i)), Normalization="pdf");
+    histogram(nonzeros(data.w(:, :, i)), 400);
     title(sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
-    hold on 
-    histogram(nonzeros(data.w(1:mynet.Ne, mynet.Ne+1:end, i)), 60, Normalization="pdf");
-    histogram(nonzeros(data.w(mynet.Ne+1:end, 1:mynet.Ne, i)), 60, Normalization="pdf");
-    legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
+    % hold on 
+    % histogram(nonzeros(data.w(1:mynet.Ne, mynet.Ne+1:end, i)), 'Normalization', 'probability');
+    % histogram(nonzeros(data.w(mynet.Ne+1:end, 1:mynet.Ne, i)), 'Normalization', 'probability');
+    % legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
 
-    pause(0.0001); % Pause to view the histogram
-end
-%% Correlation between smoothed spike trains
-
-kernelWidth = 1; % Width of the kernel in number of samples
-kernel = normpdf(-3*kernelWidth:3*kernelWidth, 0, kernelWidth);
-
-numNeurons = size(data.spike_train, 1);
-T = size(data.spike_train, 2); % Total time points or length of each spike train
-
-% Preallocate a matrix to hold the smoothed spike trains
-smoothedSpikeTrains = zeros(numNeurons, T);
-
-% Smooth each spike train
-for i = 1:numNeurons
-    % Convolve and keep the central part of the result to match the original length
-    smoothed = conv(data.spike_train(i, :), kernel, 'same');
-    smoothedSpikeTrains(i, :) = smoothed;
+    pause(0.1); % Pause to view the histogram
 end
 
-% Calculate pairwise correlation efficiently on smoothed data
-correlationMatrix = corr(smoothedSpikeTrains');
-for i = 1:size(correlationMatrix, 1)
-    correlationMatrix(i, i) = 0;
-end
-
-clf;
-% For the histogram
-figure(1);
-
-histogram(correlationMatrix);
-
-% For the imshow
-figure(2);
-imshow(correlationMatrix);
-colormap(jet(256)); % Apply colormap to the current figure (figure 2)
-clim([-0.3, 0.4]); % Set color limits for the current axes
-colorbar; 
-
-% Add a colorbar to the current figure (figure 2)
-% clim([-1 1]); % Fixing the color scale to range from -1 to 1
-% colorbar; % Show colorbar
 %% population average A Vs. time
 
 x = (1:size(data.A, 2))*mynet.dt*mynet.sampling_rate;  % Assuming meanValues is your array of mean values
@@ -162,52 +131,108 @@ yPolygon1 = [upperBound1, fliplr(lowerBound1)];  % y coordinates for the polygon
 yPolygon2 = [upperBound2, fliplr(lowerBound2)];  % y coordinates for the polygon
 
 figure()
-% Plot the mean lines
-plot(x, meanLine1, 'k.-', 'LineWidth', 2); 
 hold on;
-plot(x, meanLine2, 'b.-', 'LineWidth', 2);
+% Plot the mean lines
+plot(x/1000, meanLine1, 'k-', 'LineWidth', 2); 
+
+plot(x/1000, meanLine2, 'b-', 'LineWidth', 2);
 
 % Shade the area between upper and lower bounds
 % fillColor = [0.8, 0.8, 0.8]; % Light gray fill
-fill(xPolygon, yPolygon1, 'k', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
-hold on
-fill(xPolygon, yPolygon2, 'b', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+fill(xPolygon/1000, yPolygon1, 'k', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+
+fill(xPolygon/1000, yPolygon2, 'b', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
 
 % Additional plot adjustments
-xlabel('time (ms)');
+xlabel('time (s)');
 ylabel('A (Hz)');
 title('Plot with Shaded Std Dev');
 legend('Ex', 'In')
 hold off;
 %% dynamic of A histogram
-% pause(5)
+
 
 fig = figure('name', 'A Histogram');
-for i = 1:1:size(data.A, 2)
+for i = 1:5:size(data.A, 2)
     clf; % Clear the figure for the next histogram
     % Update figure title dynamically
     set(fig, 'Name', sprintf('A Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
     
-    
-    histogram(1000*data.A(1:mynet.Ne, i), 320, Normalization="pdf");
+    hold on
+    histogram(1000*data.A(1:mynet.Ne, i), mynet.Ne, 'Normalization', 'probability');
+    histogram(1000*data.A(mynet.Ne+1:end, i), mynet.Ni, 'Normalization', 'probability');
     title(sprintf('A Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
-    hold on 
-    histogram(1000*data.A(mynet.Ne+1:end, i), 80, Normalization="pdf");
+    xlabel('Hz')
     legend('Ex', 'Inh')
-    xlim([0, 10])
-    pause(0.0001); % Pause to view the histogram
+    xlim([0, 20])
+    % hold on 
+    % histogram(nonzeros(data.w(1:mynet.Ne, mynet.Ne+1:end, i)), 'Normalization', 'probability');
+    % histogram(nonzeros(data.w(mynet.Ne+1:end, 1:mynet.Ne, i)), 'Normalization', 'probability');
+    % legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
+
+    pause(0.1); % Pause to view the histogram
 end
 %% Raster plot
 plot(mynet.firings(:, 1), mynet.firings(:, 2), 'k.')
 
-%% Rater plot of trials in time
+
+%% Sorted Raster Plot
+
+clf;
+check_flag = zeros(1, mynet.N);
+
+spike_times = mynet.firings(:, 1);
+neuron_indices = mynet.firings(:, 2);
+
+counter_ex = 1;
+counter_inh = mynet.Ne+1;
+hold on 
+for i = 1:length(spike_times)
+    if neuron_indices(i) <= mynet.Ne
+        if check_flag(neuron_indices(i)) == 0
+            plot(spike_times(i), counter_ex, 'k.');
+           
+            check_flag(neuron_indices(i)) = counter_ex;
+            counter_ex = counter_ex + 1;
+        else
+            if counter_ex > mynet.Ne
+                counter_ex = 1;
+                check_flag(1:mynet.Ne) = zeros(1, mynet.Ne);
+                plot(spike_times(i), counter_ex, 'k.');
+            else
+                plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+            end
+        end
+    else
+        if check_flag(neuron_indices(i)) == 0
+            plot(spike_times(i), counter_inh, 'k.');
+     
+            check_flag(neuron_indices(i)) = counter_inh;
+            counter_inh = counter_inh + 1;
+        else
+            if counter_inh > mynet.N      
+                counter_inh = mynet.Ne+1;
+                check_flag(mynet.Ne+1:end) = zeros(1, mynet.Ni);
+                plot(spike_times(i), counter_inh, 'k.');
+            else
+                plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+            end
+        end
+    end
+
+end
+
+plot([0, mynet.t], [mynet.Ne + 0.5, mynet.Ne + 0.5], 'r-')
+xlabel('time (ms)')
+ylabel('neuron index')
+title('Sorted raster plot')
+    
+%% Sorted Rater plot of different trials (Input should be on!)
 
 figure();
 
-check_flagFull = [];
-for trial_number = 1:round(mynet.t/1000)
-    cla;
-    hold on
+for trial_number = 198:round(mynet.t/1000)
+    clf;
     check_flag = zeros(1, mynet.N);
     
     indices = (mynet.firings(:, 1) > (trial_number-1) * 1000) & (mynet.firings(:, 1) <= trial_number * 1000);
@@ -216,6 +241,7 @@ for trial_number = 1:round(mynet.t/1000)
     
     counter_ex = 1;
     counter_inh = mynet.Ne+1;
+    hold on
     for i = 1:length(spike_times)
         if neuron_indices(i) <= mynet.Ne
             if check_flag(neuron_indices(i)) == 0
@@ -225,95 +251,50 @@ for trial_number = 1:round(mynet.t/1000)
                 counter_ex = counter_ex + 1;
             else
                 plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+                
             end
         else
             if check_flag(neuron_indices(i)) == 0
                 plot(spike_times(i), counter_inh, 'k.');
+                
                 check_flag(neuron_indices(i)) = counter_inh;
                 counter_inh = counter_inh + 1;
             else
                 plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+                
             end
         end
 
     end
-    check_flagFull = [check_flagFull; check_flag];
-    xlim([0, 1000]);
+    
     xlabel('time (ms)')
     ylabel('neuron index')
     title(sprintf('trial number %d raster plot', trial_number))
-    
+    plot([0, 50], (mynet.Ne + 0.5)*[1, 1], 'r-')
+    plot([0, 50], (10 + 0.5)*[1, 1], 'b-')
+    xlim([0, 50])
     pause(0.1)
 end
 
-%% Similarity analysis
-finalOrder = check_flagFull(end, :);
-%%
+%% 
+Ne = 320;
+Ni = 80;
+N = Ne + Ni;
 
-figure();
 
-check_flagFull = [];
-for trial_number = 1:round(mynet.t/1000)
-    cla;
-    hold on
-    check_flag = zeros(1, mynet.N);
-    
-    indices = (mynet.firings(:, 1) > (trial_number-1) * 1000) & (mynet.firings(:, 1) <= trial_number * 1000);
-    spike_times = mynet.firings(indices, 1) - (trial_number-1)*1000;
-    neuron_indices = mynet.firings(indices, 2);
-    
-    counter_ex = 1;
-    counter_inh = mynet.Ne+1;
-    for i = 1:length(spike_times)
-        if neuron_indices(i) <= mynet.Ne
-            if check_flag(neuron_indices(i)) == 0
-                plot(spike_times(i), finalOrder(neuron_indices(i)), 'k.');
-                
-                check_flag(neuron_indices(i)) = counter_ex;
-                counter_ex = counter_ex + 1;
-            else
-                plot(spike_times(i), finalOrder(neuron_indices(i)), 'r.');
-            end
-        else
-            if check_flag(neuron_indices(i)) == 0
-                plot(spike_times(i), finalOrder(neuron_indices(i)), 'k.');
-                check_flag(neuron_indices(i)) = counter_inh;
-                counter_inh = counter_inh + 1;
-            else
-                plot(spike_times(i), finalOrder(neuron_indices(i)), 'r.');
-            end
-        end
+w = zeros(N, N);
 
-    end
-    check_flagFull = [check_flagFull; check_flag];
-    xlim([0, 100]);
-    xlabel('time (ms)')
-    ylabel('neuron index')
-    title(sprintf('trial number %d raster plot. Total: %d', trial_number, max(check_flag(check_flag < 320))))
-    
-    pause(0.1)
+for i = 1:Ne
+    array = [1:i-1, i+1:Ne]; % Example array
+    randomChoices = array(randperm(length(array), 20));
+      
+    w(i, randomChoices) = abs(0.5 + sqrt(0.05*0.5)*randn(1, 20));
+    w(i, Ne + randperm(Ni, 5)) = -8 + sqrt(0.05*8)*randn(1, 5);
 end
 
-%%
-newmat = check_flagFull(40:end,1:320);
-%newmat(newmat == 0) = nan;
-%pd=pdist(newmat,'@naneucdist');
-pd=pdist(newmat,'spearman');
-y=linkage(pd);
-figure;[~,~,perm]=dendrogram(y,0);
-c=squareform(pd);
-figure;
-imagesc(c);
-% figure;
-% imagesc(c(perm,perm));
-% set(gca,'xtick',1:length(perm));
-% set(gca,'xticklabel',perm);
-% set(gca,'ytick',1:length(perm));
-% set(gca,'yticklabel',perm);
-% 
-% 
-% 
-% 
-% 
-% 
-% 
+for i = Ne+1:N
+    w(i, randperm(Ne, 5)) = 2 + sqrt(0.05*2)*randn(1, 5);
+end
+
+
+
