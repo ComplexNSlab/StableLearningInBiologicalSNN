@@ -2,16 +2,17 @@ clear;
 clc; 
 mynet = IzhikevichNetwork(400);
 
-mynet.noise = false;
-mynet.sigma = 2;
+mynet.noise = true;
+mynet.sigma = 5;
 
-mynet.input = true;
+mynet.input = false;
 
-mynet.plasticity = true;
-mynet.alpha = 20;
+mynet.A_goal = [0.0065*ones(320, 1); 0.003*ones(80, 1)];
+mynet.scaling = true;
+mynet.alpha = 1;
 
 
-mynet.run(200000);
+mynet.run(100000);
 
 data = mynet.Data;
 
@@ -96,7 +97,7 @@ hold off;
 
 
 fig = figure('name', 'Weights Histogram');
-for i = 1:10:size(data.w, 3)
+for i = 1:5:size(data.w, 3)
     clf; % Clear the figure for the next histogram
     % Update figure title dynamically
     set(fig, 'Name', sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
@@ -111,19 +112,19 @@ for i = 1:10:size(data.w, 3)
     pause(0.1); % Pause to view the histogram
 end
 
-%% population average A Vs. time
-
-x = (1:size(data.A, 2))*mynet.dt*mynet.sampling_rate;  % Assuming meanValues is your array of mean values
+%% dynamic of A in time
+x = (1:size(data.A, 2))*mynet.dt*mynet.sampling_rate/1000;  % Assuming meanValues is your array of mean values
 meanLine1 = mean(1000*data.A(1:mynet.Ne, :), 1);     % Mean values
 meanLine2 = mean(1000*data.A(mynet.Ne+1:end, :), 1);   
-stdDev1 = std(data.A(1:mynet.Ne, :), 1);        % Standard deviation values
-stdDev2 = std(data.A(mynet.Ne+1:end, :), 1); 
+
+%stdDev1 = std(data.A(1:mynet.Ne, :), 1);        % Standard deviation values
+%stdDev2 = std(data.A(mynet.Ne+1:end, :), 1); 
 
 % Calculate the upper and lower bounds
-upperBound1 = meanLine1 + stdDev1;
-lowerBound1 = meanLine1 - stdDev1;
-upperBound2 = meanLine2 + stdDev2;
-lowerBound2 = meanLine2 - stdDev2;
+upperBound1 = prctile(data.A(1:mynet.Ne, :), 95, 1);
+lowerBound1 = prctile(data.A(1:mynet.Ne, :), 5, 1);
+upperBound2 = prctile(data.A(mynet.Ne+1:end, :), 95, 1);
+lowerBound2 = prctile(data.A(mynet.Ne+1:end, :), 5, 1);
 
 % Concatenate the upper bound and reversed lower bound
 xPolygon = [x, fliplr(x)];  % x coordinates for the polygon
@@ -133,22 +134,30 @@ yPolygon2 = [upperBound2, fliplr(lowerBound2)];  % y coordinates for the polygon
 figure()
 hold on;
 % Plot the mean lines
-plot(x/1000, meanLine1, 'k-', 'LineWidth', 2); 
+plot(x, meanLine1, 'k-', 'LineWidth', 2, 'DisplayName', 'Ex'); 
 
-plot(x/1000, meanLine2, 'b-', 'LineWidth', 2);
+plot(x, meanLine2, 'b-', 'LineWidth', 2, 'DisplayName', 'Inh');
 
 % Shade the area between upper and lower bounds
 % fillColor = [0.8, 0.8, 0.8]; % Light gray fill
-fill(xPolygon/1000, yPolygon1, 'k', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+fill(xPolygon, 1000*yPolygon1, 'k', 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off');
 
-fill(xPolygon/1000, yPolygon2, 'b', 'EdgeColor', 'none', 'FaceAlpha', 0.5);
+fill(xPolygon, 1000*yPolygon2, 'b', 'EdgeColor', 'none', 'FaceAlpha', 0.5, 'HandleVisibility', 'off');
+
+if mynet.scaling    
+    A_goal_Ex = 1000* mean(mynet.A_goal(1:mynet.Ne));
+    A_goal_Inh = 1000* mean(mynet.A_goal(mynet.Ne+1:end));
+    plot(x, A_goal_Ex*ones(1, length(x)), 'k--', 'DisplayName', 'Ex target rate')
+    plot(x, A_goal_Inh*ones(1, length(x)), 'b--', 'DisplayName', 'Inh target rate')
+end
 
 % Additional plot adjustments
 xlabel('time (s)');
 ylabel('A (Hz)');
-title('Plot with Shaded Std Dev');
-legend('Ex', 'In')
+title('Avtivity Distribution (95% CI)');
+legend()
 hold off;
+
 %% dynamic of A histogram
 
 
@@ -159,8 +168,8 @@ for i = 1:5:size(data.A, 2)
     set(fig, 'Name', sprintf('A Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
     
     hold on
-    histogram(1000*data.A(1:mynet.Ne, i), mynet.Ne, 'Normalization', 'probability');
-    histogram(1000*data.A(mynet.Ne+1:end, i), mynet.Ni, 'Normalization', 'probability');
+    histogram(1000*data.A(1:mynet.Ne, i), mynet.Ne/4, 'Normalization', 'probability');
+    histogram(1000*data.A(mynet.Ne+1:end, i), mynet.Ni/4, 'Normalization', 'probability');
     title(sprintf('A Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
     xlabel('Hz')
     legend('Ex', 'Inh')
