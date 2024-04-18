@@ -5,9 +5,10 @@ classdef IzhikevichNetwork < handle
    properties (Access = private)
         % temporary containers for sampling variables
         data_file_name 
-        patch_number=1
+        patch_number = 1
+        
         Data = struct('time', [], 'A', [], 'w', [], 'firings', []) % saved data points
-        time, w_save, v_save, A_save, I_syn_save, spike_trains
+        time, w_save, A_save, firings = []
    end
 
    properties
@@ -33,8 +34,6 @@ classdef IzhikevichNetwork < handle
        input = false
        heterogeneity = false
        STDP = false
-         
-       firings = []
    end
 
    methods
@@ -73,11 +72,14 @@ classdef IzhikevichNetwork < handle
       
       function run(obj,T)
            tic 
-            
-           n_t = round(T/obj.dt); % total integration step
-           obj.Initialize_SamplingContainers(n_t)
-
            f = waitbar(0,'Please wait...');
+
+           n_t = round(T/obj.dt); % total integration step
+           
+           
+          
+           obj.Initialize_SamplingContainers(n_t)
+           
            for i=1:n_t % simulation of T in ms
                 
                 obj.t = obj.t + obj.dt;

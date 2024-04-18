@@ -2,10 +2,10 @@ clear;
 clc; 
 mynet = IzhikevichNetwork(400);
 
-mynet.noise = false;
+mynet.noise = true;
 mynet.sigma = 5;
 
-mynet.input = true;
+mynet.input = false;
 
 mynet.A_goal = [0.001*ones(320, 1); 0.002*ones(80, 1)];
 mynet.scaling = true;
@@ -283,44 +283,5 @@ for trial_number = 1:round(mynet.t/1000)
     pause(0.1)
 end
 
-%% 
-Ne = 320;
-Ni = 80;
-N = Ne + Ni;
-w = zeros(N, N);
 
-for i = 1:Ne
-    array = [1:i-1, i+1:Ne]; % Example array
-    randomChoices = array(randperm(length(array), 20));
-      
-    w(i, randomChoices) = abs(0.5 + sqrt(0.05*0.5)*randn(1, 20));
-    w(i, Ne + randperm(Ni, 5)) = -8 + sqrt(0.05*8)*randn(1, 5);
-end
-
-for i = Ne+1:N
-    w(i, randperm(Ne, 5)) = 2 + sqrt(0.05*2)*randn(1, 5);
-end
-
-
-
-
-%%
-if obj.sampling
-                waitbar(1, f, 'saving the samples ...');
-                if ~ isempty(obj.Data.time)
-                    obj.Data.time = [obj.Data.time, obj.Data.time(end) + (1:n_t)*obj.dt];
-                else
-                    obj.Data.time = (1:n_t)*obj.dt;
-                end
-
-                % obj.Data.v = [obj.Data.v, v_save];
-                obj.Data.A = [obj.Data.A, obj.A_save];
-                % obj.Data.I_syn = [obj.Data.I_syn, I_syn_save];
-                obj.Data.spike_train = [obj.Data.spike_train, spike_trains];
-                if obj.scaling 
-                    obj.Data.w = cat(3, obj.Data.w, obj.w_save);
-                end
-     
-end
-%%
 
