@@ -2,19 +2,19 @@ clear;
 clc; 
 mynet = IzhikevichNetwork(400);
 
-mynet.noise = true;
+mynet.noise = false;
 mynet.sigma = 5;
 
-mynet.input = false;
+mynet.input = true;
 
-mynet.A_goal = [0.006*ones(320, 1); 0.012*ones(80, 1)];
+mynet.A_goal = [0.001*ones(320, 1); 0.002*ones(80, 1)];
 mynet.scaling = true;
-mynet.alpha = 0.1;
-
-
-mynet.run(100000);
-
-data = mynet.Data;
+mynet.alpha = 20;
+%%
+for i = 1:20
+    mynet.run(10000);
+end
+data = mynet.getData();
 
 %% a single cell voltage trace with syanptic inputs
 
@@ -236,14 +236,15 @@ title('Sorted raster plot')
 %% Sorted Rater plot of different trials (Input should be on!)
 
 figure();
+firings = transpose(data.firings);
 
-for trial_number = 198:round(mynet.t/1000)
+for trial_number = 1:round(mynet.t/1000)
     clf;
     check_flag = zeros(1, mynet.N);
     
-    indices = (mynet.firings(:, 1) > (trial_number-1) * 1000) & (mynet.firings(:, 1) <= trial_number * 1000);
-    spike_times = mynet.firings(indices, 1) - (trial_number-1)*1000;
-    neuron_indices = mynet.firings(indices, 2);
+    indices = (firings(:, 1) > (trial_number-1) * 1000) & (firings(:, 1) <= trial_number * 1000);
+    spike_times = firings(indices, 1) - (trial_number-1)*1000;
+    neuron_indices = firings(indices, 2);
     
     counter_ex = 1;
     counter_inh = mynet.Ne+1;
@@ -278,7 +279,7 @@ for trial_number = 198:round(mynet.t/1000)
     title(sprintf('trial number %d raster plot', trial_number))
     plot([0, 50], (mynet.Ne + 0.5)*[1, 1], 'r-')
     plot([0, 50], (10 + 0.5)*[1, 1], 'b-')
-    xlim([0, 50])
+    %xlim([0, 50])
     pause(0.1)
 end
 
@@ -286,8 +287,6 @@ end
 Ne = 320;
 Ni = 80;
 N = Ne + Ni;
-
-
 w = zeros(N, N);
 
 for i = 1:Ne
@@ -303,4 +302,25 @@ for i = Ne+1:N
 end
 
 
+
+
+%%
+if obj.sampling
+                waitbar(1, f, 'saving the samples ...');
+                if ~ isempty(obj.Data.time)
+                    obj.Data.time = [obj.Data.time, obj.Data.time(end) + (1:n_t)*obj.dt];
+                else
+                    obj.Data.time = (1:n_t)*obj.dt;
+                end
+
+                % obj.Data.v = [obj.Data.v, v_save];
+                obj.Data.A = [obj.Data.A, obj.A_save];
+                % obj.Data.I_syn = [obj.Data.I_syn, I_syn_save];
+                obj.Data.spike_train = [obj.Data.spike_train, spike_trains];
+                if obj.scaling 
+                    obj.Data.w = cat(3, obj.Data.w, obj.w_save);
+                end
+     
+end
+%%
 

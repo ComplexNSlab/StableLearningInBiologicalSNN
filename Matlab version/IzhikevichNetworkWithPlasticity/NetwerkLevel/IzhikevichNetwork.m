@@ -1,6 +1,14 @@
 % dt, W, v, u, Ne, Ni, N, tau
 
 classdef IzhikevichNetwork < handle
+    
+   properties (Access = private)
+        % temporary containers for sampling variables
+        data_file_name 
+        patch_number=1
+        Data = struct('time', [], 'A', [], 'w', [], 'firings', []) % saved data points
+        time, w_save, v_save, A_save, I_syn_save, spike_trains
+   end
 
    properties
        t = 0, dt = 0.1
@@ -10,6 +18,7 @@ classdef IzhikevichNetwork < handle
        A_goal, tau_A = 6000 % ms
        sampling_rate = 2000 % sampling rate of slow variables (w, A)
        
+       Adjacency_matrix 
        sigma = 6; % white noise strength 
         
        alpha = 20;
@@ -17,40 +26,29 @@ classdef IzhikevichNetwork < handle
        current_jump = 2 
        tau_syn = 5 % ms
         
-       Data = struct('time', [], 'v', [], 'A', [], 'I_syn', [], 'spike_train', [], 'w', []) % saved data points
-       
-       scaling = false % a logical variable, whether scaling is on or off
-       sampling = false % a logical variable, whether sampling is on or off
-       noise = false
-       input = false
-       heterogeneity = true
 
+       scaling = false % a logical variable, whether scaling is on or off
+       sampling = true % a logical variable, whether sampling is on or off
+       noise = true
+       input = false
+       heterogeneity = false
+       STDP = false
+         
        firings = []
    end
 
    methods
       function obj = IzhikevichNetwork(N)
+          obj.data_file_name = strrep(strcat(string(datetime('now', 'Format', 'MMM d uuuu HH mm')), '.mat'), ' ', '_');
+          save(obj.data_file_name)
+
           Ex_ratio = 0.8;
          
           Ne = round(Ex_ratio * N);
           Ni = round((1 - Ex_ratio) * N);
           obj.Ne = Ne; obj.Ni = Ni; obj.N = N;
-
-          % network initialization
-          obj.w = zeros(N, N);
-
-          for i = 1:Ne
-            array = [1:i-1, i+1:Ne]; % Example array
-            randomChoices = array(randperm(length(array), 20));
-                
-            obj.w(i, randomChoices) = abs(0.5 + sqrt(0.05*0.5)*randn(1, 20));
-            obj.w(i, Ne + randperm(Ni, 5)) = -8 + sqrt(0.05*8)*randn(1, 5);
-          end
           
-          for i = Ne+1:N
-            obj.w(i, randperm(Ne, 5)) = 2 + sqrt(0.05*2)*randn(1, 5);
-          end
-           
+          obj.Initialize_Topology
           
           % Excitatory neurons Inhibitory neurons (Izhikevich neurons)
           if obj.heterogeneity 
@@ -69,54 +67,36 @@ classdef IzhikevichNetwork < handle
           % variables initialization 
           obj.v = -65*ones(Ne+Ni,1); % Initial values of v (membrane potentials)
           obj.u = obj.b.*obj.v; % Initial values of u (membrane recovery variable)           
-          obj.A = [0.008* ones(Ne, 1); 0.00575* ones(Ni, 1)]*0;
+          obj.A = [0.0* ones(Ne, 1); 0.0* ones(Ni, 1)];
           obj.I_syn = zeros(Ne+Ni, 1); % Initial values of synaptic current 
-
-          obj.sampling = true;
-
-          % obj.run(2000);
-          % obj.A_goal = obj.A;
-          obj.A_goal = [0.0065*ones(Ne, 1); 0.003*ones(Ni, 1)];
-          obj.scaling = true;
       end
-
+      
       function run(obj,T)
            tic 
+            
+           n_t = round(T/obj.dt); % total integration step
+           obj.Initialize_SamplingContainers(n_t)
 
-           % rng('default')
-            n_t = round(T/obj.dt); % total integration steps
-
-            % variables to save in simulation
-            spike_trains = zeros(obj.Ne+obj.Ni, n_t);
-            if obj.sampling
-                if obj.scaling
-                    w_save = zeros(obj.Ne+obj.Ni, obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));             
-                end
-                % I_syn_save = zeros(obj.Ne+obj.Ni, n_t);
-                % v_save = zeros(obj.Ne+obj.Ni, n_t);
-                A_save = zeros(obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));
-            end
-
-            f = waitbar(0,'Please wait...');
-            for i=1:n_t % simulation of T in ms
+           f = waitbar(0,'Please wait...');
+           for i=1:n_t % simulation of T in ms
                 
                 obj.t = obj.t + obj.dt;
                 
                 % sampling variables
                 obj.v(obj.v > 30) = 30;
-                % v_save(:, i) = obj.v;
+                % obj.v_save(:, i) = obj.v;
                
                 if mod(i, obj.sampling_rate) == 0   
-                    A_save(:, round(i/obj.sampling_rate)) = obj.A;
+                    obj.A_save(:, round(i/obj.sampling_rate)) = obj.A;
                     if obj.scaling
-                        w_save(:, :, round(i/obj.sampling_rate)) = obj.w;
+                        obj.w_save(:, :, round(i/obj.sampling_rate)) = obj.w;
                     end
                 end
                 
                 % finding fired cells
                 fired = find(obj.v >= 30); % indices of spikes
                 obj.firings = [obj.firings; obj.t + 0*fired,fired];
-                spike_trains(obj.v >= 30, i) = 1/obj.dt;
+                % obj.spike_trains(obj.v >= 30, i) = 1/obj.dt;
                 
                 obj.I_syn = obj.I_syn - obj.I_syn*obj.dt/obj.tau_syn + obj.current_jump*(obj.v >= 30);
                 
@@ -134,18 +114,18 @@ classdef IzhikevichNetwork < handle
                         I = I + 5*[ones(10, 1); zeros(obj.N-10, 1)];
                     end
                 end
-
+    
                 % I_syn_save(:, i) = I - I_thalamic;
-
+    
                 % updating system
-
+    
                 obj.A = obj.A + -obj.A *obj.dt/obj.tau_A;
                 obj.A(fired) = obj.A(fired) + 1/obj.tau_A; 
         
                 if obj.scaling && mod(i, 20) == 0
                     obj.w = obj.w + obj.alpha * (((obj.A_goal - obj.A) * obj.A') .* abs(obj.w)) * 20 * obj.dt ;
                 end
-
+    
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
                 obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;
                 
@@ -154,29 +134,92 @@ classdef IzhikevichNetwork < handle
                 end
             end
             
-            if obj.sampling
-                waitbar(1, f, 'saving the samples ...');
-                if ~ isempty(obj.Data.time)
-                    obj.Data.time = [obj.Data.time, obj.Data.time(end) + (1:n_t)*obj.dt];
-                else
-                    obj.Data.time = (1:n_t)*obj.dt;
-                end
+           if obj.sampling 
+               waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
+               obj.SampleContainers
+           end
 
-                % obj.Data.v = [obj.Data.v, v_save];
-                obj.Data.A = [obj.Data.A, A_save];
-                % obj.Data.I_syn = [obj.Data.I_syn, I_syn_save];
-                obj.Data.spike_train = [obj.Data.spike_train, spike_trains];
-                if obj.scaling 
-                    obj.Data.w = cat(3, obj.Data.w, w_save);
-                end
-     
-            end
-
-            delete(f)
+           delete(f)
       end
        
-   end
+     function data1 = getData(obj)
+        if obj.patch_number > 2
+            structs = {};
+            for i = 1:obj.patch_number-1
+                s = load(obj.data_file_name, strcat('data', num2str(i)));
+                structs{1, i} = s.(strcat('data', num2str(i)));
+            end
+            
+            fields = fieldnames(obj.Data);
+            data1 = struct();
 
+            for i = 1:length(fields)
+                field = fields{i};
+                % Initialize an empty array to hold the concatenated data
+                concatenatedData = [];
+                dim = length(size(structs{1}.(field)));
+                % Loop over each struct
+                for j = 1:length(structs)
+                    concatenatedData = cat(dim ,concatenatedData, structs{j}.(field));
+                end
+                
+                % Assign the concatenated data to the corresponding field in the new struct
+                data1.(field) = concatenatedData;
+            end
+
+            obj.patch_number  = 2;
+             
+            save(obj.data_file_name, "data1", 'obj')
+           
+            
+        else
+            data1 = load(obj.data_file_name, 'data1');
+        end
+     end
+   end
+    
+   methods (Access = private)
+      function Initialize_Topology(obj)
+          % network initialization
+          obj.w = zeros(obj.N, obj.N);
+          
+          for i = 1:obj.Ne
+            array = [1:i-1, i+1:obj.Ne]; % Example array
+            randomChoices = array(randperm(length(array), 20));
+                
+            obj.w(i, randomChoices) = abs(0.5 + sqrt(0.05*0.5)*randn(1, 20));
+            obj.w(i, obj.Ne + randperm(obj.Ni, 5)) = -8 + sqrt(0.05*8)*randn(1, 5);
+          end
+          
+          for i = obj.Ne+1:obj.N
+            obj.w(i, randperm(obj.Ne, 5)) = 2 + sqrt(0.05*2)*randn(1, 5);
+          end
+
+          obj.Adjacency_matrix = boolean(obj.w);
+      end
+     
+      function Initialize_SamplingContainers(obj, n_t)
+            % variables to sample in simulation
+            obj.time = obj.t + (1:n_t)*obj.dt;
+            obj.spike_trains = zeros(obj.Ne+obj.Ni, n_t);
+            obj.w_save = zeros(obj.Ne+obj.Ni, obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));             
+            obj.I_syn_save = zeros(obj.Ne+obj.Ni, n_t);
+            obj.v_save = zeros(obj.Ne+obj.Ni, n_t);
+            obj.A_save = zeros(obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));
+      end
+
+      function SampleContainers(obj)
+          data = struct('time', obj.time, 'A', obj.A_save, 'w', obj.w_save, 'firings', transpose(obj.firings));
+          
+          eval(['data' num2str(obj.patch_number) ' = data;']);
+
+          save(obj.data_file_name, strcat('data', num2str(obj.patch_number)), '-append');
+         
+          obj.patch_number = obj.patch_number + 1;
+          
+          obj.firings = [];
+      end
+   end
 end
 
 
