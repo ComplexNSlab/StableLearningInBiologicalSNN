@@ -23,7 +23,7 @@ classdef IzhikevichNetwork < handle
        sampling = false % a logical variable, whether sampling is on or off
        noise = false
        input = false
-       heterogeneity = false
+       heterogeneity = true
 
        firings = []
    end

@@ -7,9 +7,9 @@ mynet.sigma = 5;
 
 mynet.input = false;
 
-mynet.A_goal = [0.0065*ones(320, 1); 0.003*ones(80, 1)];
+mynet.A_goal = [0.006*ones(320, 1); 0.012*ones(80, 1)];
 mynet.scaling = true;
-mynet.alpha = 1;
+mynet.alpha = 0.1;
 
 
 mynet.run(100000);
@@ -44,17 +44,14 @@ data3(data3 == 0) = nan;
 meanLine1 = squeeze(nanmean(data1, 1));     % Mean values
 meanLine2 = squeeze(nanmean(data2, 1));
 meanLine3 = squeeze(nanmean(data3, 1));
-stdDev1 = squeeze(nanstd(data1, 1));        % Standard deviation values
-stdDev2 = squeeze(nanstd(data2, 1)); 
-stdDev3 = squeeze(nanstd(data3, 1)); 
 
 % Calculate the upper and lower bounds
-upperBound1 = meanLine1 + stdDev1;
-lowerBound1 = meanLine1 - stdDev1;
-upperBound2 = meanLine2 + stdDev2;
-lowerBound2 = meanLine2 - stdDev2;
-upperBound3 = meanLine3 + stdDev3;
-lowerBound3 = meanLine3 - stdDev3;
+upperBound1 = prctile(data1, 95, 1);
+lowerBound1 = prctile(data1, 5, 1);
+upperBound2 = prctile(data2, 95, 1);
+lowerBound2 = prctile(data2, 5, 1);
+upperBound3 = prctile(data3, 95, 1);
+lowerBound3 = prctile(data3, 5, 1);
 
 % Concatenate the upper bound and reversed lower bound
 xPolygon = [x, fliplr(x)];  % x coordinates for the polygon
@@ -90,7 +87,7 @@ xlabel('time (s)');
 ylabel('W');
 title('population average of w Vs. time');
 legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
-ylim([-20, 5])
+%ylim([-20, 5])
 hold off;
 
 %% dynamic of synaptic weights histogram
