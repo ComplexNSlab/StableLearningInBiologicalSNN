@@ -3,15 +3,15 @@ clc;
 mynet = IzhikevichNetwork(400);
 
 mynet.noise = true;
-mynet.sigma = 5;
+mynet.sigma = 6;
 
 mynet.input = false;
-
-mynet.A_goal = [0.001*ones(320, 1); 0.002*ones(80, 1)];
-mynet.scaling = true;
-mynet.alpha = 20;
 %%
-for i = 1:20
+mynet.A_goal = [0.0085*ones(320, 1); 0.005*ones(80, 1)];
+mynet.scaling = true;
+mynet.alpha = 5;
+%%
+for i = 1:3
     mynet.run(10000);
 end
 data = mynet.getData();

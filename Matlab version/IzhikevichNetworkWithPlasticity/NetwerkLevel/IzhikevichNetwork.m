@@ -97,7 +97,14 @@ classdef IzhikevichNetwork < handle
                 
                 % finding fired cells
                 fired = find(obj.v >= 30); % indices of spikes
-                obj.firings = [obj.firings; obj.t + 0*fired,fired];
+                
+                if sum(fired) ~= 0        
+                    obj.firings = [obj.firings; obj.t + 0*fired,fired];
+                    if obj.STDP
+                        obj.applySTDP(fired)
+                    end
+                end
+
                 % obj.spike_trains(obj.v >= 30, i) = 1/obj.dt;
                 
                 obj.I_syn = obj.I_syn - obj.I_syn*obj.dt/obj.tau_syn + obj.current_jump*(obj.v >= 30);
@@ -127,6 +134,8 @@ classdef IzhikevichNetwork < handle
                 if obj.scaling && mod(i, 20) == 0
                     obj.w = obj.w + obj.alpha * (((obj.A_goal - obj.A) * obj.A') .* abs(obj.w)) * 20 * obj.dt ;
                 end
+
+
     
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
                 obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;
@@ -203,14 +212,27 @@ classdef IzhikevichNetwork < handle
       function Initialize_SamplingContainers(obj, n_t)
             % variables to sample in simulation
             obj.time = obj.t + (1:n_t)*obj.dt;
-            obj.spike_trains = zeros(obj.Ne+obj.Ni, n_t);
+            % obj.spike_trains = zeros(obj.Ne+obj.Ni, n_t);
             obj.w_save = zeros(obj.Ne+obj.Ni, obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));             
-            obj.I_syn_save = zeros(obj.Ne+obj.Ni, n_t);
-            obj.v_save = zeros(obj.Ne+obj.Ni, n_t);
+            % obj.I_syn_save = zeros(obj.Ne+obj.Ni, n_t);
+            % obj.v_save = zeros(obj.Ne+obj.Ni, n_t);
             obj.A_save = zeros(obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));
+      end
+        
+      function applySTDP(obj, fired)
+            
+      end
+
+      function dw = STDPvalue(t)
+          if t > 0 % depression 
+            dw = exp(-t) - exp(-t/20);
+          else % potentiation 
+             dw = exp(t/5) * t * (19/20);
+          end
       end
 
       function SampleContainers(obj)
+
           data = struct('time', obj.time, 'A', obj.A_save, 'w', obj.w_save, 'firings', transpose(obj.firings));
           
           eval(['data' num2str(obj.patch_number) ' = data;']);
