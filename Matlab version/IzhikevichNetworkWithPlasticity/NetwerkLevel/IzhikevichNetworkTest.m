@@ -3,19 +3,20 @@ clc;
 mynet = IzhikevichNetwork(400);
 
 mynet.noise = true;
-mynet.sigma = 6;
+mynet.sigma = 5;
+mynet.STDP = true;
 
 mynet.input = false;
 %%
 mynet.A_goal = [0.0085*ones(320, 1); 0.005*ones(80, 1)];
 mynet.scaling = true;
-mynet.alpha = 5;
+mynet.alpha = 1;
 %%
-for i = 1:3
-    mynet.run(10000);
+for i = 1:1
+    mynet.run(30000);
 end
 data = mynet.getData();
-
+data = data.data1;
 %% a single cell voltage trace with syanptic inputs
 
 cell_number = 11;
@@ -37,13 +38,17 @@ x = (1:size(data.w, 3))*mynet.dt*mynet.sampling_rate;  % Assuming meanValues is 
 data1 = reshape(data.w(1:mynet.Ne, 1:mynet.Ne, :), mynet.Ne*mynet.Ne, length(x));
 data2 = reshape(data.w(1:mynet.Ne, mynet.Ne+1:end, :), mynet.Ne*mynet.Ni, length(x));
 data3 = reshape(data.w(mynet.Ne+1:end, 1:mynet.Ne, :), mynet.Ni*mynet.Ne, length(x));
-data1(data1 == 0) = nan;    
-data2(data2 == 0) = nan;
-data3(data3 == 0) = nan;
 
-meanLine1 = squeeze(nanmean(data1, 1));     % Mean values
-meanLine2 = squeeze(nanmean(data2, 1));
-meanLine3 = squeeze(nanmean(data3, 1));
+rowsToRemove = all(data1 == 0, 2);
+data1(rowsToRemove, :) = [];
+rowsToRemove = all(data2 == 0, 2);
+data2(rowsToRemove, :) = [];
+rowsToRemove = all(data3 == 0, 2);
+data3(rowsToRemove, :) = [];
+
+meanLine1 = squeeze(mean(data1, 1));     % Mean values
+meanLine2 = squeeze(mean(data2, 1));
+meanLine3 = squeeze(mean(data3, 1));
 
 % Calculate the upper and lower bounds
 upperBound1 = prctile(data1, 95, 1);
@@ -101,10 +106,11 @@ for i = 1:5:size(data.w, 3)
     
     histogram(nonzeros(data.w(:, :, i)), 400);
     title(sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
-    % hold on 
-    % histogram(nonzeros(data.w(1:mynet.Ne, mynet.Ne+1:end, i)), 'Normalization', 'probability');
-    % histogram(nonzeros(data.w(mynet.Ne+1:end, 1:mynet.Ne, i)), 'Normalization', 'probability');
-    % legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
+    hold on 
+    %histogram(data1(:, i), 'Normalization', 'probability');
+    %histogram(data2(:, i), 'Normalization', 'probability');
+    %histogram(data3(:, i), 'Normalization', 'probability');
+    %legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
 
     pause(0.1); % Pause to view the histogram
 end
@@ -179,7 +185,8 @@ for i = 1:5:size(data.A, 2)
     pause(0.1); % Pause to view the histogram
 end
 %% Raster plot
-plot(mynet.firings(:, 1), mynet.firings(:, 2), 'k.')
+firings = data.firings;
+plot(firings(1, :), firings(2, :), 'k.')
 
 
 %% Sorted Raster Plot

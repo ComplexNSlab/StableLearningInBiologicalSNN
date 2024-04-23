@@ -8,7 +8,9 @@ classdef IzhikevichNetwork < handle
         patch_number = 1
         
         Data = struct('time', [], 'A', [], 'w', [], 'firings', []) % saved data points
-        time, w_save, A_save, firings = []
+        time, w_save, A_save 
+        spike_counter = 1;
+        timer_vector
    end
 
    properties
@@ -19,7 +21,8 @@ classdef IzhikevichNetwork < handle
        A_goal, tau_A = 6000 % ms
        sampling_rate = 2000 % sampling rate of slow variables (w, A)
        
-       Adjacency_matrix 
+       Adjacency_matrix
+       connections
        sigma = 6; % white noise strength 
         
        alpha = 20;
@@ -34,6 +37,10 @@ classdef IzhikevichNetwork < handle
        input = false
        heterogeneity = false
        STDP = false
+       firings
+
+       in_cells
+       out_cells
    end
 
    methods
@@ -47,8 +54,10 @@ classdef IzhikevichNetwork < handle
           Ni = round((1 - Ex_ratio) * N);
           obj.Ne = Ne; obj.Ni = Ni; obj.N = N;
           
+          obj.firings = zeros(1000000, 2);
           obj.Initialize_Topology
-          
+          obj.timer_vector = zeros(obj.N, 1);
+
           % Excitatory neurons Inhibitory neurons (Izhikevich neurons)
           if obj.heterogeneity 
               re = rand(Ne,1); ri = rand(Ni,1);
@@ -73,7 +82,8 @@ classdef IzhikevichNetwork < handle
       function run(obj,T)
            tic 
            f = waitbar(0,'Please wait...');
-
+            
+           obj.firings = zeros(1000000, 2);
            n_t = round(T/obj.dt); % total integration step
            
            
@@ -90,7 +100,7 @@ classdef IzhikevichNetwork < handle
                
                 if mod(i, obj.sampling_rate) == 0   
                     obj.A_save(:, round(i/obj.sampling_rate)) = obj.A;
-                    if obj.scaling
+                    if obj.scaling || obj.STDP
                         obj.w_save(:, :, round(i/obj.sampling_rate)) = obj.w;
                     end
                 end
@@ -98,11 +108,16 @@ classdef IzhikevichNetwork < handle
                 % finding fired cells
                 fired = find(obj.v >= 30); % indices of spikes
                 
-                if sum(fired) ~= 0        
-                    obj.firings = [obj.firings; obj.t + 0*fired,fired];
+                if ~isempty(fired)        
+                    obj.firings(obj.spike_counter: obj.spike_counter + length(fired) - 1, :) = [obj.t + 0*fired, fired];
+                    obj.spike_counter = obj.spike_counter + length(sum(fired));
                     if obj.STDP
                         obj.applySTDP(fired)
                     end
+                end
+                if obj.STDP
+                    nonzero_idx = find(obj.timer_vector);
+                    obj.timer_vector(nonzero_idx) = obj.timer_vector(nonzero_idx) - obj.dt;
                 end
 
                 % obj.spike_trains(obj.v >= 30, i) = 1/obj.dt;
@@ -130,11 +145,11 @@ classdef IzhikevichNetwork < handle
     
                 obj.A = obj.A + -obj.A *obj.dt/obj.tau_A;
                 obj.A(fired) = obj.A(fired) + 1/obj.tau_A; 
-        
+                
+
                 if obj.scaling && mod(i, 20) == 0
                     obj.w = obj.w + obj.alpha * (((obj.A_goal - obj.A) * obj.A') .* abs(obj.w)) * 20 * obj.dt ;
                 end
-
 
     
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
@@ -180,7 +195,7 @@ classdef IzhikevichNetwork < handle
 
             obj.patch_number  = 2;
              
-            save(obj.data_file_name, "data1", 'obj')
+            save(obj.data_file_name, "data1", 'obj', '-v7.3')
            
             
         else
@@ -193,7 +208,7 @@ classdef IzhikevichNetwork < handle
       function Initialize_Topology(obj)
           % network initialization
           obj.w = zeros(obj.N, obj.N);
-          
+         
           for i = 1:obj.Ne
             array = [1:i-1, i+1:obj.Ne]; % Example array
             randomChoices = array(randperm(length(array), 20));
@@ -206,7 +221,20 @@ classdef IzhikevichNetwork < handle
             obj.w(i, randperm(obj.Ne, 5)) = 2 + sqrt(0.05*2)*randn(1, 5);
           end
 
-          obj.Adjacency_matrix = boolean(obj.w);
+          obj.Adjacency_matrix = logical(obj.w);
+          [row, col] = find(obj.Adjacency_matrix);
+          obj.connections = [row, col]; 
+
+          obj.in_cells = containers.Map('KeyType', 'double', 'ValueType', 'any');
+          obj.out_cells = containers.Map('KeyType', 'double', 'ValueType', 'any');
+        
+          for i = 1:obj.N
+               obj.in_cells(i) = find(obj.Adjacency_matrix(i, :));
+          end
+          for i = 1:obj.N
+               obj.out_cells(i) = find(obj.Adjacency_matrix(:, i)).';
+          end
+
       end
      
       function Initialize_SamplingContainers(obj, n_t)
@@ -221,18 +249,45 @@ classdef IzhikevichNetwork < handle
         
       function applySTDP(obj, fired)
             
+            obj.timer_vector (fired) = 50;
+
+            for fired_neuron = fired.'
+                input_cells = obj.in_cells(fired_neuron); % If they have fired within a time window, they cause LTP
+                output_cells = obj.out_cells(fired_neuron); % If the have fired within a time window, they cause LTD
+                
+                % LTP
+                for in_idx = input_cells
+                    delta_t = 50 - obj.timer_vector(in_idx);
+                    if delta_t < 50 
+                        dw = STDP_kernel(obj, obj.w(fired_neuron, in_idx), delta_t);
+                        obj.w(fired_neuron, in_idx) = obj.w(fired_neuron, in_idx) + dw;
+                    end
+                end
+
+                % LTD
+                for out_idx = output_cells
+                    delta_t = 50 - obj.timer_vector(out_idx);
+                    if delta_t < 50   
+                        dw = STDP_kernel(obj, obj.w(fired_neuron, out_idx), -delta_t);
+                        obj.w(fired_neuron, out_idx) = obj.w(fired_neuron, out_idx) + dw;
+                    end
+                end
+            end
       end
 
-      function dw = STDPvalue(t)
-          if t > 0 % depression 
-            dw = exp(-t) - exp(-t/20);
-          else % potentiation 
-             dw = exp(t/5) * t * (19/20);
+      function dw = STDP_kernel(~, w, t) 
+          
+          if t > 0 % potentiation 
+            % dw = exp(-t) - exp(-t/20);
+            dw = - 0.01 * abs(w) * log(abs(w)/3) * exp(-t/20);
+          else % depression
+             % dw = exp(t/5) * t * (19/20);
+             dw =  - 0.001 * abs(w) *  exp(t/20);
           end
       end
 
       function SampleContainers(obj)
-
+          obj.firings = obj.firings(1:obj.spike_counter-1, :);
           data = struct('time', obj.time, 'A', obj.A_save, 'w', obj.w_save, 'firings', transpose(obj.firings));
           
           eval(['data' num2str(obj.patch_number) ' = data;']);
@@ -241,7 +296,7 @@ classdef IzhikevichNetwork < handle
          
           obj.patch_number = obj.patch_number + 1;
           
-          obj.firings = [];
+          obj.spike_counter = 1;
       end
    end
 end
