@@ -3,7 +3,7 @@ clc;
 mynet = IzhikevichNetwork(400);
 
 mynet.noise = true;
-mynet.sigma = 5;
+mynet.sigma = 4;
 mynet.STDP = true;
 
 mynet.input = false;
@@ -13,7 +13,7 @@ mynet.scaling = true;
 mynet.alpha = 1;
 %%
 for i = 1:1
-    mynet.run(30000);
+    mynet.run(50000);
 end
 data = mynet.getData();
 data = data.data1;
@@ -92,7 +92,7 @@ xlabel('time (s)');
 ylabel('W');
 title('population average of w Vs. time');
 legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
-%ylim([-20, 5])
+ylim([-20, 5])
 hold off;
 
 %% dynamic of synaptic weights histogram

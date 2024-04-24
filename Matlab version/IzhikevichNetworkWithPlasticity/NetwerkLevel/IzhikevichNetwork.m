@@ -116,9 +116,10 @@ classdef IzhikevichNetwork < handle
                     end
                 end
                 if obj.STDP
-                    nonzero_idx = find(obj.timer_vector);
-                    obj.timer_vector(nonzero_idx) = obj.timer_vector(nonzero_idx) - obj.dt;
+                    obj.timer_vector = obj.timer_vector - obj.dt;
+                    obj.timer_vector(obj.timer_vector < 0) = 0; 
                 end
+                
 
                 % obj.spike_trains(obj.v >= 30, i) = 1/obj.dt;
                 
@@ -250,7 +251,7 @@ classdef IzhikevichNetwork < handle
       function applySTDP(obj, fired)
             
             obj.timer_vector (fired) = 50;
-
+            
             for fired_neuron = fired.'
                 input_cells = obj.in_cells(fired_neuron); % If they have fired within a time window, they cause LTP
                 output_cells = obj.out_cells(fired_neuron); % If the have fired within a time window, they cause LTD
@@ -258,18 +259,20 @@ classdef IzhikevichNetwork < handle
                 % LTP
                 for in_idx = input_cells
                     delta_t = 50 - obj.timer_vector(in_idx);
-                    if delta_t < 50 
+                    if delta_t < 50 && in_idx <= obj.Ne
                         dw = STDP_kernel(obj, obj.w(fired_neuron, in_idx), delta_t);
                         obj.w(fired_neuron, in_idx) = obj.w(fired_neuron, in_idx) + dw;
                     end
                 end
 
                 % LTD
-                for out_idx = output_cells
-                    delta_t = 50 - obj.timer_vector(out_idx);
-                    if delta_t < 50   
-                        dw = STDP_kernel(obj, obj.w(fired_neuron, out_idx), -delta_t);
-                        obj.w(fired_neuron, out_idx) = obj.w(fired_neuron, out_idx) + dw;
+                if fired_neuron <= obj.Ne
+                    for out_idx = output_cells
+                        delta_t = 50 - obj.timer_vector(out_idx);
+                        if delta_t < 50   
+                            dw = STDP_kernel(obj, obj.w(out_idx, fired_neuron), -delta_t);
+                            obj.w(out_idx, fired_neuron) = obj.w(out_idx, fired_neuron) + dw;
+                        end
                     end
                 end
             end
@@ -279,10 +282,10 @@ classdef IzhikevichNetwork < handle
           
           if t > 0 % potentiation 
             % dw = exp(-t) - exp(-t/20);
-            dw = - 0.01 * abs(w) * log(abs(w)/3) * exp(-t/20);
+            dw = - 0.01 * w * log(abs(w)/3) * exp(-t/20);
           else % depression
              % dw = exp(t/5) * t * (19/20);
-             dw =  - 0.001 * abs(w) *  exp(t/20);
+             dw =  - 0.003 * w *  exp(t/20);
           end
       end
 
