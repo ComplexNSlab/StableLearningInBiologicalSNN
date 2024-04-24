@@ -1,94 +1,81 @@
-% dt, W, v, u, Ne, Ni, N, tau
-
 classdef IzhikevichNetwork < handle
-    
+   %% Izhikevich Network Class handle simulation of a SNN network with different plasticity mechanism on or off
+
+   %% 
    properties (Access = private)
-        % temporary containers for sampling variables
-        data_file_name 
-        patch_number = 1
+        
+        
+   end
+   
+   %% 
+   properties (Access = public)
+       %% Recording Parameters
+            RecordingFileName 
+            PatchNumber = 1
         
         Data = struct('time', [], 'A', [], 'w', [], 'firings', []) % saved data points
-        time, w_save, A_save 
+
+        %% Recording Containers
+        time, w_save, A_save, firings
         spike_counter = 1;
-        timer_vector
+   
+       t = 0, dt = 0.1 
+       %% Izhikevich Neurons Parameters 
+           u, v
+           Ne, Ni, N 
+           a, b, c, d  
+           heterogeneity = false % whether heterogenity is on or off
+       %% Network Topology Parameters 
+           w 
+           Adjacency_matrix
+           connections
+           ExtoExDegree = 20, ExtoInhDegree = 5, InhtoExDegree = 5;
+           in_cells % the list of neurons connected to a given neuron (in_cells(Idx))
+           out_cells % the list of neurons which a given neuron is connected to (out_cells(Idx))
+       %% Post Synaptic Current Model 
+           % it's an exponential decay current model
+           I_syn
+           current_jump = 2 
+           tau_syn = 5 % ms
+       %% Sampling (Recordings) Parameters 
+           sampling = true % whether sampling is on or off
+           sampling_rate = 2000 % sampling rate of slow variables (w, A)
+       %% Scaling Parameters 
+           A
+           scaling = false % whether scaling is on or off
+           alpha = 20
+           tau_A = 6000 % ms
+           A_goal
+       %% Noise Parameters
+           noise = false % whether scaling is on or off
+           sigma = 6; % white noise strength 
+       %% Hebbian STDP Parameters 
+           STDP = false % whether STDP is on or off
+           timer_vector
+       %% Stimulation Parameters 
+           input = false % whether external stimulation is on or off
    end
 
-   properties
-       t = 0, dt = 0.1
-       Ne, Ni, N 
-       u, v, A, w, I_syn
-       a, b, c, d  
-       A_goal, tau_A = 6000 % ms
-       sampling_rate = 2000 % sampling rate of slow variables (w, A)
-       
-       Adjacency_matrix
-       connections
-       sigma = 6; % white noise strength 
-        
-       alpha = 20;
-
-       current_jump = 2 
-       tau_syn = 5 % ms
-        
-
-       scaling = false % a logical variable, whether scaling is on or off
-       sampling = true % a logical variable, whether sampling is on or off
-       noise = true
-       input = false
-       heterogeneity = false
-       STDP = false
-       firings
-
-       in_cells
-       out_cells
-   end
-
-   methods
+   %%
+   methods (Access = public)
       function obj = IzhikevichNetwork(N)
-          obj.data_file_name = strrep(strcat(string(datetime('now', 'Format', 'MMM d uuuu HH mm')), '.mat'), ' ', '_');
-          save(obj.data_file_name)
-
-          Ex_ratio = 0.8;
+          %% Constructor of the network
+          obj.RecordingFileName = strrep(strcat(string(datetime('now', 'Format', 'MMM d uuuu HH mm')), '.mat'), ' ', '_');
          
-          Ne = round(Ex_ratio * N);
-          Ni = round((1 - Ex_ratio) * N);
-          obj.Ne = Ne; obj.Ni = Ni; obj.N = N;
-          
-          obj.firings = zeros(1000000, 2);
-          obj.Initialize_Topology
-          obj.timer_vector = zeros(obj.N, 1);
+          obj.Constructor_IzhikevichNeurons(N)
+          obj.Constructor_NetworkTopology
 
-          % Excitatory neurons Inhibitory neurons (Izhikevich neurons)
-          if obj.heterogeneity 
-              re = rand(Ne,1); ri = rand(Ni,1);
-              obj.a = [0.02*ones(Ne,1); 0.02+0.08*ri];
-              obj.b = [0.2*ones(Ne,1); 0.25-0.05*ri];
-              obj.c = [-65+15*re.^2; -65*ones(Ni,1)];
-              obj.d =[8-6*re.^2; 2*ones(Ni,1)];
-          else
-              obj.a = [0.02*ones(obj.Ne,1); 0.1*ones(obj.Ni,1)];
-              obj.b = [0.2*ones(obj.Ne,1); 0.2*ones(obj.Ni,1)];
-              obj.c = [-65*ones(obj.Ne,1); -65*ones(obj.Ni,1)];
-              obj.d = [8*ones(obj.Ne,1); 2*ones(obj.Ni,1)];
-          end  
-            
-          % variables initialization 
-          obj.v = -65*ones(Ne+Ni,1); % Initial values of v (membrane potentials)
-          obj.u = obj.b.*obj.v; % Initial values of u (membrane recovery variable)           
-          obj.A = [0.0* ones(Ne, 1); 0.0* ones(Ni, 1)];
-          obj.I_syn = zeros(Ne+Ni, 1); % Initial values of synaptic current 
+          clear N
+          save(obj.RecordingFileName)
       end
       
       function run(obj,T)
            tic 
            f = waitbar(0,'Please wait...');
             
-           obj.firings = zeros(1000000, 2);
            n_t = round(T/obj.dt); % total integration step
-           
-           
           
-           obj.Initialize_SamplingContainers(n_t)
+           obj.Constructor_RecordingContainers(n_t)
            
            for i=1:n_t % simulation of T in ms
                 
@@ -110,75 +97,64 @@ classdef IzhikevichNetwork < handle
                 
                 if ~isempty(fired)        
                     obj.firings(obj.spike_counter: obj.spike_counter + length(fired) - 1, :) = [obj.t + 0*fired, fired];
-                    obj.spike_counter = obj.spike_counter + length(sum(fired));
+                    obj.spike_counter = obj.spike_counter + length(fired);
                     if obj.STDP
                         obj.applySTDP(fired)
                     end
                 end
+                
                 if obj.STDP
                     obj.timer_vector = obj.timer_vector - obj.dt;
                     obj.timer_vector(obj.timer_vector < 0) = 0; 
                 end
-                
 
-                % obj.spike_trains(obj.v >= 30, i) = 1/obj.dt;
-                
                 obj.I_syn = obj.I_syn - obj.I_syn*obj.dt/obj.tau_syn + obj.current_jump*(obj.v >= 30);
                 
                 obj.v(fired) = obj.c(fired);
                 obj.u(fired) = obj.u(fired)+obj.d(fired);
                 
-                % thalamic (noisy) input + synaptic input
                 I_thalamic = [obj.sigma*randn(obj.Ne,1); 0.4*obj.sigma*randn(obj.Ni,1)]*obj.noise/sqrt(obj.dt);
-                
-                
                 I = I_thalamic + obj.w * obj.I_syn;
-                
                 if obj.input
                     if mod(round(obj.t), 1000) <= 10
                         I = I + 5*[ones(10, 1); zeros(obj.N-10, 1)];
                     end
                 end
-    
-                % I_syn_save(:, i) = I - I_thalamic;
-    
-                % updating system
-    
+   
                 obj.A = obj.A + -obj.A *obj.dt/obj.tau_A;
                 obj.A(fired) = obj.A(fired) + 1/obj.tau_A; 
-                
 
                 if obj.scaling && mod(i, 20) == 0
                     obj.w = obj.w + obj.alpha * (((obj.A_goal - obj.A) * obj.A') .* abs(obj.w)) * 20 * obj.dt ;
                 end
 
-    
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
                 obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;
                 
-                if mod(i, 1000) == 0     
+                if mod(i, 2000) == 0     
                     waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s', round(100*i/n_t), obj.t/1000, T/1000, toc));
                 end
             end
             
            if obj.sampling 
                waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
-               obj.SampleContainers
+               obj.SaveRecordings
            end
 
            delete(f)
       end
        
-     function data1 = getData(obj)
-        if obj.patch_number > 2
+     function data = getData(obj)
+        %% Reading and retrieving previously recorded dataset from the file
+        if obj.PatchNumber > 2
             structs = {};
-            for i = 1:obj.patch_number-1
-                s = load(obj.data_file_name, strcat('data', num2str(i)));
+            for i = 1:obj.PatchNumber-1
+                s = load(obj.RecordingFileName, strcat('data', num2str(i)));
                 structs{1, i} = s.(strcat('data', num2str(i)));
             end
             
             fields = fieldnames(obj.Data);
-            data1 = struct();
+            data = struct();
 
             for i = 1:length(fields)
                 field = fields{i};
@@ -191,35 +167,67 @@ classdef IzhikevichNetwork < handle
                 end
                 
                 % Assign the concatenated data to the corresponding field in the new struct
-                data1.(field) = concatenatedData;
+                data.(field) = concatenatedData;
             end
 
-            obj.patch_number  = 2;
+            % obj.PatchNumber  = 2;
              
-            save(obj.data_file_name, "data1", 'obj', '-v7.3')
+            % save(obj.RecordingFileName, "data1", 'obj', '-v7.3')
            
             
         else
-            data1 = load(obj.data_file_name, 'data1');
+            data = load(obj.RecordingFileName, 'data1');
         end
      end
    end
     
+   %% 
    methods (Access = private)
-      function Initialize_Topology(obj)
-          % network initialization
+      function Constructor_IzhikevichNeurons(obj, N)    
+          Ex_ratio = 0.8;
+          
+          obj.N = N;
+          obj.Ne = round(Ex_ratio * N);
+          obj.Ni = round((1 - Ex_ratio) * N);
+
+          % Excitatory neurons Inhibitory neurons (Izhikevich neurons)
+          if obj.heterogeneity 
+              re = rand(obj.Ne,1); ri = rand(obj.Ni,1);
+              obj.a = [0.02*ones(obj.Ne,1); 0.02+0.08*ri];
+              obj.b = [0.2*ones(obj.Ne,1); 0.25-0.05*ri];
+              obj.c = [-65+15*re.^2; -65*ones(obj.Ni,1)];
+              obj.d =[8-6*re.^2; 2*ones(obj.Ni,1)];
+          else
+              obj.a = [0.02*ones(obj.Ne,1); 0.1*ones(obj.Ni,1)];
+              obj.b = [0.2*ones(obj.Ne,1); 0.2*ones(obj.Ni,1)];
+              obj.c = [-65*ones(obj.Ne,1); -65*ones(obj.Ni,1)];
+              obj.d = [8*ones(obj.Ne,1); 2*ones(obj.Ni,1)];
+          end 
+ 
+          obj.v = -65*ones(obj.Ne+obj.Ni,1); % Initial values of v (membrane potentials)
+          obj.u = obj.b.*obj.v; % Initial values of u (membrane recovery variable)           
+          obj.A = [0.0* ones(obj.Ne, 1); 0.0* ones(obj.Ni, 1)];
+          obj.I_syn = zeros(obj.Ne+obj.Ni, 1); % Initial values of synaptic current
+          obj.timer_vector = zeros(obj.N, 1);
+
+          
+      end
+
+      function Constructor_NetworkTopology(obj)
+          %% Constructor of Network Topology 
           obj.w = zeros(obj.N, obj.N);
          
+          % 
           for i = 1:obj.Ne
             array = [1:i-1, i+1:obj.Ne]; % Example array
-            randomChoices = array(randperm(length(array), 20));
+            randomChoices = array(randperm(length(array), obj.ExtoExDegree));
                 
-            obj.w(i, randomChoices) = abs(0.5 + sqrt(0.05*0.5)*randn(1, 20));
-            obj.w(i, obj.Ne + randperm(obj.Ni, 5)) = -8 + sqrt(0.05*8)*randn(1, 5);
+            obj.w(i, randomChoices) = abs(0.5 + sqrt(0.05*0.5)*randn(1, obj.ExtoExDegree));
+            obj.w(i, obj.Ne + randperm(obj.Ni, 5)) = -8 + sqrt(0.05*8)*randn(1, obj.InhtoExDegree);
           end
           
           for i = obj.Ne+1:obj.N
-            obj.w(i, randperm(obj.Ne, 5)) = 2 + sqrt(0.05*2)*randn(1, 5);
+            obj.w(i, randperm(obj.Ne, 5)) = 2 + sqrt(0.05*2)*randn(1, obj.ExtoInhDegree);
           end
 
           obj.Adjacency_matrix = logical(obj.w);
@@ -238,8 +246,8 @@ classdef IzhikevichNetwork < handle
 
       end
      
-      function Initialize_SamplingContainers(obj, n_t)
-            % variables to sample in simulation
+      function Constructor_RecordingContainers(obj, n_t)
+            obj.firings = zeros(1000000, 2);
             obj.time = obj.t + (1:n_t)*obj.dt;
             % obj.spike_trains = zeros(obj.Ne+obj.Ni, n_t);
             obj.w_save = zeros(obj.Ne+obj.Ni, obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));             
@@ -279,26 +287,41 @@ classdef IzhikevichNetwork < handle
       end
 
       function dw = STDP_kernel(~, w, t) 
+          %% STDP Kernel for LTP and LTD 
           
-          if t > 0 % potentiation 
+          if t > 0 % LTP
             % dw = exp(-t) - exp(-t/20);
             dw = - 0.01 * w * log(abs(w)/3) * exp(-t/20);
-          else % depression
+          else % LTD
              % dw = exp(t/5) * t * (19/20);
-             dw =  - 0.003 * w *  exp(t/20);
+             dw =  - 0.003 * w *  exp(-abs(t)/20);
           end
       end
 
-      function SampleContainers(obj)
+      function SaveRecordings(obj)
           obj.firings = obj.firings(1:obj.spike_counter-1, :);
+          if ~obj.STDP && ~obj.scaling
+            obj.w_save = repmat(obj.w, 1, 1, size(obj.w_save, 3));
+          end
           data = struct('time', obj.time, 'A', obj.A_save, 'w', obj.w_save, 'firings', transpose(obj.firings));
           
-          eval(['data' num2str(obj.patch_number) ' = data;']);
-
-          save(obj.data_file_name, strcat('data', num2str(obj.patch_number)), '-append');
-         
-          obj.patch_number = obj.patch_number + 1;
+          data.STDP = obj.STDP;
           
+          data.scaling = obj.scaling;
+          if obj.scaling
+              data.tau_A = obj.tau_A;
+              data.A_goal = obj.A_goal;
+          end
+          data.noise = obj.noise;
+          data.input = obj.input;
+          
+          eval(['data' num2str(obj.PatchNumber) ' = data;']);
+
+          save(obj.RecordingFileName, strcat('data', num2str(obj.PatchNumber)), '-append');
+          
+          obj.PatchNumber = obj.PatchNumber + 1;
+          
+          save(obj.RecordingFileName, 'obj', '-append');
           obj.spike_counter = 1;
       end
    end

@@ -3,20 +3,22 @@ clc;
 mynet = IzhikevichNetwork(400);
 
 mynet.noise = true;
-mynet.sigma = 4;
-mynet.STDP = true;
+mynet.sigma = 5;
+mynet.STDP = false;
 
 mynet.input = false;
 %%
-mynet.A_goal = [0.0085*ones(320, 1); 0.005*ones(80, 1)];
+mynet.A_goal = [0.002*ones(mynet.Ne, 1); 0.004*ones(mynet.Ni, 1)];
 mynet.scaling = true;
-mynet.alpha = 1;
+mynet.alpha = 5;
 %%
 for i = 1:1
-    mynet.run(50000);
+    mynet.run(4000);
 end
+%%
+% mynet = obj;
 data = mynet.getData();
-data = data.data1;
+
 %% a single cell voltage trace with syanptic inputs
 
 cell_number = 11;
@@ -27,9 +29,10 @@ plot(data.time, data.v(cell_number, :))
 hold on
 
 % ax2 = subplot(2, 1, 2);   
-plot(data.time, 1 * data.I_syn(cell_number, :))
+plot(data.time, 10 * data.I(cell_number, :))
 
 hold off
+legend('v', 'I')
 % linkaxes([ax1, ax2], 'x')
 
 %% dynamic of synaptic weights in time
@@ -92,11 +95,10 @@ xlabel('time (s)');
 ylabel('W');
 title('population average of w Vs. time');
 legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
-ylim([-20, 5])
+ylim([-20, 10])
 hold off;
 
 %% dynamic of synaptic weights histogram
-
 
 fig = figure('name', 'Weights Histogram');
 for i = 1:5:size(data.w, 3)
@@ -287,6 +289,7 @@ for trial_number = 1:round(mynet.t/1000)
     plot([0, 50], (mynet.Ne + 0.5)*[1, 1], 'r-')
     plot([0, 50], (10 + 0.5)*[1, 1], 'b-')
     %xlim([0, 50])
+    ylim([0, mynet.N + 0.5])
     pause(0.1)
 end
 
