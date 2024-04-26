@@ -15,7 +15,7 @@ classdef IzhikevichNetwork < handle
         
         Data = struct('time', [], 'A', [], 'w', [], 'firings', []) % saved data points
 
-        %% Recording Containers
+       %% Recording Containers
         time, w_save, A_save, firings
         spike_counter = 1;
    
@@ -76,7 +76,8 @@ classdef IzhikevichNetwork < handle
            n_t = round(T/obj.dt); % total integration step
           
            obj.Constructor_RecordingContainers(n_t)
-           
+           obj.spike_counter = 1;
+
            for i=1:n_t % simulation of T in ms
                 
                 obj.t = obj.t + obj.dt;
@@ -177,6 +178,7 @@ classdef IzhikevichNetwork < handle
             
         else
             data = load(obj.RecordingFileName, 'data1');
+            data = data.data1;
         end
      end
    end
@@ -291,10 +293,10 @@ classdef IzhikevichNetwork < handle
           
           if t > 0 % LTP
             % dw = exp(-t) - exp(-t/20);
-            dw = - 0.01 * w * log(abs(w)/3) * exp(-t/20);
+            dw = - 0.001 * w * log(abs(w)/3) * exp(-t/20);
           else % LTD
              % dw = exp(t/5) * t * (19/20);
-             dw =  - 0.003 * w *  exp(-abs(t)/20);
+             dw =  - 0.03 * w *  exp(-abs(t)/20);
           end
       end
 
@@ -322,7 +324,6 @@ classdef IzhikevichNetwork < handle
           obj.PatchNumber = obj.PatchNumber + 1;
           
           save(obj.RecordingFileName, 'obj', '-append');
-          obj.spike_counter = 1;
       end
    end
 end

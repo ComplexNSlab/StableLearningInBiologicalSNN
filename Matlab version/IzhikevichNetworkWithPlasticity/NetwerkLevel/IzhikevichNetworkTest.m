@@ -3,20 +3,19 @@ clc;
 mynet = IzhikevichNetwork(400);
 
 mynet.noise = true;
-mynet.sigma = 5;
-mynet.STDP = false;
+mynet.sigma = 4;
+mynet.STDP = true;
 
 mynet.input = false;
 %%
-mynet.A_goal = [0.002*ones(mynet.Ne, 1); 0.004*ones(mynet.Ni, 1)];
+mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
 mynet.scaling = true;
-mynet.alpha = 5;
+mynet.alpha = 20;
 %%
 for i = 1:1
-    mynet.run(4000);
+    mynet.run(200000);
 end
-%%
-% mynet = obj;
+clear i
 data = mynet.getData();
 
 %% a single cell voltage trace with syanptic inputs
@@ -242,7 +241,7 @@ xlabel('time (ms)')
 ylabel('neuron index')
 title('Sorted raster plot')
     
-%% Sorted Rater plot of different trials (Input should be on!)
+%% Sorted Rater plot of different trials (Just Input Only Situation!)
 
 figure();
 firings = transpose(data.firings);
@@ -295,3 +294,62 @@ end
 
 
 
+%% Analyzing STDP
+firings = data.firings;
+t_min = 149000; t_max = 150000;
+check = firings(1, :) >= t_min & firings(1, :) <= t_max;
+firings = firings(:, check);
+
+idx = 20; % neuron to analyze
+in_cells = mynet.in_cells(idx);
+out_cells = mynet.out_cells(idx);
+
+in_firings = firings(:, ismember(firings(2, :), in_cells));
+out_firings = firings(:, ismember(firings(2, :), out_cells));
+
+y_in = replace_by_order(in_firings(2, :));
+y_out = replace_by_order(out_firings(2, :)) + max(unique(y_in)) + 1;
+
+hold on
+
+plot(in_firings(1, :), y_in, 'r*');
+plot(firings(1, firings(2, :) == idx), repmat(length(unique(y_in)) + 1, 1, sum(firings(2, :) == idx)), 'k*');
+plot(out_firings(1, :), y_out, 'b*');
+
+yticks([unique(y_in), max(unique(y_in)) + 1, unique(y_out)])
+yticklabels({unique(in_firings(2, :)), 'Selected Neuron', unique(out_firings(2, :))})
+
+legend('input', 'cell', 'output')
+xline(firings(1, firings(2, :) == idx), 'HandleVisibility', 'off', 'Alpha', 0.1, 'LineWidth', 0.2)
+
+xlabel('t (ms)')
+ylabel('Neuron Index')
+title('Spike Trains')
+hold off
+
+
+%%
+w_in = squeeze(data.w(idx, in_cells, :));
+w_out = squeeze(data.w(out_cells, idx, :));
+
+hold on
+HandleFlag = 'on';
+for i = 1:size(w_in, 1)
+    plot((1:size(w_in, 2)) * mynet.sampling_rate,  w_in(i, :), 'r-', LineWidth=0.1, HandleVisibility=HandleFlag)
+    HandleFlag = 'off';
+end
+
+HandleFlag = 'on';
+for i = 1:size(w_out, 1)
+    plot((1:size(w_out, 2)) * mynet.sampling_rate,  w_out(i, :), 'b-', LineWidth=0.1, HandleVisibility=HandleFlag)
+    HandleFlag = 'off';
+end
+legend('input weights', 'output weights')
+%% 
+function list = replace_by_order(list)
+    unique_elements = sort(unique(list));
+    element_order = containers.Map(unique_elements, 1:numel(unique_elements));
+    for i = 1:numel(list)
+        list(i) = element_order(list(i));
+    end
+end
