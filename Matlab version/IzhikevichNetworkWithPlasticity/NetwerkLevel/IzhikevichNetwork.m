@@ -30,6 +30,8 @@ classdef IzhikevichNetwork < handle
            Adjacency_matrix
            connections
            ExtoExDegree = 20, ExtoInhDegree = 5, InhtoExDegree = 5;
+           ExtoExStrength = 1.3, ExtoInhStrength = 2, InhtoExStrength = 8;
+
            in_cells % the list of neurons connected to a given neuron (in_cells(Idx))
            out_cells % the list of neurons which a given neuron is connected to (out_cells(Idx))
        %% Post Synaptic Current Model 
@@ -39,7 +41,7 @@ classdef IzhikevichNetwork < handle
            tau_syn = 5 % ms
        %% Sampling (Recordings) Parameters 
            sampling = true % whether sampling is on or off
-           sampling_rate = 2000 % sampling rate of slow variables (w, A)
+           sampling_rate = 5000 % sampling rate of slow variables (w, A)
        %% Scaling Parameters 
            A
            scaling = false % whether scaling is on or off
@@ -54,6 +56,8 @@ classdef IzhikevichNetwork < handle
            timer_vector
        %% Stimulation Parameters 
            input = false % whether external stimulation is on or off
+           input_interval = 1000 % ms interval between consequetive stimulations
+           input_duration = 10 % ms duration of each stimulations 
    end
 
    %%
@@ -117,7 +121,7 @@ classdef IzhikevichNetwork < handle
                 I_thalamic = [obj.sigma*randn(obj.Ne,1); 0.4*obj.sigma*randn(obj.Ni,1)]*obj.noise/sqrt(obj.dt);
                 I = I_thalamic + obj.w * obj.I_syn;
                 if obj.input
-                    if mod(round(obj.t), 1000) <= 10
+                    if mod(round(obj.t), obj.input_interval) <= obj.input_duration
                         I = I + 5*[ones(10, 1); zeros(obj.N-10, 1)];
                     end
                 end
@@ -224,12 +228,12 @@ classdef IzhikevichNetwork < handle
             array = [1:i-1, i+1:obj.Ne]; % Example array
             randomChoices = array(randperm(length(array), obj.ExtoExDegree));
                 
-            obj.w(i, randomChoices) = abs(0.5 + sqrt(0.05*0.5)*randn(1, obj.ExtoExDegree));
-            obj.w(i, obj.Ne + randperm(obj.Ni, 5)) = -8 + sqrt(0.05*8)*randn(1, obj.InhtoExDegree);
+            obj.w(i, randomChoices) = abs(obj.ExtoExStrength + sqrt(0.05*obj.ExtoExStrength)*randn(1, obj.ExtoExDegree));
+            obj.w(i, obj.Ne + randperm(obj.Ni, 5)) = -obj.InhtoExStrength + sqrt(0.05*obj.InhtoExStrength)*randn(1, obj.InhtoExDegree);
           end
           
           for i = obj.Ne+1:obj.N
-            obj.w(i, randperm(obj.Ne, 5)) = 2 + sqrt(0.05*2)*randn(1, obj.ExtoInhDegree);
+            obj.w(i, randperm(obj.Ne, 5)) = obj.ExtoInhStrength + sqrt(0.05*obj.ExtoInhStrength)*randn(1, obj.ExtoInhDegree);
           end
 
           obj.Adjacency_matrix = logical(obj.w);

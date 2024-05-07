@@ -2,21 +2,24 @@ clear;
 clc; 
 mynet = IzhikevichNetwork(400);
 
-mynet.noise = true;
-mynet.sigma = 4;
+mynet.noise = false;
+mynet.sigma = 5;
+
 mynet.STDP = true;
 
-mynet.input = false;
-%%
+mynet.input = true;
+mynet.input_interval = 1000;
+mynet.input_duration = 10;
+
+mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
-mynet.scaling = true;
 mynet.alpha = 20;
+
 %%
-for i = 1:1
-    mynet.run(200000);
+for i=1:12
+    mynet.run(250000);
 end
-clear i
-data = mynet.getData();
+% data = mynet.getData();
 
 %% a single cell voltage trace with syanptic inputs
 
@@ -105,13 +108,13 @@ for i = 1:5:size(data.w, 3)
     % Update figure title dynamically
     set(fig, 'Name', sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
     
-    histogram(nonzeros(data.w(:, :, i)), 400);
+    % histogram(nonzeros(data.w(:, :, i)), 400);
     title(sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
     hold on 
-    %histogram(data1(:, i), 'Normalization', 'probability');
-    %histogram(data2(:, i), 'Normalization', 'probability');
-    %histogram(data3(:, i), 'Normalization', 'probability');
-    %legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
+    histogram(data1(:, i), 100, 'Normalization', 'probability');
+    histogram(data2(:, i), 100, 'Normalization', 'probability');
+    histogram(data3(:, i), 100, 'Normalization', 'probability');
+    legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
 
     pause(0.1); % Pause to view the histogram
 end
@@ -186,6 +189,7 @@ for i = 1:5:size(data.A, 2)
     pause(0.1); % Pause to view the histogram
 end
 %% Raster plot
+figure()
 firings = data.firings;
 plot(firings(1, :), firings(2, :), 'k.')
 
@@ -242,58 +246,154 @@ ylabel('neuron index')
 title('Sorted raster plot')
     
 %% Sorted Rater plot of different trials (Just Input Only Situation!)
-
 figure();
 firings = transpose(data.firings);
-
-for trial_number = 1:round(mynet.t/1000)
+interval = mynet.input_interval;
+for trial_number = 1500:round(mynet.t/interval)
     clf;
     check_flag = zeros(1, mynet.N);
     
-    indices = (firings(:, 1) > (trial_number-1) * 1000) & (firings(:, 1) <= trial_number * 1000);
-    spike_times = firings(indices, 1) - (trial_number-1)*1000;
+    indices = (firings(:, 1) > (trial_number-1) * interval) & (firings(:, 1) <= trial_number * interval);
+    spike_times = firings(indices, 1) - (trial_number-1)*interval;
     neuron_indices = firings(indices, 2);
     
     counter_ex = 1;
     counter_inh = mynet.Ne+1;
     hold on
+    
+    neuron_sorted_indices = zeros(size(spike_times, 1), 1);
+ 
     for i = 1:length(spike_times)
         if neuron_indices(i) <= mynet.Ne
             if check_flag(neuron_indices(i)) == 0
-                plot(spike_times(i), counter_ex, 'k.');
-                
+                % plot(spike_times(i), counter_ex, 'k.');
+                neuron_sorted_indices(i) = counter_ex;
+
                 check_flag(neuron_indices(i)) = counter_ex;
                 counter_ex = counter_ex + 1;
             else
-                plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
-                
+                % plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+                neuron_sorted_indices(i) = check_flag(neuron_indices(i));
             end
         else
             if check_flag(neuron_indices(i)) == 0
-                plot(spike_times(i), counter_inh, 'k.');
-                
+                % plot(spike_times(i), counter_inh, 'k.');
+                neuron_sorted_indices(i) = counter_inh;
+
                 check_flag(neuron_indices(i)) = counter_inh;
                 counter_inh = counter_inh + 1;
             else
-                plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
-                
+                %plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+                neuron_sorted_indices(i) = check_flag(neuron_indices(i));
+
             end
         end
-
+        
     end
     
+   
+    plot(spike_times, neuron_sorted_indices, 'k.')
     xlabel('time (ms)')
     ylabel('neuron index')
     title(sprintf('trial number %d raster plot', trial_number))
-    plot([0, 50], (mynet.Ne + 0.5)*[1, 1], 'r-')
-    plot([0, 50], (10 + 0.5)*[1, 1], 'b-')
-    %xlim([0, 50])
+    plot([0, mynet.input_interval], (mynet.Ne + 0.5)*[1, 1], 'r-')
+    plot([0, mynet.input_interval], (10 + 0.5)*[1, 1], 'b-')
+    xlim([0, 100])
     ylim([0, mynet.N + 0.5])
-    pause(0.1)
+    
+    
+    pause(0.05)
+
+end
+%% save mp4 file for raster plots animation
+
+% Define the video file name
+videoFileName = 'raster_plots2';
+
+% Create a VideoWriter object
+writerObj = VideoWriter(videoFileName, 'MPEG-4');
+
+% Set the frame rate (frames per second)
+frameRate = 20; % Adjust this value as needed
+writerObj.FrameRate = frameRate;
+% writerObj.Quality = 100;
+
+% Open the VideoWriter object
+open(writerObj);
+
+% Your existing code
+figure('Visible', 'off');
+
+firings = transpose(data.firings);
+interval = mynet.input_interval;
+f = waitbar(0, 'please wait ...');
+total_trials = round(mynet.t/interval);
+
+for trial_number = 1:total_trials
+    waitbar(trial_number/total_trials, f, 'please wait')
+    clf;
+    check_flag = zeros(1, mynet.N);
+   
+    indices = (firings(:, 1) > (trial_number-1) * interval) & (firings(:, 1) <= trial_number * interval);
+    spike_times = firings(indices, 1) - (trial_number-1)*interval;
+    neuron_indices = firings(indices, 2);
+    
+    counter_ex = 1;
+    counter_inh = mynet.Ne+1;
+    hold on
+    
+    neuron_sorted_indices = zeros(size(spike_times, 1), 1);
+ 
+    for i = 1:length(spike_times)
+        if neuron_indices(i) <= mynet.Ne
+            if check_flag(neuron_indices(i)) == 0
+                % plot(spike_times(i), counter_ex, 'k.');
+                neuron_sorted_indices(i) = counter_ex;
+
+                check_flag(neuron_indices(i)) = counter_ex;
+                counter_ex = counter_ex + 1;
+            else
+                % plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+                neuron_sorted_indices(i) = check_flag(neuron_indices(i));
+            end
+        else
+            if check_flag(neuron_indices(i)) == 0
+                % plot(spike_times(i), counter_inh, 'k.');
+                neuron_sorted_indices(i) = counter_inh;
+
+                check_flag(neuron_indices(i)) = counter_inh;
+                counter_inh = counter_inh + 1;
+            else
+                %plot(spike_times(i), check_flag(neuron_indices(i)), 'r.');
+                neuron_sorted_indices(i) = check_flag(neuron_indices(i));
+
+            end
+        end
+        
+    end
+    
+   
+    plot(spike_times, neuron_sorted_indices, 'k.')
+    
+    title(sprintf('trial number %d raster plot', trial_number))
+    plot([0, mynet.input_interval], (mynet.Ne + 0.5)*[1, 1], 'r-')
+    plot([0, mynet.input_interval], (10 + 0.5)*[1, 1], 'b-')
+    xlim([0, 100])
+    ylim([0, mynet.N + 0.5])
+    
+    % Get the current frame
+    frame = getframe(gcf);
+    
+    % Write the current frame to the video file
+    writeVideo(writerObj, frame);
+    
+    %pause(0.05)
+
 end
 
-
-
+% Close the VideoWriter object
+close(writerObj);
+close(f)
 %% Analyzing STDP
 firings = data.firings;
 t_min = 149000; t_max = 150000;
@@ -345,6 +445,7 @@ for i = 1:size(w_out, 1)
     HandleFlag = 'off';
 end
 legend('input weights', 'output weights')
+
 %% 
 function list = replace_by_order(list)
     unique_elements = sort(unique(list));
