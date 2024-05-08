@@ -2,24 +2,29 @@ clear;
 clc; 
 mynet = IzhikevichNetwork(400);
 
-mynet.noise = false;
-mynet.sigma = 5;
+mynet.noise = true;
+mynet.sigma_ex = 5;
+mynet.sigma_inh = 0.4*mynet.sigma_ex;
 
-mynet.STDP = true;
+mynet.SetInitialConnectivity(0.5, 8, 2)
 
-mynet.input = true;
-mynet.input_interval = 1000;
-mynet.input_duration = 10;
+mynet.STDP = false;
+
+mynet.input = false;
+mynet.input_interval = 1000; % ms
+mynet.input_duration = 10; % ms
 
 mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
 mynet.alpha = 20;
 
+mynet.sampling = false;
+
 %%
-for i=1:12
-    mynet.run(250000);
+for i=1:1
+    mynet.run(40000);
 end
-% data = mynet.getData();
+data = mynet.getData();
 
 %% a single cell voltage trace with syanptic inputs
 
@@ -103,7 +108,7 @@ hold off;
 %% dynamic of synaptic weights histogram
 
 fig = figure('name', 'Weights Histogram');
-for i = 1:5:size(data.w, 3)
+for i = 10000:5:size(data.w, 3)
     clf; % Clear the figure for the next histogram
     % Update figure title dynamically
     set(fig, 'Name', sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000));
@@ -112,10 +117,11 @@ for i = 1:5:size(data.w, 3)
     title(sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
     hold on 
     histogram(data1(:, i), 100, 'Normalization', 'probability');
-    histogram(data2(:, i), 100, 'Normalization', 'probability');
+    % histogram(data2(:, i), 100, 'Normalization', 'probability');
     histogram(data3(:, i), 100, 'Normalization', 'probability');
     legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
-
+    xlabel('w')
+    ylabel('Probability')
     pause(0.1); % Pause to view the histogram
 end
 
@@ -308,13 +314,13 @@ end
 %% save mp4 file for raster plots animation
 
 % Define the video file name
-videoFileName = 'raster_plots2';
+videoFileName = 'raster_plots';
 
 % Create a VideoWriter object
 writerObj = VideoWriter(videoFileName, 'MPEG-4');
 
 % Set the frame rate (frames per second)
-frameRate = 20; % Adjust this value as needed
+frameRate = 30; % Adjust this value as needed
 writerObj.FrameRate = frameRate;
 % writerObj.Quality = 100;
 

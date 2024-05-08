@@ -30,7 +30,7 @@ classdef IzhikevichNetwork < handle
            Adjacency_matrix
            connections
            ExtoExDegree = 20, ExtoInhDegree = 5, InhtoExDegree = 5;
-           ExtoExStrength = 1.3, ExtoInhStrength = 2, InhtoExStrength = 8;
+           g_ee = 1.3, g_ie = 2, g_ei = 8; % initial connectivity strength
 
            in_cells % the list of neurons connected to a given neuron (in_cells(Idx))
            out_cells % the list of neurons which a given neuron is connected to (out_cells(Idx))
@@ -42,19 +42,20 @@ classdef IzhikevichNetwork < handle
        %% Sampling (Recordings) Parameters 
            sampling = true % whether sampling is on or off
            sampling_rate = 5000 % sampling rate of slow variables (w, A)
+       %% Noise Parameters
+           noise = false % whether scaling is on or off
+           sigma_ex  % white noise strength 
+           sigma_inh 
        %% Scaling Parameters 
            A
            scaling = false % whether scaling is on or off
            alpha = 20
            tau_A = 6000 % ms
            A_goal
-       %% Noise Parameters
-           noise = false % whether scaling is on or off
-           sigma = 6; % white noise strength 
        %% Hebbian STDP Parameters 
            STDP = false % whether STDP is on or off
            timer_vector
-       %% Stimulation Parameters 
+       %% External Stimulation (kick input) Parameters 
            input = false % whether external stimulation is on or off
            input_interval = 1000 % ms interval between consequetive stimulations
            input_duration = 10 % ms duration of each stimulations 
@@ -65,7 +66,8 @@ classdef IzhikevichNetwork < handle
       function obj = IzhikevichNetwork(N)
           %% Constructor of the network
           obj.RecordingFileName = strrep(strcat(string(datetime('now', 'Format', 'MMM d uuuu HH mm')), '.mat'), ' ', '_');
-         
+          obj.RecordingFileName = strcat('JustNoise\\', obj.RecordingFileName);
+
           obj.Constructor_IzhikevichNeurons(N)
           obj.Constructor_NetworkTopology
 
@@ -73,6 +75,14 @@ classdef IzhikevichNetwork < handle
           save(obj.RecordingFileName)
       end
       
+      function SetInitialConnectivity(obj, g_ee, g_ei, g_ie)
+          obj.g_ee = g_ee;
+          obj.g_ei = g_ei;
+          obj.g_ie = g_ie;
+          
+          obj.Constructor_NetworkTopology()
+      end
+
       function run(obj,T)
            tic 
            f = waitbar(0,'Please wait...');
@@ -86,7 +96,6 @@ classdef IzhikevichNetwork < handle
                 
                 obj.t = obj.t + obj.dt;
                 
-                % sampling variables
                 obj.v(obj.v > 30) = 30;
                 % obj.v_save(:, i) = obj.v;
                
@@ -118,7 +127,7 @@ classdef IzhikevichNetwork < handle
                 obj.v(fired) = obj.c(fired);
                 obj.u(fired) = obj.u(fired)+obj.d(fired);
                 
-                I_thalamic = [obj.sigma*randn(obj.Ne,1); 0.4*obj.sigma*randn(obj.Ni,1)]*obj.noise/sqrt(obj.dt);
+                I_thalamic = [obj.sigma_ex*randn(obj.Ne,1); obj.sigma_inh*randn(obj.Ni,1)]*obj.noise/sqrt(obj.dt);
                 I = I_thalamic + obj.w * obj.I_syn;
                 if obj.input
                     if mod(round(obj.t), obj.input_interval) <= obj.input_duration
@@ -149,7 +158,7 @@ classdef IzhikevichNetwork < handle
            delete(f)
       end
        
-     function data = getData(obj)
+      function data = getData(obj)
         %% Reading and retrieving previously recorded dataset from the file
         if obj.PatchNumber > 2
             structs = {};
@@ -228,12 +237,12 @@ classdef IzhikevichNetwork < handle
             array = [1:i-1, i+1:obj.Ne]; % Example array
             randomChoices = array(randperm(length(array), obj.ExtoExDegree));
                 
-            obj.w(i, randomChoices) = abs(obj.ExtoExStrength + sqrt(0.05*obj.ExtoExStrength)*randn(1, obj.ExtoExDegree));
-            obj.w(i, obj.Ne + randperm(obj.Ni, 5)) = -obj.InhtoExStrength + sqrt(0.05*obj.InhtoExStrength)*randn(1, obj.InhtoExDegree);
+            obj.w(i, randomChoices) = abs(obj.g_ee + sqrt(0.05*obj.g_ee)*randn(1, obj.ExtoExDegree));
+            obj.w(i, obj.Ne + randperm(obj.Ni, 5)) = -obj.g_ei + sqrt(0.05*obj.g_ei)*randn(1, obj.InhtoExDegree);
           end
           
           for i = obj.Ne+1:obj.N
-            obj.w(i, randperm(obj.Ne, 5)) = obj.ExtoInhStrength + sqrt(0.05*obj.ExtoInhStrength)*randn(1, obj.ExtoInhDegree);
+            obj.w(i, randperm(obj.Ne, 5)) = obj.g_ie + sqrt(0.05*obj.g_ie)*randn(1, obj.ExtoInhDegree);
           end
 
           obj.Adjacency_matrix = logical(obj.w);
