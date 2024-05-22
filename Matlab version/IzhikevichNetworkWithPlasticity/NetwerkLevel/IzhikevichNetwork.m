@@ -30,7 +30,7 @@ classdef IzhikevichNetwork < handle
            Adjacency_matrix
            connections
            ExtoExDegree = 20, ExtoInhDegree = 5, InhtoExDegree = 5;
-           g_ee = 1.3, g_ie = 2, g_ei = 8; % initial connectivity strength
+           g_ee = 0.5, g_ie = 2, g_ei = 8; % initial connectivity strength
 
            in_cells % the list of neurons connected to a given neuron (in_cells(Idx))
            out_cells % the list of neurons which a given neuron is connected to (out_cells(Idx))
@@ -59,6 +59,7 @@ classdef IzhikevichNetwork < handle
            input = false % whether external stimulation is on or off
            input_interval = 1000 % ms interval between consequetive stimulations
            input_duration = 10 % ms duration of each stimulations 
+           input_strength = 10
    end
 
    %%
@@ -131,7 +132,7 @@ classdef IzhikevichNetwork < handle
                 I = I_thalamic + obj.w * obj.I_syn;
                 if obj.input
                     if mod(round(obj.t), obj.input_interval) <= obj.input_duration
-                        I = I + 5*[ones(10, 1); zeros(obj.N-10, 1)];
+                        I = I + obj.input_strength*[ones(10, 1); zeros(obj.N-10, 1)];
                     end
                 end
    
@@ -145,6 +146,7 @@ classdef IzhikevichNetwork < handle
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
                 obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;
                 
+                % updates the waitbar status
                 if mod(i, 2000) == 0     
                     waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s', round(100*i/n_t), obj.t/1000, T/1000, toc));
                 end
@@ -197,7 +199,7 @@ classdef IzhikevichNetwork < handle
    end
     
    %% 
-   methods (Access = private)
+   methods (Access = public)
       function Constructor_IzhikevichNeurons(obj, N)    
           Ex_ratio = 0.8;
           
@@ -238,7 +240,7 @@ classdef IzhikevichNetwork < handle
             randomChoices = array(randperm(length(array), obj.ExtoExDegree));
                 
             obj.w(i, randomChoices) = abs(obj.g_ee + sqrt(0.05*obj.g_ee)*randn(1, obj.ExtoExDegree));
-            obj.w(i, obj.Ne + randperm(obj.Ni, 5)) = -obj.g_ei + sqrt(0.05*obj.g_ei)*randn(1, obj.InhtoExDegree);
+            obj.w(i, obj.Ne + randperm(obj.Ni, obj.InhtoExDegree)) = -obj.g_ei + sqrt(0.05*obj.g_ei)*randn(1, obj.InhtoExDegree);
           end
           
           for i = obj.Ne+1:obj.N
