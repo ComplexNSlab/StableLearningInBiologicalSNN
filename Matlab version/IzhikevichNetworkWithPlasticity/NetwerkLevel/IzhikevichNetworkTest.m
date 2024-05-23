@@ -1,5 +1,3 @@
-clear
-clc
 
 rng(2,"twister");
 
@@ -9,7 +7,8 @@ mynet.noise = true;
 mynet.sigma_ex = 5;
 mynet.sigma_inh = 0;
 
-%mynet.SetInitialConnectivity(0.5, 8, 2);
+% mynet.SetInitialConnectivity(0.5, 8, 2);
+% mynet.SetInitialConnectivity(0.5, 8, 1);
 mynet.SetInitialConnectivity(0, 0, 0);
 
 mynet.STDP = false;
@@ -23,9 +22,9 @@ mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
 mynet.alpha = 20;
 
-%%
+%% Running the network
 for i=1:1
-    mynet.run(150000);
+    mynet.run(30000);
 end
 data = mynet.getData();
 
@@ -634,12 +633,84 @@ colorbar;
 h.MarkerSize = 5;
 h.LineWidth = 1.5; % Make edges more visible
 
+%% ISI (InterSpike Interval) Analysis
 
-%%
+Ex_firings = data.firings(:, data.firings(2, :) <= mynet.Ne);
+Inh_firings = data.firings(:, data.firings(2, :) > mynet.Ne);
+
+ISI = ISI_Calculator(data.firings);
+ISI = ISI_Calculator(Ex_firings);
+Inh_ISI = ISI_Calculator(Inh_firings);
+       
+hold on 
+figure("Name" , "Interspike Interval (ISI) Analysis", HandleVisibility= 'on')
+tiledlayout(2, 1);
+
+caption = strcat('$$\sigma_{e} = ', num2str(mynet.sigma_ex), ',  \sigma_{i} = ', num2str(mynet.sigma_inh),  ',  g_{ee} = ' , num2str(mynet.g_ee), ',  g_{ei} = ', num2str(mynet.g_ei), ',  g_{ie} = ', num2str(mynet.g_ie), '$$');
+nbins = 500;
+
+ax1 = nexttile;
+title(ax1, {'Interspike Interval (ISI)'}, 'interpreter', 'latex')
+
+hold on 
+h = histogram(ax1, ISI, 'Normalization', 'pdf', EdgeColor='none', FaceAlpha = 0.2, DisplayName=caption);
+hold on 
+xline(ax1, min(ISI), 'k--', Label= strcat('Min (' , int2str(min(ISI)), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+xline(ax1, mean(ISI), 'k--', Label= strcat('Mean ('  , int2str(mean(ISI)), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+t_max = h.BinWidth/2 + h.BinEdges(h.Values == max(h.Values));
+xline(ax1, t_max, 'k--', Label= strcat('Max (', int2str(t_max), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+xlabel('time (ms)')
+ylabel('PDF')
+xlim([0, prctile(ISI, 99)])
+legend('interpreter', 'latex')
+
+
+ax2 = nexttile;
+title(ax2, 'Inverse of ISI', 'interpreter', 'latex')
+
+hold on
+f = 1000*ISI.^-1;
+h = histogram(ax2, f,'Normalization', 'pdf', EdgeColor='none', FaceAlpha=0.2, DisplayName=caption);
+hold on 
+xline(ax2, min(f), 'k--', Label= strcat('Min (' , int2str(min(f)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+xline(ax2, mean(f), 'k--', Label= strcat('Mean ('  , int2str(mean(f)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+f_max = h.BinWidth/2 + h.BinEdges(h.Values == max(h.Values));
+xline(ax2, f_max, 'k--', Label= strcat('Max (', int2str(f_max), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+xlabel('frequency (Hz)')
+ylabel('PDF')   
+xlim([0, prctile(f, 99)])
+
+
+
+%% Functions
 function list = replace_by_order(list)
     unique_elements = sort(unique(list));
     element_order = containers.Map(unique_elements, 1:numel(unique_elements));
     for i = 1:numel(list)
         list(i) = element_order(list(i));
     end
+end
+
+function ISI = ISI_Calculator(firings)
+
+    num_neurons = max(firings(2, :)); % Assuming neuron indices are 1-based
+    base = zeros(num_neurons, 1); % Initialize the last spike times to zero
+    ISI = []; % Initialize an empty list to store ISIs
+    
+    for i = 1:size(firings, 2)
+        current_time = firings(1, i); % Spike time
+        neuron_index = firings(2, i); % Neuron index
+        
+        if base(neuron_index) > 0 % Check if this is not the first spike
+            current_ISI = current_time - base(neuron_index); % Calculate ISI
+            ISI = [ISI, current_ISI]; % Append ISI to the list
+        end
+    
+        base(neuron_index) = current_time; % Update the last spike time for the neuron
+    end
+
+end
+
+function plot_ISI()
+
 end

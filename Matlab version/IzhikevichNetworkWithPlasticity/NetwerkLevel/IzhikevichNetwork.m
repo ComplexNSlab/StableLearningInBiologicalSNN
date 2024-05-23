@@ -17,6 +17,7 @@ classdef IzhikevichNetwork < handle
 
        %% Recording Containers
         time, w_save, A_save, firings
+        %spike_trains
         spike_counter = 1;
    
        t = 0, dt = 0.1 
@@ -110,7 +111,8 @@ classdef IzhikevichNetwork < handle
                 % finding fired cells
                 fired = find(obj.v >= 30); % indices of spikes
                 
-                if ~isempty(fired)        
+                if ~isempty(fired)
+                    %obj.spike_trains(fired, i) = 1;
                     obj.firings(obj.spike_counter: obj.spike_counter + length(fired) - 1, :) = [obj.t + 0*fired, fired];
                     obj.spike_counter = obj.spike_counter + length(fired);
                     if obj.STDP
@@ -266,7 +268,7 @@ classdef IzhikevichNetwork < handle
       function Constructor_RecordingContainers(obj, n_t)
             obj.firings = zeros(1000000, 2);
             obj.time = obj.t + (1:n_t)*obj.dt;
-            % obj.spike_trains = zeros(obj.Ne+obj.Ni, n_t);
+            %obj.spike_trains = zeros(obj.Ne+obj.Ni, n_t);
             obj.w_save = zeros(obj.Ne+obj.Ni, obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));             
             % obj.I_syn_save = zeros(obj.Ne+obj.Ni, n_t);
             % obj.v_save = zeros(obj.Ne+obj.Ni, n_t);
