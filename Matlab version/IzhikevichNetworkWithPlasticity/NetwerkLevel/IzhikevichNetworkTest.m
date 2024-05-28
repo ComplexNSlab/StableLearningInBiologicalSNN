@@ -1,3 +1,5 @@
+clear 
+clc
 
 rng(2,"twister");
 
@@ -5,11 +7,11 @@ mynet = IzhikevichNetwork(400);
 
 mynet.noise = true;
 mynet.sigma_ex = 5;
-mynet.sigma_inh = 0;
+mynet.sigma_inh = 2;
 
-% mynet.SetInitialConnectivity(0.5, 8, 2);
+mynet.SetInitialConnectivity(0.5, 8, 2);
 % mynet.SetInitialConnectivity(0.5, 8, 1);
-mynet.SetInitialConnectivity(0, 0, 0);
+% mynet.SetInitialConnectivity(0, 0, 0);
 
 mynet.STDP = false;
 
@@ -24,7 +26,7 @@ mynet.alpha = 20;
 
 %% Running the network
 for i=1:1
-    mynet.run(30000);
+    mynet.run(50000);
 end
 data = mynet.getData();
 
@@ -639,47 +641,83 @@ Ex_firings = data.firings(:, data.firings(2, :) <= mynet.Ne);
 Inh_firings = data.firings(:, data.firings(2, :) > mynet.Ne);
 
 ISI = ISI_Calculator(data.firings);
-ISI = ISI_Calculator(Ex_firings);
-Inh_ISI = ISI_Calculator(Inh_firings);
+ISI_ex = ISI_Calculator(Ex_firings);
+ISI_inh = ISI_Calculator(Inh_firings);
        
 hold on 
-figure("Name" , "Interspike Interval (ISI) Analysis", HandleVisibility= 'on')
-tiledlayout(2, 1);
+%figure("Name" , "Interspike Interval (ISI) Analysis", HandleVisibility= 'on')
+%tiledlayout(2, 1);
 
 caption = strcat('$$\sigma_{e} = ', num2str(mynet.sigma_ex), ',  \sigma_{i} = ', num2str(mynet.sigma_inh),  ',  g_{ee} = ' , num2str(mynet.g_ee), ',  g_{ei} = ', num2str(mynet.g_ei), ',  g_{ie} = ', num2str(mynet.g_ie), '$$');
-nbins = 500;
+nbins_ex = 500;
+nbins_inh = 800;
 
 ax1 = nexttile;
 title(ax1, {'Interspike Interval (ISI)'}, 'interpreter', 'latex')
 
 hold on 
-h = histogram(ax1, ISI, 'Normalization', 'pdf', EdgeColor='none', FaceAlpha = 0.2, DisplayName=caption);
+
+h = histogram(ax1, ISI_ex, nbins_ex, 'Normalization', 'pdf', EdgeColor='none', FaceAlpha = 0.2, DisplayName=strcat('Ex , ', caption));
 hold on 
-xline(ax1, min(ISI), 'k--', Label= strcat('Min (' , int2str(min(ISI)), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
-xline(ax1, mean(ISI), 'k--', Label= strcat('Mean ('  , int2str(mean(ISI)), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+% xline(ax1, min(ISI_ex), 'k--', Label= strcat('Min (' , int2str(min(ISI_ex)), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+xline(ax1, mean(ISI_ex), 'k--', Label= strcat('Mean ('  , int2str(mean(ISI_ex)), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+%[kernel, edges] = ksdensity(ISI_ex, 'Function','pdf', 'Bandwidth', 0.01,'Support','positive');
+%plot(edges,kernel)
+%t_max = edges(kernel == max(kernel));
 t_max = h.BinWidth/2 + h.BinEdges(h.Values == max(h.Values));
+% t_max = mode(ISI_ex); 
 xline(ax1, t_max, 'k--', Label= strcat('Max (', int2str(t_max), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+
+h = histogram(ax1, ISI_inh, nbins_inh, 'Normalization', 'pdf', EdgeColor='none', FaceAlpha = 0.2, DisplayName=strcat('Inh , ', caption));
+hold on 
+% xline(ax1, min(ISI_inh), 'k--', Label= strcat('Min (' , int2str(min(ISI_inh)), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+xline(ax1, mean(ISI_inh), 'k--', Label= strcat('Mean ('  , int2str(mean(ISI_inh)), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+%[kernel, edges] = ksdensity(ISI_inh, 'Function','pdf', 'Bandwidth', 0.01,'Support','positive');
+%plot(edges,kernel)
+%t_max = edges(kernel == max(kernel));
+t_max = h.BinWidth/2 + h.BinEdges(h.Values == max(h.Values));
+% t_max = mode(ISI_inh);
+xline(ax1, t_max, 'k--', Label= strcat('Max (', int2str(t_max), ' ms)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+
 xlabel('time (ms)')
 ylabel('PDF')
 xlim([0, prctile(ISI, 99)])
 legend('interpreter', 'latex')
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ax2 = nexttile;
-title(ax2, 'Inverse of ISI', 'interpreter', 'latex')
+title(ax2, 'Frequency (Inverse of ISI)', 'interpreter', 'latex')
 
 hold on
-f = 1000*ISI.^-1;
-h = histogram(ax2, f,'Normalization', 'pdf', EdgeColor='none', FaceAlpha=0.2, DisplayName=caption);
-hold on 
-xline(ax2, min(f), 'k--', Label= strcat('Min (' , int2str(min(f)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
-xline(ax2, mean(f), 'k--', Label= strcat('Mean ('  , int2str(mean(f)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+f =  1000*ISI.^-1;
+f_ex = 1000*ISI_ex.^-1;
+f_inh = 1000*ISI_inh.^-1;
+
+hold on
+h = histogram(ax2, f_ex, nbins_ex,'Normalization', 'pdf', EdgeColor='none', FaceAlpha=0.2, DisplayName=strcat('Ex , ', caption));
+% xline(ax2, min(f_ex), 'k--', Label= strcat('Min (' , num2str(round(mean(f_ex), 1)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+xline(ax2, mean(f_ex), 'k--', Label= strcat('Mean ('  , num2str(round(mean(f_ex), 1)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+%[kernel, edges] = ksdensity(f_ex, 'Function','pdf', 'Bandwidth', 0.001 ,'Support','positive');
+%plot(edges, kernel)
+% f_max = edges(kernel == max(kernel));
 f_max = h.BinWidth/2 + h.BinEdges(h.Values == max(h.Values));
-xline(ax2, f_max, 'k--', Label= strcat('Max (', int2str(f_max), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+% f_max = mode(f_ex);
+xline(ax2, f_max, 'k--', Label= strcat('Max (', num2str(round(f_max, 1)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+
+h = histogram(ax2, f_inh, nbins_inh,'Normalization', 'pdf', EdgeColor='none', FaceAlpha=0.2, DisplayName=strcat('Inh , ', caption));
+hold on 
+% xline(ax2, min(f_inh), 'k--', Label= strcat('Min (' , num2str(round(mean(f_inh), 1)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+xline(ax2, mean(f_inh), 'k--', Label= strcat('Mean ('  , num2str(round(mean(f_inh), 1)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+%[kernel, edges] = ksdensity(f_inh, 'Function','pdf', 'Bandwidth', 0.001,'Support','positive');
+%plot(edges, kernel)
+%f_max = edges(kernel == max(kernel));
+f_max = h.BinWidth/2 + h.BinEdges(h.Values == max(h.Values));
+% f_max = mode(f_inh);
+xline(ax2, f_max, 'k--', Label= strcat('Max (', num2str(round(f_max, 1)), ' Hz)'), LabelOrientation='aligned', HandleVisibility= 'off', LabelHorizontalAlignment='left')
+
 xlabel('frequency (Hz)')
 ylabel('PDF')   
 xlim([0, prctile(f, 99)])
-
+legend('interpreter', 'latex')
 
 
 %% Functions
@@ -711,6 +749,3 @@ function ISI = ISI_Calculator(firings)
 
 end
 
-function plot_ISI()
-
-end

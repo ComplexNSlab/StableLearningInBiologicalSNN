@@ -154,6 +154,7 @@ classdef IzhikevichNetwork < handle
                 end
             end
             
+           obj.firings = obj.firings(1:obj.spike_counter-1, :);
            if obj.sampling 
                waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
                obj.SaveRecordings
@@ -318,7 +319,7 @@ classdef IzhikevichNetwork < handle
       end
 
       function SaveRecordings(obj)
-          obj.firings = obj.firings(1:obj.spike_counter-1, :);
+     
           if ~obj.STDP && ~obj.scaling
             obj.w_save = repmat(obj.w, 1, 1, size(obj.w_save, 3));
           end
