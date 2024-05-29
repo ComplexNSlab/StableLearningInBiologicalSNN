@@ -9,11 +9,9 @@ mynet.noise = true;
 mynet.sigma_ex = 5;
 mynet.sigma_inh = 2;
 
-mynet.SetInitialConnectivity(0.5, 8, 2);
-% mynet.SetInitialConnectivity(0.5, 8, 1);
-% mynet.SetInitialConnectivity(0, 0, 0);
+mynet.SetInitialConnectivity(0.5, 2, 2);
 
-mynet.STDP = false;
+mynet.STDP = true;
 
 mynet.input = false;
 mynet.input_interval = 1000; % ms
@@ -24,9 +22,11 @@ mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
 mynet.alpha = 20;
 
+mynet.sampling_rate = 5000;
+
 %% Running the network
 for i=1:1
-    mynet.run(50000);
+    mynet.run(200000);
 end
 data = mynet.getData();
 
@@ -235,6 +235,10 @@ end
 % Additional plot adjustments
 xlabel('time (s)');
 ylabel('A (Hz)');
+
+% set(gca, 'YScale', 'log')
+
+grid on
 title('Avtivity Distribution (95% CI)');
 legend()
 hold off;
@@ -366,8 +370,7 @@ for trial_number = 1:round(mynet.t/interval)
         
     end
     
-   
-    plot(spike_times, neuron_indices, 'k.')
+    % plot(spike_times, neuron_indices, 'k.')
     hold on 
     plot(spike_times, neuron_sorted_indices, 'b.' )
 
@@ -376,13 +379,13 @@ for trial_number = 1:round(mynet.t/interval)
     title(sprintf('trial number %d raster plot', trial_number))
     plot([0, mynet.input_interval], (mynet.Ne + 0.5)*[1, 1], 'r-')
     plot([0, mynet.input_interval], (10 + 0.5)*[1, 1], 'b-')
-    xlim([0, 100])
+    xlim([0, 1000])
     ylim([0, mynet.N + 0.5])
     
     % yticks((1:mynet.N))
     % yticklabels(check_flag)
     
-    pause(0.01)
+    pause(0.3)
 
 end
 %% save mp4 file for raster plots animation
@@ -477,12 +480,14 @@ close(writerObj);
 close(f)
 %% Analyzing STDP
 firings = data.firings;
+w_data = data.w;
+time = (1:size(data.w, 3))*mynet.dt*mynet.sampling_rate;
 
-t_min = 149000   ; t_max = 150000;
+t_min = 0; t_max = 200;
 check = firings(1, :) >= t_min & firings(1, :) <= t_max;
 firings = firings(:, check);
 
-idx = 50; % neuron to analyze
+idx = 2; % neuron to analyze
 in_cells = mynet.in_cells(idx);
 out_cells = mynet.out_cells(idx);
 
@@ -492,12 +497,14 @@ out_firings = firings(:, ismember(firings(2, :), out_cells));
 y_in = replace_by_order(in_firings(2, :));
 y_out = replace_by_order(out_firings(2, :)) + max(unique(y_in)) + 1;
 
-%figure()
+figure()
 hold on
 
 plot(in_firings(1, :), y_in, 'r*');
 plot(firings(1, firings(2, :) == idx), repmat(length(unique(y_in)) + 1, 1, sum(firings(2, :) == idx)), 'k*');
 plot(out_firings(1, :), y_out, 'b*');
+
+
 
 yticks([unique(y_in), max(unique(y_in)) + 1, unique(y_out)])
 yticklabels({unique(in_firings(2, :)), 'Selected Neuron', unique(out_firings(2, :))})
@@ -719,7 +726,45 @@ ylabel('PDF')
 xlim([0, prctile(f, 99)])
 legend('interpreter', 'latex')
 
+%%
 
+% Define the ranges for w and t
+w_arr = -10:0.5:10;  % Using a larger step size to reduce the number of lines for clarity
+t_arr = -100:0.1:100;  % Using a larger step size to reduce the number of points for clarity
+
+% Create a new figure
+figure;
+hold on;
+
+% Loop through each value of w and plot the STDP_kernel function
+for w = w_arr
+    dw_values = arrayfun(@(t) IzhikevichNetwork.STDP_kernel([], w, t), t_arr);
+    plot(t_arr, dw_values, 'DisplayName', ['w = ' num2str(w)]);
+end
+
+% Add labels and legend
+xlabel("time (ms)");
+ylabel("dw");
+title("STDP Kernel for different values of w");
+
+hold off;
+
+% Create a new figure
+figure;
+hold on;
+
+% Loop through each value of w and plot the STDP_kernel function
+for t = t_arr
+    dw_values = arrayfun(@(w) IzhikevichNetwork.STDP_kernel([], w, t), w_arr);
+    plot(w_arr, dw_values, 'DisplayName', ['w = ' num2str(w)]);
+end
+
+% Add labels and legend
+xlabel("w");
+ylabel("dw");
+title("STDP Kernel for different values of t");
+
+hold off;
 %% Functions
 function list = replace_by_order(list)
     unique_elements = sort(unique(list));
@@ -748,4 +793,6 @@ function ISI = ISI_Calculator(firings)
     end
 
 end
+
+
 

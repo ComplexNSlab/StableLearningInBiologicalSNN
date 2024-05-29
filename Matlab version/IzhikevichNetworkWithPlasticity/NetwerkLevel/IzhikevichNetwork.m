@@ -287,7 +287,7 @@ classdef IzhikevichNetwork < handle
                 % LTP
                 for in_idx = input_cells
                     delta_t = 50 - obj.timer_vector(in_idx);
-                    if delta_t < 50 && in_idx <= obj.Ne
+                    if delta_t < 50
                         dw = STDP_kernel(obj, obj.w(fired_neuron, in_idx), delta_t);
                         obj.w(fired_neuron, in_idx) = obj.w(fired_neuron, in_idx) + dw;
                     end
@@ -306,44 +306,48 @@ classdef IzhikevichNetwork < handle
             end
       end
 
+      
       function dw = STDP_kernel(~, w, t) 
-          %% STDP Kernel for LTP and LTD 
-          
-          if t > 0 % LTP
-            % dw = exp(-t) - exp(-t/20);
-            dw = - 0.001 * w * log(abs(w)/3) * exp(-t/20);
-          else % LTD
-             % dw = exp(t/5) * t * (19/20);
-             dw =  - 0.03 * w *  exp(-abs(t)/20);
-          end
+              %% STDP Kernel for LTP and LTD 
+              
+              if t > 0 % LTP
+                % dw = exp(-t) - exp(-t/20);
+                dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
+              else % LTD
+                 % dw = exp(t/5) * t * (19/20);
+                 dw =  - 0.03 * w *  exp(-abs(t)/20);
+              end
+              dw = 1 * dw;
       end
 
       function SaveRecordings(obj)
      
-          if ~obj.STDP && ~obj.scaling
-            obj.w_save = repmat(obj.w, 1, 1, size(obj.w_save, 3));
-          end
-          data = struct('time', obj.time, 'A', obj.A_save, 'w', obj.w_save, 'firings', transpose(obj.firings));
-          
-          data.STDP = obj.STDP;
-          
-          data.scaling = obj.scaling;
-          if obj.scaling
-              data.tau_A = obj.tau_A;
-              data.A_goal = obj.A_goal;
-          end
-          data.noise = obj.noise;
-          data.input = obj.input;
-          
-          eval(['data' num2str(obj.PatchNumber) ' = data;']);
-
-          save(obj.RecordingFileName, strcat('data', num2str(obj.PatchNumber)), '-append');
-          
-          obj.PatchNumber = obj.PatchNumber + 1;
-          
-          save(obj.RecordingFileName, 'obj', '-append');
+              if ~obj.STDP && ~obj.scaling
+                obj.w_save = repmat(obj.w, 1, 1, size(obj.w_save, 3));
+              end
+              data = struct('time', obj.time, 'A', obj.A_save, 'w', obj.w_save, 'firings', transpose(obj.firings));
+              
+              data.STDP = obj.STDP;
+              
+              data.scaling = obj.scaling;
+              if obj.scaling
+                  data.tau_A = obj.tau_A;
+                  data.A_goal = obj.A_goal;
+              end
+              data.noise = obj.noise;
+              data.input = obj.input;
+              
+              eval(['data' num2str(obj.PatchNumber) ' = data;']);
+    
+              save(obj.RecordingFileName, strcat('data', num2str(obj.PatchNumber)), '-append');
+              
+              obj.PatchNumber = obj.PatchNumber + 1;
+              
+              save(obj.RecordingFileName, 'obj', '-append');
       end
+
    end
+  
 end
 
 
