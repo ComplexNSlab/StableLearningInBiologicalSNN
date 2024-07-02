@@ -56,11 +56,9 @@ classdef IzhikevichNetwork < handle
        %% Hebbian STDP Parameters 
            STDP = false % whether STDP is on or off
            timer_vector
-       %% External Stimulation (kick input) Parameters 
-           input = false % whether external stimulation is on or off
-           input_interval = 1000 % ms interval between consequetive stimulations
-           input_duration = 10 % ms duration of each stimulations 
-           input_strength = 10
+       %% External Stimulation (kick stim) Parameters 
+           stimulation = false % whether external stimulation is on or off
+           stims = [];
    end
 
    %%
@@ -74,7 +72,7 @@ classdef IzhikevichNetwork < handle
           obj.Constructor_NetworkTopology
 
           clear N
-          save(obj.RecordingFileName)
+          save(obj.RecordingFileName, '-v7.3')
       end
       
       function SetInitialConnectivity(obj, g_ee, g_ei, g_ie)
@@ -93,6 +91,13 @@ classdef IzhikevichNetwork < handle
           
            obj.Constructor_RecordingContainers(n_t)
            obj.spike_counter = 1;
+            
+           I_stim = zeros(obj.N, n_t);
+           if obj.stimulation
+               for stim = obj.stims
+                    I_stim = I_stim + stim.getStimCurrent(n_t);
+               end
+           end
 
            for i=1:n_t % simulation of T in ms
                 
@@ -130,15 +135,13 @@ classdef IzhikevichNetwork < handle
                 obj.v(fired) = obj.c(fired);
                 obj.u(fired) = obj.u(fired)+obj.d(fired);
                 
-                I_thalamic = [obj.sigma_ex*randn(obj.Ne,1); obj.sigma_inh*randn(obj.Ni,1)]*obj.noise/sqrt(obj.dt);
-                I = I_thalamic + obj.w * obj.I_syn;
-                if obj.input
-                    if mod(round(obj.t), obj.input_interval) <= obj.input_duration
-                        I = I + obj.input_strength*[ones(10, 1); zeros(obj.N-10, 1)];
-                    end
+                I_noise = [obj.sigma_ex*randn(obj.Ne,1); obj.sigma_inh*randn(obj.Ni,1)]*obj.noise/sqrt(obj.dt);
+                I = I_noise + obj.w * obj.I_syn;
+                if obj.stimulation
+                    I = I + I_stim(:, i);
                 end
-   
-                obj.A = obj.A + -obj.A *obj.dt/obj.tau_A;
+                
+                obj.A = obj.A - obj.A *obj.dt/obj.tau_A;
                 obj.A(fired) = obj.A(fired) + 1/obj.tau_A; 
 
                 if obj.scaling && mod(i, 20) == 0
@@ -162,8 +165,9 @@ classdef IzhikevichNetwork < handle
 
            delete(f)
       end
-       
+   
       function data = getData(obj)
+
         %% Reading and retrieving previously recorded dataset from the file
         if obj.PatchNumber > 2
             structs = {};
@@ -198,7 +202,7 @@ classdef IzhikevichNetwork < handle
             data = load(obj.RecordingFileName, 'data1');
             data = data.data1;
         end
-     end
+      end
    end
     
    %% 
@@ -281,23 +285,24 @@ classdef IzhikevichNetwork < handle
             obj.timer_vector (fired) = 50;
             
             for fired_neuron = fired.'
-                input_cells = obj.in_cells(fired_neuron); % If they have fired within a time window, they cause LTP
-                output_cells = obj.out_cells(fired_neuron); % If the have fired within a time window, they cause LTD
-                
-                % LTP
-                for in_idx = input_cells
-                    delta_t = 50 - obj.timer_vector(in_idx);
-                    if delta_t < 50
-                        dw = STDP_kernel(obj, obj.w(fired_neuron, in_idx), delta_t);
-                        obj.w(fired_neuron, in_idx) = obj.w(fired_neuron, in_idx) + dw;
-                    end
-                end
-
-                % LTD
                 if fired_neuron <= obj.Ne
+                    input_cells = obj.in_cells(fired_neuron); % If they have fired within a time window, they cause LTP
+                    output_cells = obj.out_cells(fired_neuron); % If the have fired within a time window, they cause LTD
+                    
+                    % LTP
+                    for in_idx = input_cells
+                        delta_t = 50 - obj.timer_vector(in_idx);
+                        if delta_t < 50 && in_idx <= obj.Ne
+                            dw = STDP_kernel(obj, obj.w(fired_neuron, in_idx), delta_t);
+                            obj.w(fired_neuron, in_idx) = obj.w(fired_neuron, in_idx) + dw;
+                        end
+                    end
+    
+                    % LTD
+                    
                     for out_idx = output_cells
                         delta_t = 50 - obj.timer_vector(out_idx);
-                        if delta_t < 50   
+                        if delta_t < 50 && out_idx <= obj.Ne
                             dw = STDP_kernel(obj, obj.w(out_idx, fired_neuron), -delta_t);
                             obj.w(out_idx, fired_neuron) = obj.w(out_idx, fired_neuron) + dw;
                         end
@@ -306,13 +311,13 @@ classdef IzhikevichNetwork < handle
             end
       end
 
-      
       function dw = STDP_kernel(~, w, t) 
               %% STDP Kernel for LTP and LTD 
               
-              if t > 0 % LTP
+              if t >= 0 % LTP
                 % dw = exp(-t) - exp(-t/20);
-                dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
+                % dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
+                dw =  0.015 * w *  log(3/abs(w)) * exp(-t/20);
               else % LTD
                  % dw = exp(t/5) * t * (19/20);
                  dw =  - 0.03 * w *  exp(-abs(t)/20);
@@ -335,7 +340,7 @@ classdef IzhikevichNetwork < handle
                   data.A_goal = obj.A_goal;
               end
               data.noise = obj.noise;
-              data.input = obj.input;
+              data.stimulation = obj.stimulation;
               
               eval(['data' num2str(obj.PatchNumber) ' = data;']);
     
@@ -345,10 +350,8 @@ classdef IzhikevichNetwork < handle
               
               save(obj.RecordingFileName, 'obj', '-append');
       end
+   
+   end  
 
-   end
-  
 end
-
-
 
