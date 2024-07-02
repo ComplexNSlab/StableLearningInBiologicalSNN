@@ -5,19 +5,20 @@ classdef Stimulation < handle
         Ncells = 50 % number of targeted celss
 
         interval = 1000 % time (ms) interval between consecutive stimulation 
-        
-        duration = 2 % duration of stim current 
+        start_time 
+
+        duration = 2 % (ms) duration of stim current for each cell 
         amplitude = 30 % strength of stim current
         
         pattern_indices % index of stimulated cells
-        pattern_timings % start time of stimulatino for each cell
+        pattern_timings % start time of stimulation for each cell
 
         on = true % whether stimulation is on or off momentarily 
     end
 
 
     methods
-        function obj = Stimulation(net, interval, duration, amplitude, Ncells)
+        function obj = Stimulation(net, interval, duration, amplitude, Ncells, start_time)
             obj.network = net;
             obj.interval = interval;
             obj.duration = duration;
@@ -25,6 +26,8 @@ classdef Stimulation < handle
             obj.Ncells = Ncells;
             obj.ConstructStimSubset(false);
             obj.ConstructStimTimings();
+            obj.start_time = start_time;
+            obj.network.stims = [obj.network.stims, obj]; % adding stim obj to the list of stims in the network 
         end
 
         function ConstructStimSubset(obj, connected)
@@ -48,12 +51,12 @@ classdef Stimulation < handle
             obj.pattern_timings = (5 + 2*randn(obj.Ncells,1)) ;
         end
 
-        function I_stim = getStimCurrent(obj, n_t)
-            I_stim = zeros(obj.network.N, n_t);
+        function I_stim = getStimCurrent(obj)
+            I_stim = zeros(obj.network.N, 1);
 
             if obj.on
-                time_ = repmat(mod(obj.network.dt*(1:n_t) + obj.network.t, obj.interval), obj.Ncells, 1);
-                indices = (time_ - repmat(obj.pattern_timings, 1, n_t)) <= obj.duration & (time_ - repmat(obj.pattern_timings, 1, n_t)) >= 0;
+                time_ = repmat(mod(obj.network.t - obj.start_time, obj.interval), obj.Ncells, 1);
+                indices = (time_ - obj.pattern_timings) <= obj.duration & (time_ - obj.pattern_timings) >= 0;
                 I_stim(obj.pattern_indices, :) = indices*obj.amplitude;
             end
         end

@@ -15,12 +15,9 @@ mynet.STDP = true;
 
 mynet.stimulation = true;
 
-stim1 = Stimulation(mynet, 1000, 2, 30, 50);
-stim2 = Stimulation(mynet, 1000, 2, 30, 50);
-stim1.on = true;
-%stim2.on = false;
-
-mynet.stims = [stim1];
+stim1 = Stimulation(mynet, 100, 2, 30, 50, 0);
+%stim2 = Stimulation(mynet, 3000, 2, 30, 50);
+%stim3 = Stimulation(mynet, 3000, 2, 30, 50);
 
 mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
@@ -30,7 +27,7 @@ mynet.sampling_rate = 5000;
 
 %% Run 
 
-mynet.run(1000000)
+mynet.run(100000)
 
 data = mynet.getData();
 
@@ -149,7 +146,8 @@ for i = 1:5:size(data.w, 3)
     % histogram(nonzeros(data.w(:, :, i)), 400);
     title(sprintf('Weights Histogram at Time %.2f s', i*mynet.sampling_rate*mynet.dt/1000))
     hold on 
-    histogram(data1(:, i), 100, 'Normalization', 'pdf', 'EdgeColor', 'none');
+    indices = data1(:, i) > 0.05;
+    histogram(data1(indices, i), 100, 'Normalization', 'pdf', 'EdgeColor', 'none');
     histogram(data2(:, i), 100, 'Normalization', 'pdf', 'EdgeColor', 'none');
     histogram(data3(:, i), 100, 'Normalization', 'pdf', 'EdgeColor', 'none');
     legend('Ex -> Ex', 'Inh -> Ex', 'Ex -> Inh')
@@ -303,74 +301,32 @@ xlim([0, max(mynet.input_pattern(:, 2)) + 10])
 ylim([0, mynet.input_strength * 1.05])
 xlabel("time (ms)")
 ylabel("Stimulation Current")
-%% Raster plot in any time window (Poster Content)
 
-figure('Name', "Raster Plot", 'Renderer', 'painters', 'Position', [100 100 1000 1000]); 
-ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
-firings = data.firings;
-fsize = 20;
-start_time = 0; % in seconds
-end_time = 300; % in seconds
-
-ex_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) <= 320);
-inh_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) > 320);
-plot(ax, firings(1, ex_indices)/1000, firings(2, ex_indices), 'b.', 'MarkerSize', 6)
-hold on
-plot(ax, firings(1, inh_indices)/1000, firings(2, inh_indices), 'r.', 'MarkerSize', 6)
-
-xlabel("time (s)")
-ylabel("neuron index")
-title("After Learning (Just Noise Phase)")
-
-y_starts = [0.2, 0.685];
-y_ends = [0.675, 0.8];
-phases = ["Excitatory", "Inhibitory"];
-for i = 1:length(phases)
-    annotation('line',[0.81 0.81], [y_starts(i), y_ends(i)], 'Color', 'Black', 'LineWidth', 3, LineStyle='-'); % Stimulation
-    annotation('textbox', [0.83,  y_starts(i)/2 + y_ends(i)/2 - 0.05, 0.1, 0.01], 'String', phases(i), 'FontName', 'Arial', 'FontSize', 15, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'EdgeColor', 'none', Rotation=90)
-end
-
-ylim([0, mynet.N])
-yticks([1, 50:50:300, 321, 360,400])
-yticklabels([1, 50:50:300, 1, 40,80])
-set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
-
-
-%% Sorted Rater plot of different trials (Just Input Only Situation!)
-figure('Renderer', 'painters', 'Position', [100 100 1000 1000]); 
-fsize = 25;
-msize = 12.5;
-
+%% Computation of the spike orders in different trial
 firings = transpose(data.firings);
 interval = mynet.stims(1).interval;
+off_set_time = mynet.stims(1).start_time;
 
-% orange color [0.8500 0.3250 0.0980]
-stim_color = [0 0.4470 0.7410];
-first_color = [0.4 0.4 0.4];
-repeated_color = [0.6350 0.0780 0.1840];
+check_flag_save = zeros(round(mynet.t/interval), mynet.N);
+total_spike_count = zeros(1, round(mynet.t/interval));
+ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
 
-%check_flag_save = zeros(round(mynet.t/interval), mynet.N);
-%total_spike_count = zeros(1, round(mynet.t/interval));
-%ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
-%inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
-
-for trial_number = [1000]
-    clf;
-    ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
-
+f = waitbar(0, "Computing First to Spike Orders ...");
+for trial_number = 1:round(mynet.t/interval)
+    % Computing the orders
     check_flag = zeros(1, mynet.N);
     
     indices = (firings(:, 1) > (trial_number-1) * interval) & (firings(:, 1) <= trial_number * interval);
-    spike_times = firings(indices, 1) - (trial_number-1)*interval;
-    neuron_indices = firings(indices, 2);
+    spike_times = firings(indices, 1) - (trial_number-1)*interval - off_set_time;
+    neuron_indices = firings(indices, 2);    
     
     counter_ex = 1;
     counter_inh = mynet.Ne+1;
-    hold on
-    
+  
     c_code = zeros(size(spike_times, 1), 3);
     neuron_sorted_indices = zeros(size(spike_times, 1), 1);
-    clear h1 h2
+   
     for i = 1:length(spike_times)
         if true
             if neuron_indices(i) <= mynet.Ne
@@ -404,69 +360,176 @@ for trial_number = [1000]
         end
     end
     
-    %check_flag_save(trial_number, :) = check_flag;
-    %total_spike_count(trial_number) =  length(spike_times);
-    %ex_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)<=mynet.Ne);
-    %inh_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)>mynet.Ne);
+    check_flag_save(trial_number, :) = check_flag;
+    total_spike_count(trial_number) =  length(spike_times);
+    ex_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)<=mynet.Ne);
+    inh_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)>mynet.Ne);
     
-    %plot(spike_times, neuron_indices, 'k.')
-    hold on 
+    waitbar(trial_number/round(mynet.t/interval), f, "Computing First to Spike Orders ...")
+end
+
+close(f)
+%% Raster plot in any time window (Poster Content)
+
+figure('Name', "Raster Plot", 'Renderer', 'painters', 'Position', [100 100 1000 1000]); 
+ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
+firings = data.firings;
+fsize = 20;
+start_time = 99; % in seconds
+end_time = 99.1; % in seconds
+
+ex_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) <= 320);
+inh_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) > 320);
+plot(ax, firings(1, ex_indices)/1000, firings(2, ex_indices), 'b.', 'MarkerSize', 6)
+hold on
+plot(ax, firings(1, inh_indices)/1000, firings(2, inh_indices), 'r.', 'MarkerSize', 6)
+
+xlabel("time (s)")
+ylabel("neuron index")
+title("After Learning (Just Noise Phase)")
+
+y_starts = [0.2, 0.685];
+y_ends = [0.675, 0.8];
+phases = ["Excitatory", "Inhibitory"];
+for i = 1:length(phases)
+    annotation('line',[0.81 0.81], [y_starts(i), y_ends(i)], 'Color', 'Black', 'LineWidth', 3, LineStyle='-'); % Stimulation
+    annotation('textbox', [0.83,  y_starts(i)/2 + y_ends(i)/2 - 0.05, 0.1, 0.01], 'String', phases(i), 'FontName', 'Arial', 'FontSize', 15, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'EdgeColor', 'none', Rotation=90)
+end
+
+ylim([0, mynet.N])
+yticks([1, 50:50:300, 321, 360,400])
+yticklabels([1, 50:50:300, 1, 40,80])
+xlim([start_time end_time])
+set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
+
+
+%% Sorted Rater plot of different trials (Just Input Only Situation!)
+%figure('Renderer', 'painters', 'Position', [100 100 1000 1000]); 
+fsize = 25;
+msize = 12.5;
+
+firings = transpose(data.firings);
+interval = mynet.stims(1).interval;
+off_set_time = mynet.stims(1).start_time;
+
+% orange color [0.8500 0.3250 0.0980]
+stim_color = [0 0.4470 0.7410];
+first_color = [0.4 0.4 0.4];
+repeated_color = [0.6350 0.0780 0.1840];
+
+check_flag_save = zeros(round(mynet.t/interval), mynet.N);
+total_spike_count = zeros(1, round(mynet.t/interval));
+ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+
+f = waitbar(0, "please wait");
+for trial_number = 1:round(mynet.t/interval)
+    % Computing the orders
+    check_flag = zeros(1, mynet.N);
     
-    colors = [first_color; repeated_color; stim_color];
-    markers = ['.', '.', "x"];
-    msizes = [125 ,125, 125];
-    h = [];
-    for i = 1:size(colors, 1)
-        indices =  ismember(c_code, colors(i, :), 'rows');
-        if ~isempty(spike_times(indices))
-            H = scatter(spike_times(indices), neuron_sorted_indices(indices), msizes(i), colors(i, :),'Marker', markers(i));
-        else
-            H = scatter(nan, neuron_sorted_indices(indices), msizes(i), colors(i, :),'Marker', markers(i));
+    indices = (firings(:, 1) > (trial_number-1) * interval) & (firings(:, 1) <= trial_number * interval);
+    spike_times = firings(indices, 1) - (trial_number-1)*interval - off_set_time;
+    neuron_indices = firings(indices, 2);    
+    
+    counter_ex = 1;
+    counter_inh = mynet.Ne+1;
+  
+    c_code = zeros(size(spike_times, 1), 3);
+    neuron_sorted_indices = zeros(size(spike_times, 1), 1);
+   
+    for i = 1:length(spike_times)
+        if true
+            if neuron_indices(i) <= mynet.Ne
+                if check_flag(neuron_indices(i)) == 0 % First excitatory spikes
+                    neuron_sorted_indices(i) = counter_ex;
+                    if ismember(neuron_indices(i), stim1.pattern_indices)
+                        c_code(i, :) = stim_color;
+                    else
+                        c_code(i, :) = first_color;
+                    end
+
+                    check_flag(neuron_indices(i)) = counter_ex;
+                    counter_ex = counter_ex + 1;
+                else % Repeated excitatory spikes
+                    neuron_sorted_indices(i) = check_flag(neuron_indices(i));
+                    c_code(i, :) = repeated_color;
+                end
+            else
+                if check_flag(neuron_indices(i)) == 0 % First Inhibitory spikes
+                    neuron_sorted_indices(i) = counter_inh;
+                    c_code(i, :) = first_color;
+    
+                    check_flag(neuron_indices(i)) = counter_inh;
+                    counter_inh = counter_inh + 1;
+                else % Repeated Inhibitory spikes
+                    neuron_sorted_indices(i) = check_flag(neuron_indices(i));
+                    c_code(i, :) = repeated_color;
+  
+                end
+            end
         end
-        h = [h, H];
-    end 
-    
-    [~, objh] = legend(h, {'First Spike', 'Repeated Spike', 'Stimulatated Cell'},'Location', 'northwest', 'FontSize', 12); % Instead of "h_legend" use "[~, objh]"
-    
-    for i = size(objh, 1)/2 + 1:size(objh, 1)
-        objh(i).Children(1).MarkerSize = 20;
-    end
-
-    xlabel('time (ms)');
-    ylabel('sorted neuron index');
-    title(sprintf('Trial Number %d Raster Plot', trial_number));
-    plot(ax, [0, 2*interval], (mynet.Ne + 0.5)*[1, 1], 'k-', HandleVisibility='off')
-    %plot(ax, [0, 2*interval], (mynet.stims(1).Ncells + 0.5)*[1, 1], 'k--', HandleVisibility='off')
-    xlim([0, 30])
-    ylim([0, mynet.N + 0.5])
-    
-    %if exist("h1") && exist("h2")
-    %    lgd = legend([h1, h2], "First Spike","Repeated Spike", Location="northwest");
-    %    fontsize(lgd,14,'points')
-    %elseif exist("h1")
-    %    lgd = legend([h1], "First Spike", Location="northwest");
-    %    fontsize(lgd,14,'points')
-    %elseif exist("h2")
-    %    lgd = legend([h2], "Repeated Spike", Location="northwest");
-    %    fontsize(lgd,14,'points')
-    %end
-
-    % Add text annotations for different phases using annotation
-    % Add arrows or lines to span the phases at the bottom of the plot
-    y_starts = [0.2, 0.685];
-    y_ends = [0.675, 0.8];
-    phases = ["Excitatory", "Inhibitory"];
-    for i = 1:length(phases)
-        annotation('line',[0.81 0.81], [y_starts(i), y_ends(i)], 'Color', 'Black', 'LineWidth', 3, LineStyle='-'); % Stimulation
-        annotation('textbox', [0.83,  y_starts(i)/2 + y_ends(i)/2 - 0.05, 0.1, 0.01], 'String', phases(i), 'FontName', 'Arial', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'EdgeColor', 'none', Rotation=90)
     end
     
-    yticks([1, 50:50:300, 321, 360,400])
-    yticklabels([1, 50:50:300, 1, 40,80])
-    set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold'); 
-    pause(2)
+    check_flag_save(trial_number, :) = check_flag;
+    total_spike_count(trial_number) =  length(spike_times);
+    ex_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)<=mynet.Ne);
+    inh_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)>mynet.Ne);
+    
+    waitbar(trial_number/round(mynet.t/interval), f, "please wait")
+    
+    % clf;
+    % ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
+    % hold on 
+    % colors = [first_color; repeated_color; stim_color];
+    % markers = ['.', '.', "x"];
+    % msizes = [125 ,125, 125];
+    % h = [];
+    % for i = 1:size(colors, 1)
+    %     indices =  ismember(c_code, colors(i, :), 'rows');
+    %     if ~isempty(spike_times(indices))
+    %         H = scatter(spike_times(indices), neuron_sorted_indices(indices), msizes(i), colors(i, :),'Marker', markers(i));
+    %     else
+    %         H = scatter(nan, neuron_sorted_indices(indices), msizes(i), colors(i, :),'Marker', markers(i));
+    %     end
+    %     h = [h, H];
+    % end 
+    % 
+    % 
+    % [~, objh] = legend(h, {'First Spike', 'Repeated Spike', 'Stimulatated Cell'},'Location', 'northwest', 'FontSize', 12); % Instead of "h_legend" use "[~, objh]"
+    % 
+    % for i = size(objh, 1)/2 + 1:size(objh, 1)
+    %     objh(i).Children(1).MarkerSize = 20;
+    % end
+    % 
+    % xlabel('time (ms)');
+    % ylabel('sorted neuron index');
+    % title(sprintf('Trial Number %d Raster Plot', trial_number));
+    % 
+    % plot(ax, [0, interval], (mynet.Ne + 0.5)*[1, 1], 'k-', HandleVisibility='off')
+    % %plot(ax, [0, 2*interval], (mynet.stims(1).Ncells + 0.5)*[1, 1], 'k--', HandleVisibility='off')
+    % 
+    % xlim([0, 30])
+    % ylim([0, mynet.N + 0.5])
+    % 
+    % yticks([1, 50:50:300, 321, 360,400])
+    % yticklabels([1, 50:50:300, 1, 40,80])
+    % set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
+    % 
+    % % Add text annotations for different phases using annotation
+    % % Add arrows or lines to span the phases at the bottom of the plot
+    % y_starts = [0.2, 0.685];
+    % y_ends = [0.675, 0.8];
+    % phases = ["Excitatory", "Inhibitory"];
+    % 
+    % for i = 1:length(phases)
+    %    annotation('line',[0.81 0.81], [y_starts(i), y_ends(i)], 'Color', 'Black', 'LineWidth', 3, LineStyle='-'); % Stimulation
+    %    annotation('textbox', [0.83,  y_starts(i)/2 + y_ends(i)/2 - 0.05, 0.1, 0.01], 'String', phases(i), 'FontName', 'Arial', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'EdgeColor', 'none', Rotation=90)
+    % end
+    % 
+    % pause(0.1)
     
 end
+close(f)
 
 %% 
 firings = transpose(data.firings);
@@ -500,14 +563,14 @@ temp(temp == 0) = nan;
 stable_order_ex = check_flag_save(end, 1:320);
 stable_order_inh = check_flag_save(end, 321:end)-320;
 
-colormap_ex = parula(320);
+colormap_ex = jet(320);
 colormap_ex = colormap_ex(stable_order_ex, :);
 
-colormap_inh = parula(80);
+colormap_inh = jet(80);
 colormap_inh = colormap_inh(stable_order_inh, :);
 
 hold on 
-wsize = 2;
+wsize = 1.5;
 for cell_id =1:1:320
     
     plot(temp(1:end, cell_id), 'color', colormap_ex(cell_id, :), LineWidth= wsize)
@@ -523,11 +586,15 @@ title("First to Fire Order Vector")
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
 %%
 figure;
+stable_order = check_flag_save(end-1, :);
 
 % filter time window
 firings = transpose(data.firings);
-indices = firings(:,1) > 900000 & firings(:,1) < 1000000; 
+indices = firings(:,1) > 90000 & firings(:,1) < 100000; 
 firings = firings(indices, :);
+for i = 1:size(firings, 1)
+    firings(i, 2) = stable_order(firings(i, 2));
+end
 
 firings(:, 1) = mod(firings(:, 1), 1000);
 x_edges = 0.05:0.1:1000.05;  % 1000 bins for the x-axis (time)
@@ -536,24 +603,28 @@ h = histogram2(firings(:, 1), firings(:, 2), x_edges, y_edges);
 xlabel("time (ms)")
 ylabel("Neuron Index")
 zlabel("Spike Count")
-xlim([550 620])
+xlim([500 530])
 
 % Second figure for imagesc visualization
 figure;
-imagesc(h.XBinEdges, h.YBinEdges, h.Values'/100)
+values = h.Values'/100;
+values(values < 0) = 0;
+imagesc(h.XBinEdges, h.YBinEdges, values)
 set(gca, 'YDir', 'normal')  % Correct the y-axis direction
 xlabel('time (ms)')
 ylabel('Neuron Index')
 colorbar
-xlim([550 620])
+xlim([500 530])
 ylim([0 400])  % Adjust according to your neuron indices range
 
 figure;
 hold on
 values = h.Values;
-for cell_id = 1:10:size(values, 2)
+values(values < 0) = 0;
+for cell_id = 1:1:size(values, 2)
     plot(values(:, cell_id) + cell_id, 'k')    
 end
+xlim([5000 5300])
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -650,7 +721,7 @@ legend()
 xlabel('Trial')
 ylabel('SpearMan Correltion')
 
-%% Spearman Corr Matrix Analysis (Poster Component)
+%% Spearman Corr,, Matrix  Analysis (Poster Component)
 
 %corrmat = 1-squareform(pdist(check_flag_save(1:1:end, 1:320), 'spearman')); % Replace this with your actual data
 corrmat = corr(check_flag_save(1:1:end, 1:320)','type', 'spearman');
@@ -843,8 +914,8 @@ figure('Name', 'Population Analysis')
 
 subplot(3, 1, 1)
 hold on
-plot(100* ex_neurons_engagement_count(1:2:end)/mynet.Ne, DisplayName='memory 1')
-plot(100* ex_neurons_engagement_count(2:2:end)/mynet.Ne, DisplayName= 'memory 2')
+plot(100* ex_neurons_engagement_count(1:1:end)/mynet.Ne, DisplayName='memory 1')
+%plot(100* ex_neurons_engagement_count(2:2:end)/mynet.Ne, DisplayName= 'memory 2')
 legend()
 
 title("Excitatory Population Engagement")
@@ -853,8 +924,8 @@ ylabel('Engagement %')
 %%%%%%%%%%%%%%%%%%%%%
 subplot(3, 1, 2)
 hold on
-plot(100* inh_neurons_engagement_count(1:2:end)/mynet.Ni, DisplayName='memory 1')
-plot(100* inh_neurons_engagement_count(2:2:end)/mynet.Ni, DisplayName= 'memory 2')
+plot(100* inh_neurons_engagement_count(1:1:end)/mynet.Ni, DisplayName='memory 1')
+%plot(100* inh_neurons_engagement_count(2:2:end)/mynet.Ni, DisplayName= 'memory 2')
 legend()
 
 title("Inhibitory Population Engagement")
@@ -865,8 +936,8 @@ ylabel('Engagement %')
 
 subplot(3, 1, 3)
 hold on
-plot(total_spike_count(1:2:end), DisplayName='memory 1')
-plot(total_spike_count(2:2:end), DisplayName= 'memory 2')
+plot(total_spike_count(1:1:end), DisplayName='memory 1')
+%plot(total_spike_count(2:2:end), DisplayName= 'memory 2')
 legend()
 title("Total Spike Count per Trial")
 xlabel('Trial')
@@ -1222,24 +1293,27 @@ legend('interpreter', 'latex')
 %%
 
 % Define the ranges for w and t
-w_arr = -10:0.5:10;  % Using a larger step size to reduce the number of lines for clarity
-t_arr = -100:0.1:100;  % Using a larger step size to reduce the number of points for clarity
+w_arr = 0.5:0.05:4;  % Using a larger step size to reduce the number of lines for clarity
+t_arr = -100:1:100;  % Using a larger step size to reduce the number of points for clarity
 
 % Create a new figure
 figure;
 hold on;
 
 % Loop through each value of w and plot the STDP_kernel function
-for w = w_arr
-    dw_values = arrayfun(@(t) IzhikevichNetwork.STDP_kernel([], w, t), t_arr);
-    plot(t_arr, dw_values, 'DisplayName', ['w = ' num2str(w)]);
+for i = 1:10:length(w_arr)
+    w = w_arr(i);
+    dw_values   = arrayfun(@(t) IzhikevichNetwork.STDP_kernel([], w, t), t_arr);
+    plot(t_arr, dw_values/w, 'DisplayName', ['w = ' num2str(w)], 'LineWidth', 3);
 end
 
 % Add labels and legend
 xlabel("time (ms)");
-ylabel("dw");
+ylabel("dw/w");
 title("STDP Kernel for different values of w");
+legend()
 
+set(gca, 'FontName', 'Arial', 'FontSize', 15, 'FontWeight', 'bold'); 
 hold off;
 
 % Create a new figure
@@ -1247,16 +1321,20 @@ figure;
 hold on;
 
 % Loop through each value of w and plot the STDP_kernel function
-for t = t_arr
-    dw_values = arrayfun(@(w) IzhikevichNetwork.STDP_kernel([], w, t), w_arr);
-    plot(w_arr, dw_values, 'DisplayName', ['w = ' num2str(w)]);
+for i = 1:20:length(t_arr)
+    t = t_arr(i);
+    dw_w_values = arrayfun(@(w) IzhikevichNetwork.STDP_kernel([], w, t)/w, w_arr);
+    plot(w_arr, dw_w_values, 'DisplayName', ['t = ' num2str(t)], 'LineWidth', 3, 'LineStyle', '-');
+    hold on;
 end
 
 % Add labels and legend
 xlabel("w");
-ylabel("dw");
+ylabel("dw/w");
 title("STDP Kernel for different values of t");
-
+legend()
+set(gca, 'XScale', 'log');
+set(gca, 'FontName', 'Arial', 'FontSize', 15, 'FontWeight', 'bold'); 
 hold off;
 
 %% Two consecutive patterns fed to the network 

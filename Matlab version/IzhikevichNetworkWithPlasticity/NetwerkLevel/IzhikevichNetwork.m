@@ -66,7 +66,8 @@ classdef IzhikevichNetwork < handle
       function obj = IzhikevichNetwork(N)
           %% Constructor of the network
           obj.RecordingFileName = strrep(strcat(string(datetime('now', 'Format', 'MMM d uuuu HH mm')), '.mat'), ' ', '_');
-          obj.RecordingFileName = strcat('JustNoise\\', obj.RecordingFileName);
+          obj.RecordingFileName = strcat(['Data', filesep], obj.RecordingFileName);
+
 
           obj.Constructor_IzhikevichNeurons(N)
           obj.Constructor_NetworkTopology
@@ -92,12 +93,6 @@ classdef IzhikevichNetwork < handle
            obj.Constructor_RecordingContainers(n_t)
            obj.spike_counter = 1;
             
-           I_stim = zeros(obj.N, n_t);
-           if obj.stimulation
-               for stim = obj.stims
-                    I_stim = I_stim + stim.getStimCurrent(n_t);
-               end
-           end
 
            for i=1:n_t % simulation of T in ms
                 
@@ -136,9 +131,14 @@ classdef IzhikevichNetwork < handle
                 obj.u(fired) = obj.u(fired)+obj.d(fired);
                 
                 I_noise = [obj.sigma_ex*randn(obj.Ne,1); obj.sigma_inh*randn(obj.Ni,1)]*obj.noise/sqrt(obj.dt);
-                I = I_noise + obj.w * obj.I_syn;
+                I = I_noise + obj.w * sparse(obj.I_syn);
+                
                 if obj.stimulation
-                    I = I + I_stim(:, i);
+                   I_stim = zeros(obj.N, 1);
+                   for stim = obj.stims
+                        I_stim = I_stim + stim.getStimCurrent();
+                   end
+                   I = I + I_stim;
                 end
                 
                 obj.A = obj.A - obj.A *obj.dt/obj.tau_A;
@@ -206,6 +206,22 @@ classdef IzhikevichNetwork < handle
    end
     
    %% 
+   methods (Static)
+      function dw = STDP_kernel(w, t) 
+              %% STDP Kernel for LTP and LTD 
+              
+              if t >= 0 % LTP
+                % dw = exp(-t) - exp(-t/20);
+                % dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
+                dw =  0.015 * w *  log(3/abs(w)) * exp(-t/20);
+              else % LTD
+                 % dw = exp(t/5) * t * (19/20);
+                 dw =  - 0.03 * w *  exp(-abs(t)/20);
+              end
+              dw = 1 * dw;
+      end
+   end
+
    methods (Access = public)
       function Constructor_IzhikevichNeurons(obj, N)    
           Ex_ratio = 0.8;
@@ -267,7 +283,8 @@ classdef IzhikevichNetwork < handle
           for i = 1:obj.N
                obj.out_cells(i) = find(obj.Adjacency_matrix(:, i)).';
           end
-
+            
+          obj.w = sparse(obj.w);
       end
      
       function Constructor_RecordingContainers(obj, n_t)
@@ -293,7 +310,7 @@ classdef IzhikevichNetwork < handle
                     for in_idx = input_cells
                         delta_t = 50 - obj.timer_vector(in_idx);
                         if delta_t < 50 && in_idx <= obj.Ne
-                            dw = STDP_kernel(obj, obj.w(fired_neuron, in_idx), delta_t);
+                            dw = IzhikevichNetwork.STDP_kernel(obj.w(fired_neuron, in_idx), delta_t);
                             obj.w(fired_neuron, in_idx) = obj.w(fired_neuron, in_idx) + dw;
                         end
                     end
@@ -303,7 +320,7 @@ classdef IzhikevichNetwork < handle
                     for out_idx = output_cells
                         delta_t = 50 - obj.timer_vector(out_idx);
                         if delta_t < 50 && out_idx <= obj.Ne
-                            dw = STDP_kernel(obj, obj.w(out_idx, fired_neuron), -delta_t);
+                            dw = IzhikevichNetwork.STDP_kernel(obj.w(out_idx, fired_neuron), -delta_t);
                             obj.w(out_idx, fired_neuron) = obj.w(out_idx, fired_neuron) + dw;
                         end
                     end
@@ -311,19 +328,6 @@ classdef IzhikevichNetwork < handle
             end
       end
 
-      function dw = STDP_kernel(~, w, t) 
-              %% STDP Kernel for LTP and LTD 
-              
-              if t >= 0 % LTP
-                % dw = exp(-t) - exp(-t/20);
-                % dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
-                dw =  0.015 * w *  log(3/abs(w)) * exp(-t/20);
-              else % LTD
-                 % dw = exp(t/5) * t * (19/20);
-                 dw =  - 0.03 * w *  exp(-abs(t)/20);
-              end
-              dw = 1 * dw;
-      end
 
       function SaveRecordings(obj)
      
