@@ -14,6 +14,7 @@ classdef Stimulation < handle
         pattern_timings % start time of stimulation for each cell
 
         on = true % whether stimulation is on or off momentarily 
+        I_stim 
     end
 
 
@@ -26,7 +27,9 @@ classdef Stimulation < handle
             obj.Ncells = Ncells;
             obj.ConstructStimSubset(false);
             obj.ConstructStimTimings();
+            obj.ConstructStimCurrent();
             obj.start_time = start_time;
+            
             obj.network.stims = [obj.network.stims, obj]; % adding stim obj to the list of stims in the network 
         end
 
@@ -48,18 +51,17 @@ classdef Stimulation < handle
         end
         
         function ConstructStimTimings(obj)
-            obj.pattern_timings = (5 + 2*randn(obj.Ncells,1)) ;
+            obj.pattern_timings = (10 + 2*randn(obj.Ncells,1)) ;
         end
-
-        function I_stim = getStimCurrent(obj)
-            I_stim = zeros(obj.network.N, 1);
-
-            if obj.on
-                time_ = repmat(mod(obj.network.t - obj.start_time, obj.interval), obj.Ncells, 1);
-                indices = (time_ - obj.pattern_timings) <= obj.duration & (time_ - obj.pattern_timings) >= 0;
-                I_stim(obj.pattern_indices, :) = indices*obj.amplitude;
-            end
+        
+        function ConstructStimCurrent(obj)
+            n_t = round(obj.interval/obj.network.dt);
+            obj.I_stim = zeros(obj.network.N, n_t);
+            time_ = repmat(obj.network.dt:obj.network.dt:obj.interval, obj.Ncells, 1);
+            indices = (time_ - repmat(obj.pattern_timings, 1, n_t)) <= obj.duration & (time_ - repmat(obj.pattern_timings, 1, n_t)) >= 0;
+            obj.I_stim(obj.pattern_indices, :) = indices*obj.amplitude;
         end
+        
     end
 
 end

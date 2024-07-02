@@ -1,13 +1,6 @@
 classdef IzhikevichNetwork < handle
    %% Izhikevich Network Class handle simulation of a SNN network with different plasticity mechanism on or off
-
-   %% 
-   properties (Access = private)
-        
-        
-   end
    
-   %% 
    properties (Access = public)
        %% Recording Parameters
             RecordingFileName 
@@ -61,13 +54,11 @@ classdef IzhikevichNetwork < handle
            stims = [];
    end
 
-   %%
    methods (Access = public)
       function obj = IzhikevichNetwork(N)
           %% Constructor of the network
           obj.RecordingFileName = strrep(strcat(string(datetime('now', 'Format', 'MMM d uuuu HH mm')), '.mat'), ' ', '_');
           obj.RecordingFileName = strcat(['Data', filesep], obj.RecordingFileName);
-
 
           obj.Constructor_IzhikevichNeurons(N)
           obj.Constructor_NetworkTopology
@@ -101,7 +92,7 @@ classdef IzhikevichNetwork < handle
                 obj.v(obj.v > 30) = 30;
                 % obj.v_save(:, i) = obj.v;
                
-                if mod(i, obj.sampling_rate) == 0   
+                if mod(i, obj.sampling_rate) == 0  && obj.sampling 
                     obj.A_save(:, round(i/obj.sampling_rate)) = obj.A;
                     if obj.scaling || obj.STDP
                         obj.w_save(:, :, round(i/obj.sampling_rate)) = obj.w;
@@ -130,17 +121,24 @@ classdef IzhikevichNetwork < handle
                 obj.v(fired) = obj.c(fired);
                 obj.u(fired) = obj.u(fired)+obj.d(fired);
                 
-                I_noise = [obj.sigma_ex*randn(obj.Ne,1); obj.sigma_inh*randn(obj.Ni,1)]*obj.noise/sqrt(obj.dt);
-                I = I_noise + obj.w * sparse(obj.I_syn);
                 
+                I = obj.w * obj.I_syn;
+
+                if obj.noise
+                    I_noise = [obj.sigma_ex*randn(obj.Ne,1); obj.sigma_inh*randn(obj.Ni,1)]/sqrt(obj.dt);
+                    I = I + I_noise;
+                end
+
                 if obj.stimulation
                    I_stim = zeros(obj.N, 1);
                    for stim = obj.stims
-                        I_stim = I_stim + stim.getStimCurrent();
+                       time_index = 1 + mod(round((obj.t - stim.start_time)/obj.dt), stim.interval/obj.dt);
+                       I_stim = I_stim + stim.I_stim(:, time_index);
                    end
                    I = I + I_stim;
                 end
-                
+                %obj.I_syn_save(:, i) = I;
+
                 obj.A = obj.A - obj.A *obj.dt/obj.tau_A;
                 obj.A(fired) = obj.A(fired) + 1/obj.tau_A; 
 
@@ -158,10 +156,10 @@ classdef IzhikevichNetwork < handle
             end
             
            obj.firings = obj.firings(1:obj.spike_counter-1, :);
-           if obj.sampling 
-               waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
-               obj.SaveRecordings
-           end
+           
+           waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
+           obj.SaveRecordings
+           
 
            delete(f)
       end
@@ -205,7 +203,6 @@ classdef IzhikevichNetwork < handle
       end
    end
     
-   %% 
    methods (Static)
       function dw = STDP_kernel(w, t) 
               %% STDP Kernel for LTP and LTD 
@@ -221,7 +218,7 @@ classdef IzhikevichNetwork < handle
               dw = 1 * dw;
       end
    end
-
+    
    methods (Access = public)
       function Constructor_IzhikevichNeurons(obj, N)    
           Ex_ratio = 0.8;
@@ -284,7 +281,7 @@ classdef IzhikevichNetwork < handle
                obj.out_cells(i) = find(obj.Adjacency_matrix(:, i)).';
           end
             
-          obj.w = sparse(obj.w);
+          obj.w = obj.w;
       end
      
       function Constructor_RecordingContainers(obj, n_t)
@@ -334,6 +331,7 @@ classdef IzhikevichNetwork < handle
               if ~obj.STDP && ~obj.scaling
                 obj.w_save = repmat(obj.w, 1, 1, size(obj.w_save, 3));
               end
+              
               data = struct('time', obj.time, 'A', obj.A_save, 'w', obj.w_save, 'firings', transpose(obj.firings));
               
               data.STDP = obj.STDP;

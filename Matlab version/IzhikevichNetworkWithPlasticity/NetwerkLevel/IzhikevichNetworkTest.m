@@ -15,19 +15,22 @@ mynet.STDP = true;
 
 mynet.stimulation = true;
 
-stim1 = Stimulation(mynet, 100, 2, 30, 50, 0);
-%stim2 = Stimulation(mynet, 3000, 2, 30, 50);
-%stim3 = Stimulation(mynet, 3000, 2, 30, 50);
+stim1 = Stimulation(mynet, 300, 2, 30, 50, 0);
+stim2 = Stimulation(mynet, 300, 2, 30, 50, 100);
+%stim3 = Stimulation(mynet, 400, 2, 30, 50, 200);
+%stim4 = Stimulation(mynet, 400, 2, 30, 50, 300);
 
 mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
 mynet.alpha = 20;
 
 mynet.sampling_rate = 5000;
-
+mynet.sampling = false;
 %% Run 
 
-mynet.run(100000)
+for i = 1:3
+    mynet.run(100000)
+end
 
 data = mynet.getData();
 
@@ -304,8 +307,12 @@ ylabel("Stimulation Current")
 
 %% Computation of the spike orders in different trial
 firings = transpose(data.firings);
-interval = mynet.stims(1).interval;
-off_set_time = mynet.stims(1).start_time;
+interval = mynet.stims(2).interval;
+off_set_time = mynet.stims(2).start_time;
+
+stim_color = [0 0.4470 0.7410];
+first_color = [0.4 0.4 0.4];
+repeated_color = [0.6350 0.0780 0.1840];
 
 check_flag_save = zeros(round(mynet.t/interval), mynet.N);
 total_spike_count = zeros(1, round(mynet.t/interval));
@@ -317,7 +324,7 @@ for trial_number = 1:round(mynet.t/interval)
     % Computing the orders
     check_flag = zeros(1, mynet.N);
     
-    indices = (firings(:, 1) > (trial_number-1) * interval) & (firings(:, 1) <= trial_number * interval);
+    indices = (firings(:, 1) > (trial_number-1) * interval + off_set_time) & (firings(:, 1) <= (trial_number-1) * interval + off_set_time + 100);
     spike_times = firings(indices, 1) - (trial_number-1)*interval - off_set_time;
     neuron_indices = firings(indices, 2);    
     
@@ -375,8 +382,8 @@ figure('Name', "Raster Plot", 'Renderer', 'painters', 'Position', [100 100 1000 
 ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
 firings = data.firings;
 fsize = 20;
-start_time = 99; % in seconds
-end_time = 99.1; % in seconds
+start_time = 0; % in seconds
+end_time = 2; % in seconds
 
 ex_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) <= 320);
 inh_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) > 320);
@@ -560,8 +567,13 @@ fsize = 15;
 temp = check_flag_save;
 temp(temp == 0) = nan;
 
+%active_ex_cells = find(temp(end, :) ~= 0 & temp(end, :) <= mynet.Ne);
+%active_inh_cells = find(temp(end, :) ~= 0 & temp(end, :) > mynet.Ne);
+
 stable_order_ex = check_flag_save(end, 1:320);
 stable_order_inh = check_flag_save(end, 321:end)-320;
+stable_order_ex(stable_order_ex == 0) = 320;
+stable_order_inh(stable_order_inh == 0) = 80;
 
 colormap_ex = jet(320);
 colormap_ex = colormap_ex(stable_order_ex, :);
@@ -571,11 +583,11 @@ colormap_inh = colormap_inh(stable_order_inh, :);
 
 hold on 
 wsize = 1.5;
-for cell_id =1:1:320
+for cell_id =1:320
     
     plot(temp(1:end, cell_id), 'color', colormap_ex(cell_id, :), LineWidth= wsize)
 end
-for cell_id = 321:1:400
+for cell_id = 321:400
     
     plot(temp(1:end, cell_id), 'color', colormap_inh(cell_id-320, :), LineWidth= wsize)
 end
