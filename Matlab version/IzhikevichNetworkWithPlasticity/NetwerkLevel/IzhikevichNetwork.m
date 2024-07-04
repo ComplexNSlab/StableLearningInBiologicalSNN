@@ -132,8 +132,10 @@ classdef IzhikevichNetwork < handle
                 if obj.stimulation
                    I_stim = zeros(obj.N, 1);
                    for stim = obj.stims
-                       time_index = 1 + mod(round((obj.t - stim.start_time)/obj.dt), stim.interval/obj.dt);
-                       I_stim = I_stim + stim.I_stim(:, time_index);
+                       if stim.on
+                           time_index = 1 + mod(round((obj.t - stim.start_time)/obj.dt), stim.interval/obj.dt);
+                           I_stim = I_stim + stim.I_stim(:, time_index);
+                       end
                    end
                    I = I + I_stim;
                 end

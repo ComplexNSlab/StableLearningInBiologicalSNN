@@ -15,8 +15,8 @@ mynet.STDP = true;
 
 mynet.stimulation = true;
 
-stim1 = Stimulation(mynet, 300, 2, 30, 50, 0);
-stim2 = Stimulation(mynet, 300, 2, 30, 50, 100);
+stim1 = Stimulation(mynet, 200, 2, 30, 50, 0);
+%stim2 = Stimulation(mynet, 300, 2, 30, 50, 100);
 %stim3 = Stimulation(mynet, 400, 2, 30, 50, 200);
 %stim4 = Stimulation(mynet, 400, 2, 30, 50, 300);
 
@@ -28,8 +28,8 @@ mynet.sampling_rate = 5000;
 mynet.sampling = false;
 %% Run 
 
-for i = 1:3
-    mynet.run(100000)
+for i = 1:1
+    mynet.run(50000)
 end
 
 data = mynet.getData();
@@ -307,8 +307,8 @@ ylabel("Stimulation Current")
 
 %% Computation of the spike orders in different trial
 firings = transpose(data.firings);
-interval = mynet.stims(2).interval;
-off_set_time = mynet.stims(2).start_time;
+interval = 200; % ms 
+off_set_time = 0;
 
 stim_color = [0 0.4470 0.7410];
 first_color = [0.4 0.4 0.4];
@@ -324,7 +324,7 @@ for trial_number = 1:round(mynet.t/interval)
     % Computing the orders
     check_flag = zeros(1, mynet.N);
     
-    indices = (firings(:, 1) > (trial_number-1) * interval + off_set_time) & (firings(:, 1) <= (trial_number-1) * interval + off_set_time + 100);
+    indices = (firings(:, 1) > (trial_number-1) * interval + off_set_time) & (firings(:, 1) <= trial_number * interval + off_set_time);
     spike_times = firings(indices, 1) - (trial_number-1)*interval - off_set_time;
     neuron_indices = firings(indices, 2);    
     
@@ -383,10 +383,22 @@ ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
 firings = data.firings;
 fsize = 20;
 start_time = 0; % in seconds
-end_time = 2; % in seconds
+end_time = 0.4; % in seconds
+
 
 ex_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) <= 320);
 inh_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) > 320);
+
+% stable_order = check_flag_save(1001, :);
+% ex = stable_order(1:mynet.Ne) == 0;
+% inh = stable_order(mynet.Ne+1:end) == 0;
+% stable_order(logical([ex, zeros(1, mynet.Ni)])) = mynet.Ne-sum(ex)+1:mynet.Ne;
+% stable_order(logical([zeros(1, mynet.Ne), inh])) = mynet.N - sum(inh)+1:mynet.N;
+% 
+% for i = 1:size(firings, 2)
+%     firings(2, i) = stable_order(firings(2, i));
+% end
+
 plot(ax, firings(1, ex_indices)/1000, firings(2, ex_indices), 'b.', 'MarkerSize', 6)
 hold on
 plot(ax, firings(1, inh_indices)/1000, firings(2, inh_indices), 'r.', 'MarkerSize', 6)
@@ -564,7 +576,7 @@ colorbar()
 %% Order of spikes analysis (In input mode!)
 figure('Name', "Single Neuron Spike Order")
 fsize = 15;
-temp = check_flag_save;
+temp = check_flag_save(1:1:end, :);
 temp(temp == 0) = nan;
 
 %active_ex_cells = find(temp(end, :) ~= 0 & temp(end, :) <= mynet.Ne);
@@ -572,8 +584,8 @@ temp(temp == 0) = nan;
 
 stable_order_ex = check_flag_save(end, 1:320);
 stable_order_inh = check_flag_save(end, 321:end)-320;
-stable_order_ex(stable_order_ex == 0) = 320;
-stable_order_inh(stable_order_inh == 0) = 80;
+% stable_order_ex(stable_order_ex == 0) = mynet.Ne-sum(stable_order_ex == 0)+1:mynet.Ne;
+% stable_order_inh(stable_order_inh == -320) = mynet.Ni-sum(stable_order_inh == -320)+1:mynet.Ni;
 
 colormap_ex = jet(320);
 colormap_ex = colormap_ex(stable_order_ex, :);
@@ -602,20 +614,20 @@ stable_order = check_flag_save(end-1, :);
 
 % filter time window
 firings = transpose(data.firings);
-indices = firings(:,1) > 90000 & firings(:,1) < 100000; 
+indices = firings(:,1) > 199900 & firings(:,1) < 200100; 
 firings = firings(indices, :);
 for i = 1:size(firings, 1)
     firings(i, 2) = stable_order(firings(i, 2));
 end
 
-firings(:, 1) = mod(firings(:, 1), 1000);
+firings(:, 1) = mod(firings(:, 1), 300);
 x_edges = 0.05:0.1:1000.05;  % 1000 bins for the x-axis (time)
 y_edges = 0.5:1:400.5;  % 400 bins for the y-axis (neuron indices), centered on integers
 h = histogram2(firings(:, 1), firings(:, 2), x_edges, y_edges);
 xlabel("time (ms)")
 ylabel("Neuron Index")
 zlabel("Spike Count")
-xlim([500 530])
+xlim([0 200])
 
 % Second figure for imagesc visualization
 figure;
@@ -626,7 +638,7 @@ set(gca, 'YDir', 'normal')  % Correct the y-axis direction
 xlabel('time (ms)')
 ylabel('Neuron Index')
 colorbar
-xlim([500 530])
+xlim([0 200])
 ylim([0 400])  % Adjust according to your neuron indices range
 
 figure;
@@ -636,7 +648,7 @@ values(values < 0) = 0;
 for cell_id = 1:1:size(values, 2)
     plot(values(:, cell_id) + cell_id, 'k')    
 end
-xlim([5000 5300])
+xlim([0 2000])
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -736,9 +748,9 @@ ylabel('SpearMan Correltion')
 %% Spearman Corr,, Matrix  Analysis (Poster Component)
 
 %corrmat = 1-squareform(pdist(check_flag_save(1:1:end, 1:320), 'spearman')); % Replace this with your actual data
-corrmat = corr(check_flag_save(1:1:end, 1:320)','type', 'spearman');
+corrmat = corr(check_flag_save(1:end, 1:320)','type', 'spearman');
 indices = [301:400, 901:1000, 1501:1600];
-submat = corrmat(:, :);
+submat = corrmat(1:end, 1:end);
 %submat(logical(eye(size(submat, 1)))) = 0;
 
 % Create the heatmap
@@ -777,19 +789,19 @@ ylabel('Trial', 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold', 'R
 set(gca, 'YDir', 'normal')
 
 % Define the x-tick positions and labels
-xTickPositions = 0:200:size(corrmat, 1);
-xTickPositions(1) = xTickPositions(1) + 1;
-xTickLabels = xTickPositions;
+% xTickPositions = 0:200:size(corrmat, 1);
+% xTickPositions(1) = xTickPositions(1) + 1;
+% xTickLabels = xTickPositions;
 
 % Set the x-ticks and labels with consistent font properties
-xticks(xTickPositions);
-xticklabels(xTickLabels);
+% xticks(xTickPositions);
+% xticklabels(xTickLabels);
 xtickangle(-45)
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold'); % Set for x-tick labels
 
 % Similarly, you can set y-ticks if needed
-yticks(xTickPositions);
-yticklabels(xTickLabels);
+% yticks(xTickPositions);
+% yticklabels(xTickLabels);
 ytickangle(-45)
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold'); % Set for y-tick labels
 
@@ -814,14 +826,14 @@ set(gcf, 'PaperPosition', [0 0 10 10]); % [left, bottom, width, height]
 set(gcf, 'PaperSize', [10 10]); % [width, height]
 
 % Add horizontal and vertical lines to separate phases
-hold on;
-line([1001 1001], ylim, 'Color', 'black', 'LineWidth', 1.5); % Vertical line at 1000
-line([1501 1501], ylim, 'Color', 'black', 'LineWidth', 1.5); % Vertical line at 1500
-line([2001 2001], ylim, 'Color', 'black', 'LineWidth', 1.5); % Vertical line at 2000
-line(xlim, [1001 1001], 'Color', 'black', 'LineWidth', 1.5); % Horizontal line at 1000
-line(xlim, [1501 1501], 'Color', 'black', 'LineWidth', 1.5); % Horizontal line at 1500
-line(xlim, [2001 2001], 'Color', 'black', 'LineWidth', 1.5); % Horizontal line at 2000
-hold off;
+% hold on;
+% line([1001 1001], ylim, 'Color', 'black', 'LineWidth', 1.5); % Vertical line at 1000
+% line([1501 1501], ylim, 'Color', 'black', 'LineWidth', 1.5); % Vertical line at 1500
+% line([2001 2001], ylim, 'Color', 'black', 'LineWidth', 1.5); % Vertical line at 2000
+% line(xlim, [1001 1001], 'Color', 'black', 'LineWidth', 1.5); % Horizontal line at 1000
+% line(xlim, [1501 1501], 'Color', 'black', 'LineWidth', 1.5); % Horizontal line at 1500
+% line(xlim, [2001 2001], 'Color', 'black', 'LineWidth', 1.5); % Horizontal line at 2000
+% hold off;
 
 title("First to Spike Orders Correlation Matrix", 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold')
 % Save the figure as a PDF with higher resolution

@@ -4,7 +4,7 @@ classdef Stimulation < handle
         network % targeted network (IzhikevichNetwork obj)
         Ncells = 50 % number of targeted celss
 
-        interval = 1000 % time (ms) interval between consecutive stimulation 
+        interval % time (ms) interval between consecutive stimulation 
         start_time 
 
         duration = 2 % (ms) duration of stim current for each cell 
@@ -34,7 +34,7 @@ classdef Stimulation < handle
         end
 
         function ConstructStimSubset(obj, connected)
-             if connected
+            if connected
                 obj.pattern_indices = [randsample(obj.network.Ne, 1)];
                 for i = 1:nNeurons-1
                     connected_to = obj.network.out_cells(obj.pattern_indices(end));
