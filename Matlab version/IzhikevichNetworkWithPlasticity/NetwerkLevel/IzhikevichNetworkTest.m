@@ -15,21 +15,18 @@ mynet.STDP = true;
 
 mynet.stimulation = true;
 
-stim1 = Stimulation(mynet, 200, 2, 30, 50, 0);
-%stim2 = Stimulation(mynet, 300, 2, 30, 50, 100);
-%stim3 = Stimulation(mynet, 400, 2, 30, 50, 200);
-%stim4 = Stimulation(mynet, 400, 2, 30, 50, 300);
+stim1 = Stimulation(mynet, 100, 2, 30, 20, 0);
 
 mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
 mynet.alpha = 20;
 
 mynet.sampling_rate = 5000;
-mynet.sampling = false;
+mynet.sampling = true;
 %% Run 
 
 for i = 1:1
-    mynet.run(50000)
+    mynet.run(90000)
 end
 
 data = mynet.getData();
@@ -307,7 +304,7 @@ ylabel("Stimulation Current")
 
 %% Computation of the spike orders in different trial
 firings = transpose(data.firings);
-interval = 200; % ms 
+interval = 100; % ms 
 off_set_time = 0;
 
 stim_color = [0 0.4470 0.7410];
@@ -382,8 +379,8 @@ figure('Name', "Raster Plot", 'Renderer', 'painters', 'Position', [100 100 1000 
 ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
 firings = data.firings;
 fsize = 20;
-start_time = 0; % in seconds
-end_time = 0.4; % in seconds
+start_time = 9; % in seconds
+end_time = 10; % in seconds
 
 
 ex_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) <= 320);
@@ -584,8 +581,8 @@ temp(temp == 0) = nan;
 
 stable_order_ex = check_flag_save(end, 1:320);
 stable_order_inh = check_flag_save(end, 321:end)-320;
-% stable_order_ex(stable_order_ex == 0) = mynet.Ne-sum(stable_order_ex == 0)+1:mynet.Ne;
-% stable_order_inh(stable_order_inh == -320) = mynet.Ni-sum(stable_order_inh == -320)+1:mynet.Ni;
+stable_order_ex(stable_order_ex == 0) = mynet.Ne-sum(stable_order_ex == 0)+1:mynet.Ne;
+stable_order_inh(stable_order_inh == -320) = mynet.Ni-sum(stable_order_inh == -320)+1:mynet.Ni;
 
 colormap_ex = jet(320);
 colormap_ex = colormap_ex(stable_order_ex, :);
