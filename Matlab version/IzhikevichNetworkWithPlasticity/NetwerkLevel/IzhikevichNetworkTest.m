@@ -5,17 +5,17 @@ rng(2,"twister");
 
 mynet = IzhikevichNetwork(400);
 
-mynet.noise = false;
-mynet.sigma_ex = 0.7*5;
-mynet.sigma_inh = 0.7*2;
+mynet.noise = true;
+mynet.sigma_ex = 1*5;
+mynet.sigma_inh = 1*2;
 
 mynet.SetInitialConnectivity(0.5, 2, 2);
 
 mynet.STDP = true;
 
-mynet.stimulation = true;
+mynet.stimulation = false;
 
-stim1 = Stimulation(mynet, 100, 2, 30, 20, 0);
+% stim1 = Stimulation(mynet, 100, 2, 30, 20, 0);
 
 mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
@@ -26,7 +26,7 @@ mynet.sampling = true;
 %% Run 
 
 for i = 1:1
-    mynet.run(90000)
+    mynet.run(200000)
 end
 
 data = mynet.getData();
