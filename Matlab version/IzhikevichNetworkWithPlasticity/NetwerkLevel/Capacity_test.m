@@ -10,7 +10,7 @@ mynet.sampling = false;
 
 %% In Series Learning
 % Feeding the stims to the network to learn (In series)
-M_max = 5; % maximum number of memory to encode in the network
+M_max = 30; % maximum number of memory to encode in the network
 stims = []; 
 interval = 100; %ms
 N_trials = 1000;
@@ -19,14 +19,15 @@ for m = 1:M_max
     stims = [stims, Stimulation(mynet, interval, 2, 30, 50, 0)];
   
     mynet.run(N_trials*interval);
-    stims(end).on = false;
+    mynet.stims = []; % clear the stims list as it slows down the computaiton speed
 end
+%%
 % Retrieval of memories by just one stimulation per stim (In series)
 N_retrievals = 3;
 for m = 1:M_max
     stims(m).on = true;
+    mynet.stims = [stims(m)];
     mynet.run(interval*N_retrievals)
-    stims(m).on = false;
 end
 
 data = mynet.getData();
@@ -41,7 +42,7 @@ for m = 1:M_max
     stims = [stims, Stimulation(mynet, interval, 2, 30, 50, (m-1)*100)];
 end 
 
-mynet.run(N_trials*interval)
+mynet.run(N_trials * interval)
 
 data = mynet.getData();
 
@@ -97,16 +98,22 @@ for trial_number = 1:round(mynet.t/interval)
     ex_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)<=mynet.Ne);
     inh_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)>mynet.Ne);
     
-    waitbar(trial_number/round(mynet.t/interval), f, "Computing First to Spike Orders ...")
+    waitbar(trial_number/round(mynet.t/interval), f, sprintf("Computing First to Spike Orders ..., trial %d", trial_number))
 end
 
 close(f)
 %% Spearman Corr Matrix  Analysis (Poster Component)
 
 %corrmat = 1-squareform(pdist(check_flag_save(1:1:end, 1:320), 'spearman')); % Replace this with your actual data
+
+%temp = [];
+%for m = 1:M_max
+%    temp = [temp; check_flag_save(m:M_max:end, :)]; 
+%end
+
 corrmat = corr(check_flag_save(:, 1:320)','type', 'spearman');
-indices = [301:400, 901:1000, 1501:1600];
-submat = corrmat(:, :);
+%%
+submat = corrmat(1:1000:end, 1:1000:end);
 %submat(logical(eye(size(submat, 1)))) = 0;
 
 % Create the heatmap
@@ -136,8 +143,8 @@ c.Label.FontSize = fsize; % Set the font size
 c.Label.FontWeight = 'bold'; % Set the font weight to bold
 
 % Set the title and axis labels with consistent font properties
-xlabel('Retrieved Sequence', 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
-ylabel('Retrieved Sequence', 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold', 'Rotation', 90);
+xlabel('Learnt Sequence', 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
+ylabel('Learnt Sequence', 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold', 'Rotation', 90);
 
 % Fix the aspect ratio to square
 % axis square;
@@ -195,8 +202,8 @@ temp(temp == 0) = nan;
 %active_ex_cells = find(temp(end, :) ~= 0 & temp(end, :) <= mynet.Ne);
 %active_inh_cells = find(temp(end, :) ~= 0 & temp(end, :) > mynet.Ne);
 
-stable_order_ex = check_flag_save(1000, 1:320);
-stable_order_inh = check_flag_save(1000, 321:end)-320;
+stable_order_ex = check_flag_save(end, 1:320);
+stable_order_inh = check_flag_save(end, 321:end)-320;
 stable_order_ex(stable_order_ex == 0) = 320;
 stable_order_inh(stable_order_inh == -320) = 80;
 
@@ -305,7 +312,7 @@ ylabel('Spike Count')
 
 %% PCA on order vectors
 % Perform PCA
-[coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(1:M_max*1000, :));
+[coeff, score, latent, tsquared, explained, mu] = pca(temp(:, :));
 
 % coeff    - Principal component coefficients (eigenvectors)
 % score    - Principal component scores (projected data)
@@ -321,33 +328,38 @@ z = score(:, 3);
 mem_colors = lines(M_max);
 colors = [];
 for m = 1:M_max
-    colors = [colors; [flip(gray(999)); mem_colors(m, :)]];
+    colors = [colors; [flip(parula(999)); mem_colors(m, :)]];
 end
 
 figure;
+
+for m = 1:M_max
+    indices = (m-1)*N_trials+1:m*N_trials;
+    patch([x(indices); nan], [y(indices); nan], [z(indices); nan], [colors(indices), nan], 'FaceColor','none','EdgeColor','interp');
+    view(3)
+    hold on
+end
+
 hold on
-
-scatter(x(1:M_max*1000), y(1:M_max*1000), 20, colors, Marker="o", MarkerFaceColor="flat", HandleVisibility="off");
-
 colormap(flipud(gray))
 colorbar;
 clim([0 1000]);
 ylabel(colorbar, 'Trial Number');
 
 indices = 1000:1000:M_max*1000;
-scatter(x(indices), y(indices), 100, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= 'Learnt');
+scatter3(x(indices), y(indices), z(indices), 100, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= 'Learnt', HandleVisibility='off');
 %%%%%%%%%%%%%%%%%
-test_data_centered = bsxfun(@minus, check_flag_save(M_max*1000+1:end, :), mu);
-score = test_data_centered * coeff;
-x = score(:, 1);
-y = score(:, 2);
-z = score(:, 3);
+%test_data_centered = bsxfun(@minus, check_flag_save(M_max*1000+1:end, :), mu);
+%score = test_data_centered * coeff;
+%x = score(:, 1);
+%y = score(:, 2);
+%z = score(:, 3);
 
-c = [];
-for m = 1:M_max
-    c = [c;repmat(mem_colors(m, :), N_retrievals, 1)];
-end
-scatter(x, y, 150, c, marker="pentagram", MarkerFaceColor="flat", DisplayName='Retrieved')
+%c = [];
+%for m = 1:M_max
+%    c = [c;repmat(mem_colors(m, :), N_retrievals, 1)];
+%end
+%scatter(x, y, 150, c, marker="pentagram", MarkerFaceColor="flat", DisplayName='Retrieved')
 
 
 % colormap('parula');
@@ -356,8 +368,9 @@ scatter(x, y, 150, c, marker="pentagram", MarkerFaceColor="flat", DisplayName='R
 % ylabel(colorbar2, 'Memories');
 
 
-xlabel('Principal Component 1');
-ylabel('Principal Component 2');
+xlabel('PC 1');
+ylabel('PC 2');
+zlabel('PC 3')
 title('Order Vector Evolution in PCA Space');
-legend(Location='best')
+%legend(Location='best')
 
