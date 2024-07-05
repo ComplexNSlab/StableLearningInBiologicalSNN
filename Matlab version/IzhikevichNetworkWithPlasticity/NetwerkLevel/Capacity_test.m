@@ -8,7 +8,8 @@ mynet.STDP = true;
 mynet.stimulation = true;
 mynet.sampling = false;
 
-%% Feeding the stims to the network to learn
+%% In Series Learning
+% Feeding the stims to the network to learn (In series)
 M_max = 5; % maximum number of memory to encode in the network
 stims = []; 
 interval = 100; %ms
@@ -20,15 +21,30 @@ for m = 1:M_max
     mynet.run(N_trials*interval);
     stims(end).on = false;
 end
-%% Retrieval of memories by just one stimulation per stim 
+% Retrieval of memories by just one stimulation per stim (In series)
 N_retrievals = 3;
 for m = 1:M_max
     stims(m).on = true;
     mynet.run(interval*N_retrievals)
     stims(m).on = false;
 end
-%% Getting data
+
 data = mynet.getData();
+%% Parallel Learning
+% Feeding the stims to the network to learn (In Parallel)
+M_max = 5; % maximum number of memory to encode in the network
+stims = []; 
+interval = M_max*100; %ms
+N_trials = 1000;
+
+for m = 1:M_max
+    stims = [stims, Stimulation(mynet, interval, 2, 30, 50, (m-1)*100)];
+end 
+
+mynet.run(N_trials*interval)
+
+data = mynet.getData();
+
 %% Computing the order vectors :)
 
 firings = transpose(data.firings);
