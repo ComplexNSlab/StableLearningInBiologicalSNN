@@ -26,10 +26,10 @@ mynet.sampling = true;
 %% Run 
 
 for i = 1:1
-    mynet.run(200000)
+    mynet.run(5000)
 end
 
-data = mynet.getData();
+%data = mynet.getData();
 
 %% Calculating correlation between Spike time signals
 signals = zeros(mynet.N, length(mynet.time));

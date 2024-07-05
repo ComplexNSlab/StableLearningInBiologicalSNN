@@ -3,7 +3,8 @@ classdef IzhikevichNetwork < handle
    
    properties (Access = public)
        %% Recording Parameters
-            RecordingFileName 
+            RecordingDirectory 
+            RecordingFile
             PatchNumber = 1
         
         Data = struct('time', [], 'A', [], 'w', [], 'firings', []) % saved data points
@@ -57,14 +58,14 @@ classdef IzhikevichNetwork < handle
    methods (Access = public)
       function obj = IzhikevichNetwork(N)
           %% Constructor of the network
-          obj.RecordingFileName = strrep(strcat(string(datetime('now', 'Format', 'MMM d uuuu HH mm')), '.mat'), ' ', '_');
-          obj.RecordingFileName = strcat(['Data', filesep], obj.RecordingFileName);
+          obj.RecordingDirectory = strrep(string(datetime('now', 'Format', 'MMM d uuuu HH mm')), ' ', '_');
+          obj.RecordingDirectory = "Data" + filesep + obj.RecordingDirectory;
 
           obj.Constructor_IzhikevichNeurons(N)
           obj.Constructor_NetworkTopology
 
           clear N
-          save(obj.RecordingFileName, '-v7.3')
+          mkdir(obj.RecordingDirectory)
       end
       
       function SetInitialConnectivity(obj, g_ee, g_ei, g_ie)
@@ -153,7 +154,11 @@ classdef IzhikevichNetwork < handle
                 
                 % updates the waitbar status
                 if mod(i, 2000) == 0     
+<<<<<<< Updated upstream
                     waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s, Ratio : %0.2f', round(100*i/n_t), obj.t/1000, T/1000, toc, i*obj.dt/1000/toc));
+=======
+                    waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s Ratio : %0.2f', round(100*i/n_t), obj.t/1000, T/1000, toc, i*obj.dt/1000/toc));
+>>>>>>> Stashed changes
                 end
             end
             
@@ -172,7 +177,7 @@ classdef IzhikevichNetwork < handle
         if obj.PatchNumber > 2
             structs = {};
             for i = 1:obj.PatchNumber-1
-                s = load(obj.RecordingFileName, strcat('data', num2str(i)));
+                s = load(obj.RecordingFile, strcat('data', num2str(i)));
                 structs{1, i} = s.(strcat('data', num2str(i)));
             end
             
@@ -199,7 +204,7 @@ classdef IzhikevichNetwork < handle
            
             
         else
-            data = load(obj.RecordingFileName, 'data1');
+            data = load(obj.RecordingFile, 'data1');
             data = data.data1;
         end
       end
@@ -207,17 +212,17 @@ classdef IzhikevichNetwork < handle
     
    methods (Static)
       function dw = STDP_kernel(w, t) 
-              %% STDP Kernel for LTP and LTD 
-              
-              if t >= 0 % LTP
-                % dw = exp(-t) - exp(-t/20);
-                % dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
-                dw =  0.015 * w *  log(3/abs(w)) * exp(-t/20);
-              else % LTD
-                 % dw = exp(t/5) * t * (19/20);
-                 dw =  - 0.03 * w *  exp(-abs(t)/20);
-              end
-              dw = 1 * dw;
+          %% STDP Kernel for LTP and LTD 
+          
+          if t >= 0 % LTP
+            % dw = exp(-t) - exp(-t/20);
+            % dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
+            dw =  0.015 * w *  log(3/abs(w)) * exp(-t/20);
+          else % LTD
+             % dw = exp(t/5) * t * (19/20);
+             dw =  - 0.03 * w *  exp(-abs(t)/20);
+          end
+          dw = 1 * dw;
       end
    end
     
@@ -287,6 +292,11 @@ classdef IzhikevichNetwork < handle
       end
      
       function Constructor_RecordingContainers(obj, n_t)
+<<<<<<< Updated upstream
+=======
+            obj.RecordingFile = obj.RecordingDirectory + filesep + "Patch" + int2str(obj.PatchNumber);
+
+>>>>>>> Stashed changes
             obj.firings = zeros(3000000, 2);
             obj.time = obj.t + (1:n_t)*obj.dt;
             %obj.spike_trains = zeros(obj.Ne+obj.Ni, n_t);
@@ -347,12 +357,9 @@ classdef IzhikevichNetwork < handle
               data.stimulation = obj.stimulation;
               
               eval(['data' num2str(obj.PatchNumber) ' = data;']);
-    
-              save(obj.RecordingFileName, strcat('data', num2str(obj.PatchNumber)), '-append');
-              
               obj.PatchNumber = obj.PatchNumber + 1;
-              
-              save(obj.RecordingFileName, 'obj', '-append');
+
+              save(obj.RecordingFile, strcat('data', num2str(obj.PatchNumber-1)), 'obj');
       end
    
    end  
