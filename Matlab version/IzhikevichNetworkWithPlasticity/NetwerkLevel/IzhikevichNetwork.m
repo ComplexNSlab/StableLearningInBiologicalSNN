@@ -154,11 +154,7 @@ classdef IzhikevichNetwork < handle
                 
                 % updates the waitbar status
                 if mod(i, 2000) == 0     
-<<<<<<< Updated upstream
                     waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s, Ratio : %0.2f', round(100*i/n_t), obj.t/1000, T/1000, toc, i*obj.dt/1000/toc));
-=======
-                    waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s Ratio : %0.2f', round(100*i/n_t), obj.t/1000, T/1000, toc, i*obj.dt/1000/toc));
->>>>>>> Stashed changes
                 end
             end
             
@@ -177,6 +173,7 @@ classdef IzhikevichNetwork < handle
         if obj.PatchNumber > 2
             structs = {};
             for i = 1:obj.PatchNumber-1
+                obj.RecordingFile = obj.RecordingDirectory + filesep + "Patch" + int2str(i);
                 s = load(obj.RecordingFile, strcat('data', num2str(i)));
                 structs{1, i} = s.(strcat('data', num2str(i)));
             end
@@ -292,11 +289,7 @@ classdef IzhikevichNetwork < handle
       end
      
       function Constructor_RecordingContainers(obj, n_t)
-<<<<<<< Updated upstream
-=======
             obj.RecordingFile = obj.RecordingDirectory + filesep + "Patch" + int2str(obj.PatchNumber);
-
->>>>>>> Stashed changes
             obj.firings = zeros(3000000, 2);
             obj.time = obj.t + (1:n_t)*obj.dt;
             %obj.spike_trains = zeros(obj.Ne+obj.Ni, n_t);
