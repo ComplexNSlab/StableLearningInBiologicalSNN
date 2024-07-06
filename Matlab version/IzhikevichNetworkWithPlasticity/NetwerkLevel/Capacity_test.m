@@ -10,7 +10,7 @@ mynet.sampling = false;
 
 %% In Series Learning
 % Feeding the stims to the network to learn (In series)
-M_max = 30; % maximum number of memory to encode in the network
+M_max = 10; % maximum number of memory to encode in the network
 stims = []; 
 interval = 100; %ms
 N_trials = 1000;
@@ -23,13 +23,13 @@ for m = 1:M_max
 end
 %%
 % Retrieval of memories by just one stimulation per stim (In series)
-N_retrievals = 3;
+N_retrievals = 15;
 for m = 1:M_max
     stims(m).on = true;
     mynet.stims = [stims(m)];
     mynet.run(interval*N_retrievals)
 end
-
+%%
 data = mynet.getData();
 %% Parallel Learning
 % Feeding the stims to the network to learn (In Parallel)
@@ -52,13 +52,13 @@ firings = transpose(data.firings);
 interval = 100; % ms 
 off_set_time = 0;
 
-check_flag_save = zeros(round(mynet.t/interval), mynet.N);
-total_spike_count = zeros(1, round(mynet.t/interval));
-ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
-inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+%check_flag_save = zeros(round(mynet.t/interval), mynet.N);
+%total_spike_count = zeros(1, round(mynet.t/interval));
+%ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+%inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
 
 f = waitbar(0, "Computing First to Spike Orders ...");
-for trial_number = 1:round(mynet.t/interval)
+for trial_number = 10000:round(mynet.t/interval)
     % Computing the orders
     check_flag = zeros(1, mynet.N);
     
@@ -111,9 +111,9 @@ close(f)
 %    temp = [temp; check_flag_save(m:M_max:end, :)]; 
 %end
 
-corrmat = corr(check_flag_save(:, 1:320)','type', 'spearman');
-%%
-submat = corrmat(1:1000:end, 1:1000:end);
+corrmat = corr([check_flag_save(1:10000, 1:400); temp(:, 1:400)]','type', 'spearman');
+
+submat = corrmat(1000:1000:end, 10001:5:10050);
 %submat(logical(eye(size(submat, 1)))) = 0;
 
 % Create the heatmap
@@ -127,7 +127,7 @@ ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
 
 %imagesc(submat, 'Parent', ax, 'AlphaData', ~isnan(submat));
 imagesc(submat, 'Parent', ax)
-colormap parula;
+colormap(flipud(hsv));
 c = colorbar;
 
 % Adjust the position of the colorbar to the left
@@ -202,8 +202,8 @@ temp(temp == 0) = nan;
 %active_ex_cells = find(temp(end, :) ~= 0 & temp(end, :) <= mynet.Ne);
 %active_inh_cells = find(temp(end, :) ~= 0 & temp(end, :) > mynet.Ne);
 
-stable_order_ex = check_flag_save(end, 1:320);
-stable_order_inh = check_flag_save(end, 321:end)-320;
+stable_order_ex = check_flag_save(10045, 1:320);
+stable_order_inh = check_flag_save(10045, 321:end)-320;
 stable_order_ex(stable_order_ex == 0) = 320;
 stable_order_inh(stable_order_inh == -320) = 80;
 
@@ -312,7 +312,7 @@ ylabel('Spike Count')
 
 %% PCA on order vectors
 % Perform PCA
-[coeff, score, latent, tsquared, explained, mu] = pca(temp(:, :));
+[coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(1:M_max*N_trials, 1:400));
 
 % coeff    - Principal component coefficients (eigenvectors)
 % score    - Principal component scores (projected data)
@@ -325,52 +325,71 @@ x = score(:, 1);
 y = score(:, 2);
 z = score(:, 3);
 
-mem_colors = lines(M_max);
+mem_colors = hsv(M_max);
 colors = [];
 for m = 1:M_max
-    colors = [colors; [flip(parula(999)); mem_colors(m, :)]];
+    colors = [colors; [flip(gray(999)); mem_colors(m, :)]];
 end
 
 figure;
+ax1 = axes;
+ax2 = axes;
+ax2.Position = ax1.Position; % Align the second axes with the first
+ax2.Color = 'none'; % Make the background of the second axes transparent
+linkprop([ax1, ax2], {'CameraPosition', 'CameraTarget', 'CameraUpVector', 'CameraViewAngle'});
+
 
 for m = 1:M_max
     indices = (m-1)*N_trials+1:m*N_trials;
-    patch([x(indices); nan], [y(indices); nan], [z(indices); nan], [colors(indices), nan], 'FaceColor','none','EdgeColor','interp');
-    view(3)
+    scatter3(x(indices), y(indices), z(indices),10, colors(indices, :), Marker="o", MarkerFaceColor="flat", HandleVisibility='off');
     hold on
 end
 
 hold on
-colormap(flipud(gray))
-colorbar;
-clim([0 1000]);
-ylabel(colorbar, 'Trial Number');
 
 indices = 1000:1000:M_max*1000;
-scatter3(x(indices), y(indices), z(indices), 100, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= 'Learnt', HandleVisibility='off');
-%%%%%%%%%%%%%%%%%
-%test_data_centered = bsxfun(@minus, check_flag_save(M_max*1000+1:end, :), mu);
-%score = test_data_centered * coeff;
-%x = score(:, 1);
-%y = score(:, 2);
-%z = score(:, 3);
 
-%c = [];
-%for m = 1:M_max
-%    c = [c;repmat(mem_colors(m, :), N_retrievals, 1)];
-%end
-%scatter(x, y, 150, c, marker="pentagram", MarkerFaceColor="flat", DisplayName='Retrieved')
+scatter3(ax2, x(indices), y(indices), z(indices), 200, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= "Learnt M", HandleVisibility='on');
+
+%%%%%%%%%%%%%%%%% Plotting retrieved sequences
+test_data_centered = bsxfun(@minus, temp, mu);
+score = test_data_centered * coeff;
+x = score(:, 1);
+y = score(:, 2);
+z = score(:, 3);
+
+c = [];
+for m = 1:M_max
+    c = [c;repmat(mem_colors(m, :), N_retrievals, 1)];
+end
+
+scatter3(ax2, x, y, z, 150, c, marker="pentagram", MarkerFaceColor="flat", DisplayName='Retrieved M')
 
 
-% colormap('parula');
-% clim([1 M_max]);
-% colorbar2 = colorbar('Position', [0.2 0.95 0.6 0.02], 'Orientation', 'horizontal');
-% ylabel(colorbar2, 'Memories');
+colormap(ax1, flipud(gray))
+clim(ax1,[0 1000]);
+cb1 = colorbar(ax1,'Position',[.05 .11 .0675 .810]);
+ylabel(cb1, 'Trial Number');
+
+colormap(ax2, mem_colors)
+clim(ax2, [0 M_max]);
+cb2 = colorbar(ax2,'Position',[.88 .11 .0675 .810]);
+cb2.Ticks = 0.5:1:M_max-0.5;
+cb2.TickLabels = 1:M_max ;
+ylabel(cb2, 'Memories');
+
+%%Then add colorbars and get everything lined up
+set([ax1,ax2],'Position',[.17 .11 .685 .815]);
 
 
 xlabel('PC 1');
 ylabel('PC 2');
 zlabel('PC 3')
 title('Order Vector Evolution in PCA Space');
-%legend(Location='best')
-
+legend(Location='best')
+%%
+temp = [];
+for i = 1:M_max
+    indices = [10000+5*(i-1)+1:10000+5*i, 10050+15*(i-1)+1:10050+15*i];
+    temp = [temp; check_flag_save(indices, :)];
+end
