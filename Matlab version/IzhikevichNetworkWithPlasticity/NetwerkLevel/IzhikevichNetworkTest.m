@@ -6,16 +6,16 @@ rng(2,"twister");
 mynet = IzhikevichNetwork(400);
 
 mynet.noise = true;
-mynet.sigma_ex = 1*5;
-mynet.sigma_inh = 1*2;
+mynet.sigma_ex = 0.3*5;
+mynet.sigma_inh = 0.3*2;
 
 mynet.SetInitialConnectivity(0.5, 2, 2);
 
 mynet.STDP = true;
 
-mynet.stimulation = false;
+mynet.stimulation = true;
 
-% stim1 = Stimulation(mynet, 100, 2, 30, 20, 0);
+stim1 = Stimulation(mynet, 100, 2, 30, 20, 0);
 
 mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
@@ -26,10 +26,10 @@ mynet.sampling = true;
 %% Run 
 
 for i = 1:1
-    mynet.run(5000)
+    mynet.run(50000)
 end
 
-%data = mynet.getData();
+data = mynet.getData();
 
 %% Calculating correlation between Spike time signals
 signals = zeros(mynet.N, length(mynet.time));
@@ -379,8 +379,8 @@ figure('Name', "Raster Plot", 'Renderer', 'painters', 'Position', [100 100 1000 
 ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
 firings = data.firings;
 fsize = 20;
-start_time = 9; % in seconds
-end_time = 10; % in seconds
+start_time = 0; % in seconds
+end_time = 0.1; % in seconds
 
 
 ex_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) <= 320);
