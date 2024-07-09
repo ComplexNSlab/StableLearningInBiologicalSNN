@@ -10,7 +10,7 @@ mynet.sampling = false;
 
 %% In Series Learning
 % Feeding the stims to the network to learn (In series)
-M_max = 10; % maximum number of memory to encode in the network
+M_max = 5; % maximum number of memory to encode in the network
 stims = []; 
 interval = 100; %ms
 N_trials = 1000;
@@ -33,7 +33,7 @@ end
 data = mynet.getData();
 %% Parallel Learning
 % Feeding the stims to the network to learn (In Parallel)
-M_max = 5; % maximum number of memory to encode in the network
+M_max = 10; % maximum number of memory to encode in the network
 stims = []; 
 interval = M_max*100; %ms
 N_trials = 1000;
@@ -42,7 +42,9 @@ for m = 1:M_max
     stims = [stims, Stimulation(mynet, interval, 2, 30, 50, (m-1)*100)];
 end 
 
-mynet.run(N_trials * interval)
+for m = 1:M_max
+    mynet.run(N_trials * 100)
+end
 
 data = mynet.getData();
 
@@ -52,13 +54,13 @@ firings = transpose(data.firings);
 interval = 100; % ms 
 off_set_time = 0;
 
-%check_flag_save = zeros(round(mynet.t/interval), mynet.N);
-%total_spike_count = zeros(1, round(mynet.t/interval));
-%ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
-%inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+check_flag_save = zeros(round(mynet.t/interval), mynet.N);
+total_spike_count = zeros(1, round(mynet.t/interval));
+ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
 
 f = waitbar(0, "Computing First to Spike Orders ...");
-for trial_number = 10000:round(mynet.t/interval)
+for trial_number = 1:round(mynet.t/interval)
     % Computing the orders
     check_flag = zeros(1, mynet.N);
     
@@ -104,16 +106,16 @@ end
 close(f)
 %% Spearman Corr Matrix  Analysis (Poster Component)
 
-%corrmat = 1-squareform(pdist(check_flag_save(1:1:end, 1:320), 'spearman')); % Replace this with your actual data
+% corrmat = 1-squareform(pdist(check_flag_save(1:1:end, 1:320), 'spearman')); % Replace this with your actual data
 
 %temp = [];
 %for m = 1:M_max
 %    temp = [temp; check_flag_save(m:M_max:end, :)]; 
 %end
 
-corrmat = corr([check_flag_save(1:10000, 1:400); temp(:, 1:400)]','type', 'spearman');
+corrmat = corr(check_flag_save(:, 1:400)','type', 'spearman');
 
-submat = corrmat(1000:1000:end, 10001:5:10050);
+submat = corrmat(1 :end, 1:5:end);
 %submat(logical(eye(size(submat, 1)))) = 0;
 
 % Create the heatmap
@@ -127,7 +129,7 @@ ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
 
 %imagesc(submat, 'Parent', ax, 'AlphaData', ~isnan(submat));
 imagesc(submat, 'Parent', ax)
-colormap(flipud(hsv));
+colormap(parula);
 c = colorbar;
 
 % Adjust the position of the colorbar to the left
@@ -202,8 +204,8 @@ temp(temp == 0) = nan;
 %active_ex_cells = find(temp(end, :) ~= 0 & temp(end, :) <= mynet.Ne);
 %active_inh_cells = find(temp(end, :) ~= 0 & temp(end, :) > mynet.Ne);
 
-stable_order_ex = check_flag_save(10045, 1:320);
-stable_order_inh = check_flag_save(10045, 321:end)-320;
+stable_order_ex = check_flag_save(end, 1:320);
+stable_order_inh = check_flag_save(end, 321:end)-320;
 stable_order_ex(stable_order_ex == 0) = 320;
 stable_order_inh(stable_order_inh == -320) = 80;
 
@@ -326,9 +328,9 @@ y = score(:, 2);
 z = score(:, 3);
 
 mem_colors = hsv(M_max);
-colors = [];
+colors = zeros(N_trials*M_max, 3);
 for m = 1:M_max
-    colors = [colors; [flip(gray(999)); mem_colors(m, :)]];
+    colors(m:M_max:end, :) = [flip(gray(999)); mem_colors(m, :)];
 end
 
 figure;
@@ -340,30 +342,31 @@ linkprop([ax1, ax2], {'CameraPosition', 'CameraTarget', 'CameraUpVector', 'Camer
 
 
 for m = 1:M_max
-    indices = (m-1)*N_trials+1:m*N_trials;
-    scatter3(x(indices), y(indices), z(indices),10, colors(indices, :), Marker="o", MarkerFaceColor="flat", HandleVisibility='off');
+    indices = m:M_max:M_max*N_trials;
+    scatter3(x(indices), y(indices), z(indices),40, colors(indices, :), Marker="o", MarkerFaceColor="flat", HandleVisibility='off');
+    %plot3(x(indices), y(indices), z(indices), 'k' )
     hold on
 end
 
 hold on
 
-indices = 1000:1000:M_max*1000;
+indices = N_trials*M_max-M_max+1:N_trials*M_max;
 
 scatter3(ax2, x(indices), y(indices), z(indices), 200, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= "Learnt M", HandleVisibility='on');
 
 %%%%%%%%%%%%%%%%% Plotting retrieved sequences
-test_data_centered = bsxfun(@minus, temp, mu);
-score = test_data_centered * coeff;
-x = score(:, 1);
-y = score(:, 2);
-z = score(:, 3);
+%test_data_centered = bsxfun(@minus, temp, mu);
+%score = test_data_centered * coeff;
+%x = score(:, 1);
+%y = score(:, 2);
+%z = score(:, 3);
 
-c = [];
-for m = 1:M_max
-    c = [c;repmat(mem_colors(m, :), N_retrievals, 1)];
-end
+%c = [];
+%for m = 1:M_max
+%    c = [c;repmat(mem_colors(m, :), N_retrievals, 1)];
+%end
 
-scatter3(ax2, x, y, z, 150, c, marker="pentagram", MarkerFaceColor="flat", DisplayName='Retrieved M')
+%scatter3(ax2, x, y, z, 150, c, marker="pentagram", MarkerFaceColor="flat", DisplayName='Retrieved M')
 
 
 colormap(ax1, flipud(gray))
