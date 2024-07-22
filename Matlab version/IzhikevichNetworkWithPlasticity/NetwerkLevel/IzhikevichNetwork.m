@@ -75,6 +75,15 @@ classdef IzhikevichNetwork < handle
           
           obj.Constructor_NetworkTopology()
       end
+        
+      function AddHeterogeneity(obj)
+          obj.heterogeneity = true;
+          re = rand(obj.Ne,1); ri = rand(obj.Ni,1);
+          obj.a = [0.02*ones(obj.Ne,1); 0.02+0.08*ri];
+          obj.b = [0.2*ones(obj.Ne,1); 0.25-0.05*ri];
+          obj.c = [-65+15*re.^2; -65*ones(obj.Ni,1)];
+          obj.d =[8-6*re.^2; 2*ones(obj.Ni,1)];
+      end
 
       function run(obj,T)
            tic 
