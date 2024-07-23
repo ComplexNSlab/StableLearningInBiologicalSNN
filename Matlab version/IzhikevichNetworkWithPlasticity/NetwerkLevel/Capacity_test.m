@@ -21,9 +21,9 @@ for m = 1:M_max
     mynet.run(N_trials*interval);
     mynet.stims = []; % clear the stims list as it slows down the computaiton speed
 end
-%%
-% Retrieval of memories by just one stimulation per stim (In series)
-N_retrievals = 15;
+%% Retrieval (In Series)
+% Retrieval of memories by N_retreivals stimulations per stim (In series)
+N_retrievals = 15; % number of retrieval per memory
 for m = 1:M_max
     stims(m).on = true;
     mynet.stims = [stims(m)];

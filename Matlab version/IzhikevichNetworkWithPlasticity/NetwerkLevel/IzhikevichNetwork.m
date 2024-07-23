@@ -39,8 +39,8 @@ classdef IzhikevichNetwork < handle
            sampling_rate = 5000 % sampling rate of slow variables (w, A)
        %% Noise Parameters
            noise = false % whether scaling is on or off
-           sigma_ex  % white noise strength 
-           sigma_inh 
+           sigma_ex = 5 % white noise strength 
+           sigma_inh = 2
        %% Scaling Parameters 
            A
            scaling = false % whether scaling is on or off
@@ -152,7 +152,7 @@ classdef IzhikevichNetwork < handle
                 %obj.I_syn_save(:, i) = I;
 
                 obj.A = obj.A - obj.A *obj.dt/obj.tau_A;
-                obj.A(fired) = obj.A(fired) + 1/obj.tau_A; 
+                obj.A(fired) = obj.A(fired) + 1000/obj.tau_A; 
 
                 if obj.scaling && mod(i, 20) == 0
                     obj.w = obj.w + obj.alpha * (((obj.A_goal - obj.A) * obj.A') .* abs(obj.w)) * 20 * obj.dt ;
@@ -300,7 +300,7 @@ classdef IzhikevichNetwork < handle
       function Constructor_RecordingContainers(obj, n_t)
             obj.RecordingFile = obj.RecordingDirectory + filesep + "Patch" + int2str(obj.PatchNumber);
             obj.firings = zeros(3000000, 2);
-            obj.time = obj.t + (1:n_t)*obj.dt;
+            obj.time = obj.t/1000 + (1: obj.sampling_rate : n_t)*obj.dt/1000;
             %obj.spike_trains = zeros(obj.Ne+obj.Ni, n_t);
             obj.w_save = zeros(obj.Ne+obj.Ni, obj.Ne+obj.Ni, round(n_t/obj.sampling_rate));             
             % obj.I_syn_save = zeros(obj.Ne+obj.Ni, n_t);
@@ -327,7 +327,6 @@ classdef IzhikevichNetwork < handle
                     end
     
                     % LTD
-                    
                     for out_idx = output_cells
                         delta_t = 50 - obj.timer_vector(out_idx);
                         if delta_t < 50 && out_idx <= obj.Ne
