@@ -171,7 +171,7 @@ classdef IzhikevichNetwork < handle
            
            waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
            obj.SaveRecordings
-           
+           obj.PushToGithub
 
            delete(f)
       end
@@ -359,7 +359,15 @@ classdef IzhikevichNetwork < handle
 
               save(obj.RecordingFile, strcat('data', num2str(obj.PatchNumber-1)), 'obj');
       end
+        
+      function PushToGithub(obj)
+          system(['git add ', char(obj.RecordingFile), '.mat'])
 
+          commitMessage = ['running to ', num2str(obj.t), ' with ', num2str(length(obj.stims)), ' stims'];
+          system(['git commit ', char(obj.RecordingFile) ,'.mat',' -m "', commitMessage, '"']);
+
+          system('git push');
+      end
    end  
 
 end
