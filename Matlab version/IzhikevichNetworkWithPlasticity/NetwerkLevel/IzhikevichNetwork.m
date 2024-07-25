@@ -207,8 +207,6 @@ classdef IzhikevichNetwork < handle
             % obj.PatchNumber  = 2;
              
             % save(obj.RecordingFileName, "data1", 'obj', '-v7.3')
-           
-            
         else
             data = load(obj.RecordingFile, 'data1');
             data = data.data1;
@@ -338,7 +336,6 @@ classdef IzhikevichNetwork < handle
             end
       end
 
-
       function SaveRecordings(obj)
      
               if ~obj.STDP && ~obj.scaling
@@ -362,7 +359,7 @@ classdef IzhikevichNetwork < handle
 
               save(obj.RecordingFile, strcat('data', num2str(obj.PatchNumber-1)), 'obj');
       end
-   
+
    end  
 
 end
