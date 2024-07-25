@@ -183,7 +183,10 @@ classdef IzhikevichNetwork < handle
             structs = {};
             for i = 1:obj.PatchNumber-1
                 obj.RecordingFile = obj.RecordingDirectory + filesep + "Patch" + int2str(i);
-                s = load(obj.RecordingFile, strcat('data', num2str(i)));
+                pathParts = strsplit(obj.RecordingFile, {'\', '/'});
+                patch_address = fullfile(pathParts{:});
+
+                s = load(patch_address, strcat('data', num2str(i)));
                 structs{1, i} = s.(strcat('data', num2str(i)));
             end
             

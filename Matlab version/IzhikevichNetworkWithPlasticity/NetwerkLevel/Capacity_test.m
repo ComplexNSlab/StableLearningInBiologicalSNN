@@ -27,7 +27,7 @@ N_retrievals = 10; % number of retrieval per memory
 for m = 1:M_max
     stims(m).on = true;
     mynet.stims = [stims(m)];
-    mynet.run(interval*N_retrievals)
+    mynet.run(interval*N_retrievals, false)
 end
 
 data = mynet.getData();
@@ -115,10 +115,10 @@ close(f)
 %    temp = [temp; check_flag_save(m:M_max:end, :)]; 
 %end
 
-corrmat = corr(check_flag_save(:, 1:400)','type', 'spearman');
+corrmat = corr(check_flag_save(121001:121200, 1:400)','type', 'spearman');
 
-submat = corrmat(1 :end, 1:5:end);
-%submat(logical(eye(size(submat, 1)))) = 0;
+submat = corrmat(1 :end, :);
+submat(logical(eye(size(submat, 1)))) = 0;
 
 % Create the heatmap
 
