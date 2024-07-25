@@ -1,4 +1,4 @@
-%% Configuring the network 
+%% *Configuring the network* 
 clear 
 clc
 
@@ -8,9 +8,9 @@ mynet.STDP = true;
 mynet.stimulation = true;
 mynet.sampling = false;
 
-%% In Series Learning
+%% *Learning Sequentially* 
 % Feeding the stims to the network to learn (In series)
-M_max = 5; % maximum number of memory to encode in the network
+M_max = 10; % maximum number of memory to encode in the network
 stims = []; 
 interval = 100; %ms
 N_trials = 1000;
@@ -21,19 +21,19 @@ for m = 1:M_max
     mynet.run(N_trials*interval);
     mynet.stims = []; % clear the stims list as it slows down the computaiton speed
 end
-%% Retrieval (In Series)
+%% Retrieval (In Sequential Learning)
 % Retrieval of memories by N_retreivals stimulations per stim (In series)
-N_retrievals = 15; % number of retrieval per memory
+N_retrievals = 10; % number of retrieval per memory
 for m = 1:M_max
     stims(m).on = true;
     mynet.stims = [stims(m)];
     mynet.run(interval*N_retrievals)
 end
-%%
+
 data = mynet.getData();
-%% Parallel Learning
+%% Alternating Learning
 % Feeding the stims to the network to learn (In Parallel)
-M_max = 10; % maximum number of memory to encode in the network
+M_max = 5; % maximum number of memory to encode in the network
 stims = []; 
 interval = M_max*100; %ms
 N_trials = 1000;
@@ -55,16 +55,18 @@ interval = 100; % ms
 off_set_time = 0;
 
 check_flag_save = zeros(round(mynet.t/interval), mynet.N);
-total_spike_count = zeros(1, round(mynet.t/interval));
-ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
-inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+%total_spike_count = zeros(1, round(mynet.t/interval));
+%ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+%inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
 
 f = waitbar(0, "Computing First to Spike Orders ...");
 for trial_number = 1:round(mynet.t/interval)
     % Computing the orders
     check_flag = zeros(1, mynet.N);
     
-    indices = (firings(:, 1) > (trial_number-1) * interval + off_set_time) & (firings(:, 1) <= trial_number * interval + off_set_time);
+    start_time = (firings(:, 1) > (trial_number-1) * interval + off_set_time);
+    end_time = (firings(:, 1) <= trial_number * interval + off_set_time);
+    indices = start_time & end_time;
     spike_times = firings(indices, 1) - (trial_number-1)*interval - off_set_time;
     neuron_indices = firings(indices, 2);    
     
@@ -96,9 +98,9 @@ for trial_number = 1:round(mynet.t/interval)
     end
     
     check_flag_save(trial_number, :) = check_flag;
-    total_spike_count(trial_number) =  length(spike_times);
-    ex_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)<=mynet.Ne);
-    inh_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)>mynet.Ne);
+%    total_spike_count(trial_number) =  length(spike_times);
+%    ex_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)<=mynet.Ne);
+%    inh_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)>mynet.Ne);
     
     waitbar(trial_number/round(mynet.t/interval), f, sprintf("Computing First to Spike Orders ..., trial %d", trial_number))
 end
@@ -312,10 +314,12 @@ xlabel('Trial')
 ylabel('Spike Count')
 %%%%%%%%%%%%%%%%%%%%%
 
-%% PCA on order vectors
+
+
+%% PCA on order vectors (For Sequential Learning)
+
 % Perform PCA
 [coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(1:M_max*N_trials, 1:400));
-
 % coeff    - Principal component coefficients (eigenvectors)
 % score    - Principal component scores (projected data)
 % latent   - Principal component variances (eigenvalues)
@@ -330,7 +334,7 @@ z = score(:, 3);
 mem_colors = hsv(M_max);
 colors = zeros(N_trials*M_max, 3);
 for m = 1:M_max
-    colors(m:M_max:end, :) = [flip(gray(999)); mem_colors(m, :)];
+    colors((m-1)*N_trials+1:m*N_trials, :) = [flip(gray(N_trials-1)); mem_colors(m, :)];
 end
 
 figure;
@@ -343,30 +347,31 @@ linkprop([ax1, ax2], {'CameraPosition', 'CameraTarget', 'CameraUpVector', 'Camer
 
 for m = 1:M_max
     indices = m:M_max:M_max*N_trials;
-    scatter3(x(indices), y(indices), z(indices),40, colors(indices, :), Marker="o", MarkerFaceColor="flat", HandleVisibility='off');
-    %plot3(x(indices), y(indices), z(indices), 'k' )
+    scatter3(x(indices), y(indices), z(indices),10, colors(indices, :), Marker="o", MarkerFaceColor="flat", HandleVisibility='off');
     hold on
 end
 
 hold on
 
-indices = N_trials*M_max-M_max+1:N_trials*M_max;
 
-scatter3(ax2, x(indices), y(indices), z(indices), 200, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= "Learnt M", HandleVisibility='on');
+indices = N_trials:N_trials:M_max*N_trials; % for in series mode
+
+scatter3(ax2, x(indices), y(indices), z(indices), 200, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= "Learnt M", HandleVisibility='on'); 
 
 %%%%%%%%%%%%%%%%% Plotting retrieved sequences
-%test_data_centered = bsxfun(@minus, temp, mu);
-%score = test_data_centered * coeff;
-%x = score(:, 1);
-%y = score(:, 2);
-%z = score(:, 3);
+temp = check_flag_save(M_max*N_trials+1:end, :);
+test_data_centered = bsxfun(@minus, temp, mu);
+score = test_data_centered * coeff;
+x = score(:, 1);
+y = score(:, 2);
+z = score(:, 3);
 
-%c = [];
-%for m = 1:M_max
-%    c = [c;repmat(mem_colors(m, :), N_retrievals, 1)];
-%end
+c = [];
+for m = 1:M_max
+    c = [c;repmat(mem_colors(m, :), N_retrievals, 1)];
+end
 
-%scatter3(ax2, x, y, z, 150, c, marker="pentagram", MarkerFaceColor="flat", DisplayName='Retrieved M')
+scatter3(ax2, x, y, z, 150, c, marker="pentagram", MarkerFaceColor="flat", DisplayName='Retrieved M')
 
 
 colormap(ax1, flipud(gray))
@@ -390,9 +395,233 @@ ylabel('PC 2');
 zlabel('PC 3')
 title('Order Vector Evolution in PCA Space');
 legend(Location='best')
-%%
-temp = [];
-for i = 1:M_max
-    indices = [10000+5*(i-1)+1:10000+5*i, 10050+15*(i-1)+1:10050+15*i];
-    temp = [temp; check_flag_save(indices, :)];
+%% PCA on order vectors (For Alternating Learning)
+% Perform PCA
+[coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(1:M_max*N_trials, :));
+
+% coeff    - Principal component coefficients (eigenvectors)
+% score    - Principal component scores (projected data)
+% latent   - Principal component variances (eigenvalues)
+% tsquared - Hotelling's T-squared statistic for each observation
+% explained- Percentage of total variance explained by each principal component
+% mu       - Estimated mean of each variable
+
+x = score(:, 1);
+y = score(:, 2);
+z = score(:, 3);
+
+mem_colors = hsv(M_max);
+colors = zeros(N_trials*M_max, 3);
+for m = 1:M_max
+    colors(m:M_max:end, :) = [flip(gray(N_trials-1)); mem_colors(m, :)];
 end
+
+figure;
+ax1 = axes;
+ax2 = axes;
+ax2.Position = ax1.Position; % Align the second axes with the first
+ax2.Color = 'none'; % Make the background of the second axes transparent
+linkprop([ax1, ax2], {'CameraPosition', 'CameraTarget', 'CameraUpVector', 'CameraViewAngle'});
+
+
+for m = 1:M_max
+    indices = m:M_max:M_max*N_trials;
+    scatter3(x(indices), y(indices), z(indices),10, colors(indices, :), Marker="o", MarkerFaceColor="flat", HandleVisibility='off');
+    %plot3(x(indices), y(indices), z(indices), 'k' )
+    hold on
+end
+
+hold on
+
+indices = N_trials*M_max-M_max+1:N_trials*M_max;
+
+scatter3(ax2, x(indices), y(indices), z(indices), 200, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= "Learnt M", HandleVisibility='on'); % in series
+
+colormap(ax1, flipud(gray))
+clim(ax1,[0 1000]);
+cb1 = colorbar(ax1,'Position',[.05 .11 .0675 .810]);
+ylabel(cb1, 'Trial Number');
+
+colormap(ax2, mem_colors)
+clim(ax2, [0 M_max]);
+cb2 = colorbar(ax2,'Position',[.88 .11 .0675 .810]);
+cb2.Ticks = 0.5:1:M_max-0.5;
+cb2.TickLabels = 1:M_max ;
+ylabel(cb2, 'Memories');
+
+%%Then add colorbars and get everything lined up
+set([ax1,ax2],'Position',[.17 .11 .685 .815]);
+
+xlabel('PC 1');
+ylabel('PC 2');
+zlabel('PC 3')
+title('Order Vector Evolution in PCA Space');
+legend(Location='best')
+
+%% Kmean Clustering (Sequential Learning)
+
+% Perform PCA
+
+[coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(end-2000:end, :));
+X = score;
+colors = hsv(M_max);
+%colors = colors(randperm(M_max),:);
+
+groupID = repelem(1:M_max,1,N_retrievals)';   % known group ID for each point
+
+% plot raw retrieved memories
+figure()
+gscatter(X(:,1), X(:,2), groupID, colors, '.', 20, "filled")
+xlabel('PC 1')
+ylabel('PC 2')
+title('Raw data')
+
+% Clustering!
+k = M_max;
+opts = statset('Display','final');
+[idx,C] = kmeans(X,k, "Replicates",100, 'Options',opts, Distance='sqeuclidean');
+
+T = array2table(zeros(k,5),'VariableName',{'cluster','numGroups', 'dominantGroup','secondGroup', 'clusteredpoints'}); 
+for i = 1:k
+    counts = histcounts(groupID(idx==i),'BinMethod','integers','BinLimits',[1,k]);
+    [counts_new,groupIds] = sort(counts, 'descend');
+    T.cluster(i) = i; 
+    T.clusteredpoints(i) = sum(counts_new);
+    if counts_new(1) ~= 0
+        T.dominantGroup(i) = groupIds(1);
+    else
+        T.dominantGroup(i) = none;
+    end
+    T.numGroups(i) = length(nonzeros(counts_new));
+    if counts_new(2) ~= 0 
+        T.secondGroup(i) = groupIds(2);
+    else
+        T.secondGroup(i) = -1;
+    end
+end
+disp(T)
+
+temp = zeros(1, M_max*N_retrievals);
+for i = 1:M_max
+    temp(idx == i) = T.dominantGroup(i);
+end
+
+% Plot clusters
+figure(); hold on;
+gscatter(X(:,1), X(:,2), idx, colors, '.', 20, "filled")
+xlabel('PC 1')
+ylabel('PC 2')
+title('Clustered data')
+
+
+% Plot cluster Id vs. group Id
+figure(); hold on;
+plot(idx-0.5, Marker='o', MarkerFaceColor='k', MarkerSize=5, LineStyle='none', Color='k', LineWidth=0.05)
+
+for i = 1:M_max
+    area([0.5, N_retrievals+0.5]+N_retrievals*(i-1), [M_max, M_max], FaceColor = colors(i, :),FaceAlpha=0.2)
+    yline(i-0.5, LineStyle='--', Alpha=0.1)
+end
+xlabel('Known Group ID')
+ylabel('Cluster ID')
+xticks((1:M_max)*N_retrievals - N_retrievals/2)
+xticklabels(1:M_max)
+xlim([0 N_retrievals*M_max])
+yticks((1:M_max)-0.5)
+yticklabels(1:M_max)
+title('Kmean Clustering of Retrieved Memories(Sequential Learning)')
+
+figure();
+plot(groupID, temp, 'ko-')
+xlabel('known group ID')
+ylabel('Sorted Cluster ID')
+title('Kmean Clustering of Retrieved Memories(Sequential Learning)')
+%% Kmean Clustering (Alternating Learning)
+
+% Perform PCA
+num_trials = 800;
+
+dat = check_flag_save(end-num_trials*M_max+1:end, :);
+test_data_centered = bsxfun(@minus, dat, mu);
+score = test_data_centered * coeff;
+
+X = score;
+colors = hsv(M_max);
+%colors = colors(randperm(M_max),:);
+
+groupID = repmat(1:M_max,1,num_trials)';   % known group ID for each point
+
+% plot raw retrieved memories
+figure()
+gscatter(X(:,1), X(:,2), groupID, colors, '.', 20, "filled")
+xlabel('PC 1')
+ylabel('PC 2')
+title('Raw data')
+
+% Clustering!
+k = M_max;
+opts = statset('Display','final');
+[idx,C] = kmeans(X,k, "Replicates",100, 'Options',opts, Distance='sqeuclidean');
+
+T = array2table(zeros(k,5),'VariableName',{'cluster','numGroups', 'dominantGroup','secondGroup', 'clusteredpoints'}); 
+for i = 1:k
+    counts = histcounts(groupID(idx==i),'BinMethod','integers','BinLimits',[1,k]);
+    [counts_new,groupIds] = sort(counts, 'descend');
+    T.cluster(i) = i; 
+    T.clusteredpoints(i) = sum(counts_new);
+    if counts_new(1) ~= 0
+        T.dominantGroup(i) = groupIds(1);
+    else
+        T.dominantGroup(i) = none;
+    end
+    T.numGroups(i) = length(nonzeros(counts_new));
+    if counts_new(2) ~= 0 
+        T.secondGroup(i) = groupIds(2);
+    else
+        T.secondGroup(i) = -1;
+    end
+end
+disp(T)
+
+temp = zeros(1, M_max*num_trials);
+for i = 1:M_max
+    temp(idx == i) = T.dominantGroup(i);
+end
+
+% Plot clusters
+figure(); hold on;
+gscatter(X(:,1), X(:,2), temp, colors, '.', 20, "filled")
+xlabel('PC 1')
+ylabel('PC 2')
+title('Clustered data')
+
+%%
+% Plot cluster Id vs. group Id
+figure(); hold on;
+
+temp2 = zeros(1, length(groupID));
+for i = 1:M_max
+    temp2(i:M_max:end) = (i-1)*num_trials+1:i*num_trials;
+end
+plot(temp2, idx-0.5, Marker='o', MarkerFaceColor='k', MarkerSize=5, LineStyle='none', Color='k', LineWidth=0.05)
+
+
+for i = 1:M_max
+    area([0.5, num_trials+0.5]+num_trials*(i-1), [M_max, M_max], FaceColor = colors(i, :),FaceAlpha=0.2)
+    yline(i-0.5, LineStyle='--', Alpha=0.1)
+end
+xlabel('Known Group ID')
+ylabel('Cluster ID')
+xticks((1:M_max)*num_trials  - num_trials/2)
+xticklabels(1:M_max)
+xlim([0 num_trials*M_max])
+yticks((1:M_max)-0.5)
+yticklabels(1:M_max)
+title('Kmean Clustering of Retrieved Memories(Alternating Learning)')
+
+figure();
+plot(groupID, temp, 'ko-')
+xlabel('known group ID')
+ylabel('Sorted Cluster ID')
+title('Kmean Clustering of Retrieved Memories(Alternating Learning)')
+
