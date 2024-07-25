@@ -6,7 +6,7 @@ system(['git add ', char('gitTest.m')]);
 %%
 % Optionally, commit the changes chwith a message
 commitMessage = 'Add git test file for automated git requests';
-system(['git commit -m "', commitMessage, '"']);
+system(['git commit ', 'gitTest.m',' -m "', commitMessage, '"']);
 %%
 branch = 'main';  % Replace with your branch name
 system(['git push ']);
