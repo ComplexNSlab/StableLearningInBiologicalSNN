@@ -174,7 +174,7 @@ lgd = legend();
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold'); 
 %% save mp4 file for weights histograms
 % Define the video file name
-videoFileName = 'weights_histogram3';
+videoFileName = 'weights_histogram';
 
 % Create a VideoWriter object
 writerObj = VideoWriter(videoFileName, 'MPEG-4');
@@ -425,8 +425,8 @@ fsize = 25;
 msize = 12.5;
 
 firings = transpose(data.firings);
-interval = mynet.stims(1).interval;
-off_set_time = mynet.stims(1).start_time;
+interval = 100;
+off_set_time = 0;
 
 % orange color [0.8500 0.3250 0.0980]
 stim_color = [0 0.4470 0.7410];
@@ -493,56 +493,56 @@ for trial_number = 1:round(mynet.t/interval)
     
     waitbar(trial_number/round(mynet.t/interval), f, "please wait")
     
-    % clf;
-    % ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
-    % hold on 
-    % colors = [first_color; repeated_color; stim_color];
-    % markers = ['.', '.', "x"];
-    % msizes = [125 ,125, 125];
-    % h = [];
-    % for i = 1:size(colors, 1)
-    %     indices =  ismember(c_code, colors(i, :), 'rows');
-    %     if ~isempty(spike_times(indices))
-    %         H = scatter(spike_times(indices), neuron_sorted_indices(indices), msizes(i), colors(i, :),'Marker', markers(i));
-    %     else
-    %         H = scatter(nan, neuron_sorted_indices(indices), msizes(i), colors(i, :),'Marker', markers(i));
-    %     end
-    %     h = [h, H];
-    % end 
-    % 
-    % 
-    % [~, objh] = legend(h, {'First Spike', 'Repeated Spike', 'Stimulatated Cell'},'Location', 'northwest', 'FontSize', 12); % Instead of "h_legend" use "[~, objh]"
-    % 
-    % for i = size(objh, 1)/2 + 1:size(objh, 1)
-    %     objh(i).Children(1).MarkerSize = 20;
-    % end
-    % 
-    % xlabel('time (ms)');
-    % ylabel('sorted neuron index');
-    % title(sprintf('Trial Number %d Raster Plot', trial_number));
-    % 
-    % plot(ax, [0, interval], (mynet.Ne + 0.5)*[1, 1], 'k-', HandleVisibility='off')
-    % %plot(ax, [0, 2*interval], (mynet.stims(1).Ncells + 0.5)*[1, 1], 'k--', HandleVisibility='off')
-    % 
-    % xlim([0, 30])
-    % ylim([0, mynet.N + 0.5])
-    % 
-    % yticks([1, 50:50:300, 321, 360,400])
-    % yticklabels([1, 50:50:300, 1, 40,80])
-    % set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
-    % 
-    % % Add text annotations for different phases using annotation
-    % % Add arrows or lines to span the phases at the bottom of the plot
-    % y_starts = [0.2, 0.685];
-    % y_ends = [0.675, 0.8];
-    % phases = ["Excitatory", "Inhibitory"];
-    % 
-    % for i = 1:length(phases)
-    %    annotation('line',[0.81 0.81], [y_starts(i), y_ends(i)], 'Color', 'Black', 'LineWidth', 3, LineStyle='-'); % Stimulation
-    %    annotation('textbox', [0.83,  y_starts(i)/2 + y_ends(i)/2 - 0.05, 0.1, 0.01], 'String', phases(i), 'FontName', 'Arial', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'EdgeColor', 'none', Rotation=90)
-    % end
-    % 
-    % pause(0.1)
+    clf;
+    ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
+    hold on 
+    colors = [first_color; repeated_color; stim_color];
+    markers = ['.', '.', "x"];
+    msizes = [125 ,125, 125];
+    h = [];
+    for i = 1:size(colors, 1)
+        indices =  ismember(c_code, colors(i, :), 'rows');
+        if ~isempty(spike_times(indices))
+            H = scatter(spike_times(indices), neuron_sorted_indices(indices), msizes(i), colors(i, :),'Marker', markers(i));
+        else
+            H = scatter(nan, neuron_sorted_indices(indices), msizes(i), colors(i, :),'Marker', markers(i));
+        end
+        h = [h, H];
+     end 
+    
+    
+    [~, objh] = legend(h, {'First Spike', 'Repeated Spike', 'Stimulatated Cell'},'Location', 'northwest', 'FontSize', 12); % Instead of "h_legend" use "[~, objh]"
+     
+    for i = size(objh, 1)/2 + 1:size(objh, 1)
+        objh(i).Children(1).MarkerSize = 20;
+    end
+     
+     xlabel('time (ms)');
+     ylabel('sorted neuron index');
+     title(sprintf('Trial Number %d Raster Plot', trial_number));
+     
+     plot(ax, [0, interval], (mynet.Ne + 0.5)*[1, 1], 'k-', HandleVisibility='off')
+     %plot(ax, [0, 2*interval], (mynet.stims(1).Ncells + 0.5)*[1, 1], 'k--', HandleVisibility='off')
+     
+     xlim([0, 30])
+     ylim([0, mynet.N + 0.5])
+     
+     yticks([1, 50:50:300, 321, 360,400])
+     yticklabels([1, 50:50:300, 1, 40,80])
+     set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
+     
+     % Add text annotations for different phases using annotation
+     % Add arrows or lines to span the phases at the bottom of the plot
+     y_starts = [0.2, 0.685];
+     y_ends = [0.675, 0.8];
+     phases = ["Excitatory", "Inhibitory"];
+     
+     for i = 1:length(phases)
+        annotation('line',[0.81 0.81], [y_starts(i), y_ends(i)], 'Color', 'Black', 'LineWidth', 3, LineStyle='-'); % Stimulation
+        annotation('textbox', [0.83,  y_starts(i)/2 + y_ends(i)/2 - 0.05, 0.1, 0.01], 'String', phases(i), 'FontName', 'Arial', 'FontSize', 20, 'HorizontalAlignment', 'center', 'FontWeight', 'bold', 'EdgeColor', 'none', Rotation=90)
+     end
+     
+     pause(0.1)
     
 end
 close(f)

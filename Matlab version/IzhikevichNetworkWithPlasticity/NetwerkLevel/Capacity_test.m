@@ -10,7 +10,7 @@ mynet.sampling = false;
 
 %% *Learning Sequentially* 
 % Feeding the stims to the network to learn (In series)
-M_max = 10; % maximum number of memory to encode in the network
+M_max = 80; % maximum number of memory to encode in the network
 stims = []; 
 interval = 100; %ms
 N_trials = 1000;
@@ -18,16 +18,25 @@ N_trials = 1000;
 for m = 1:M_max
     stims = [stims, Stimulation(mynet, interval, 2, 30, 50, 0)];
   
-    mynet.run(N_trials*interval);
+    mynet.run(N_trials*interval, true);
     mynet.stims = []; % clear the stims list as it slows down the computaiton speed
 end
-%% Retrieval (In Sequential Learning)
+%% Retrieval (After Sequential Learning)
+% reading stimulations protocols from files
+stims = [];
+for patch_num = 1:mynet.PatchNumber-1
+    patch_address = mynet.RecordingDirectory + filesep + 'Patch' + num2str(patch_num);
+    s = load(patch_address); 
+    net = getfield(s, 'obj');
+    stims = [stims, net.stims(1)];
+end
+%% Retrieval (After Sequential Learning)
 % Retrieval of memories by N_retreivals stimulations per stim (In series)
 N_retrievals = 10; % number of retrieval per memory
 for m = 1:M_max
     stims(m).on = true;
     mynet.stims = [stims(m)];
-    mynet.run(interval*N_retrievals)
+    mynet.run(interval*N_retrievals, false)
 end
 
 data = mynet.getData();
@@ -233,13 +242,23 @@ ylabel("Single Neuron Spike Order")
 title("First to Fire Order Vector")
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
 %% Raster plot in any time window (Poster Content)
+patch_num = 400;
+patch_address = mynet.RecordingDirectory + filesep + 'Patch' + num2str(patch_num);
+variable_name = "data" + num2str(patch_num);
+s = load(patch_address);
+data = getfield(s, variable_name);
+
+firings = data.firings;
+clear s 
 
 figure('Name', "Raster Plot", 'Renderer', 'painters', 'Position', [100 100 1000 1000]); 
 ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
-firings = data.firings;
 fsize = 20;
-start_time = 1000.5; % in seconds
-end_time = 1002; % in seconds
+start_time = 200*100 + patch_num-200 -1; % in seconds
+end_time = 200*100 + patch_num-200; % in seconds
+
+%start_time = (patch_num-1)*100 + 99; % in seconds
+%end_time = patch_num*100; % in seconds
 
 ex_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) <= 320);
 inh_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) > 320);
@@ -260,7 +279,7 @@ plot(ax, firings(1, inh_indices)/1000, firings(2, inh_indices), 'r.', 'MarkerSiz
 
 xlabel("time (s)")
 ylabel("neuron index")
-title("After Learning (Just Noise Phase)")
+% title("After Learning (Just Noise Phase)")
 
 y_starts = [0.2, 0.685];
 y_ends = [0.675, 0.8];
@@ -284,7 +303,7 @@ figure('Name', 'Population Analysis')
 
 subplot(3, 1, 1)
 hold on
-plot(100* ex_neurons_engagement_count(1:1:end)/mynet.Ne)
+plot(100* ex_neurons_engagement_count(200000:1:end)/mynet.Ne)
 %plot(100* ex_neurons_engagement_count(2:2:end)/mynet.Ne, DisplayName= 'memory 2')
 %legend()
 
@@ -294,7 +313,7 @@ ylabel('Engagement %')
 %%%%%%%%%%%%%%%%%%%%%
 subplot(3, 1, 2)
 hold on
-plot(100* inh_neurons_engagement_count(1:1:end)/mynet.Ni)
+plot(100* inh_neurons_engagement_count(200000:1:end)/mynet.Ni)
 %plot(100* inh_neurons_engagement_count(2:2:end)/mynet.Ni, DisplayName= 'memory 2')
 %legend()
 
@@ -306,7 +325,7 @@ ylabel('Engagement %')
 
 subplot(3, 1, 3)
 hold on
-plot(total_spike_count(1:1:end))
+plot(total_spike_count(200000:1:end))
 %plot(total_spike_count(2:2:end), DisplayName= 'memory 2')
 %legend()
 title("Total Spike Count per Trial")
@@ -462,7 +481,7 @@ legend(Location='best')
 
 % Perform PCA
 
-[coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(end-2000:end, :));
+[coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(end-2000+1:end, :));
 X = score;
 colors = hsv(M_max);
 %colors = colors(randperm(M_max),:);

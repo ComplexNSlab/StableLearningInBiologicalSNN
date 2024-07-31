@@ -85,7 +85,7 @@ classdef IzhikevichNetwork < handle
           obj.d =[8-6*re.^2; 2*ones(obj.Ni,1)];
       end
 
-      function run(obj,T)
+      function run(obj,T, github)
            tic 
            f = waitbar(0,'Please wait...');
             
@@ -171,7 +171,10 @@ classdef IzhikevichNetwork < handle
            
            waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
            obj.SaveRecordings
-           obj.PushToGithub
+           
+           if github
+                obj.PushToGithub
+           end
 
            delete(f)
       end

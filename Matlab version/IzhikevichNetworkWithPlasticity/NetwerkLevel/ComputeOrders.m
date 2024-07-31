@@ -1,9 +1,12 @@
-%% Computing the order vectors :)
+%% Computing the order vectors from patch.mat files for computation speed reasons:)
 
 interval = 100; % ms 
 off_set_time = 0;
 
 check_flag_save = zeros(round(mynet.t/interval), mynet.N);
+total_spike_count = zeros(1, round(mynet.t/interval));
+ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
+inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
 
 f = waitbar(0, "Computing First to Spike Orders ...");
 trial_counter = 0;
@@ -29,7 +32,10 @@ for patch_num = 1:mynet.PatchNumber-1
         order = TimeToFirstSpikeSort(spike_times, neuron_indices);
         trial_counter = trial_counter + 1;
         check_flag_save(trial_counter, :) = order;
-  
+        total_spike_count(trial_counter) =  length(spike_times);
+        ex_neurons_engagement_count(trial_counter) = sum(unique(neuron_indices)<=mynet.Ne);
+        inh_neurons_engagement_count(trial_counter) = sum(unique(neuron_indices)>mynet.Ne);
+
         waitbar(patch_num/(mynet.PatchNumber-1), f, sprintf("Computing First to Spike Orders ... \n trial %d, patch %d/%d", trial_counter, patch_num, mynet.PatchNumber-1))
     end
 
