@@ -12,7 +12,10 @@ f = waitbar(0, "Computing First to Spike Orders ...");
 trial_counter = 0;
 time_keeper = 0;
 for patch_num = 1:mynet.PatchNumber-1
-    patch_address = mynet.RecordingDirectory + filesep + 'Patch' + num2str(patch_num);
+    patch_address = mynet.RecordingDirectory + filesep + "Patch" + num2str(patch_num) + ".mat";
+    pathParts = strsplit(patch_address, {'\', '/'});
+    patch_address = fullfile(pathParts{:});
+
     variable_name = "data" + num2str(patch_num);
     s = load(patch_address);
     data = getfield(s, variable_name);
