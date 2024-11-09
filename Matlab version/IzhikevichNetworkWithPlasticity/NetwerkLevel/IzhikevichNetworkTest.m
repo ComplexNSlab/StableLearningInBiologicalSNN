@@ -5,9 +5,9 @@ rng(2,"twister");
 
 mynet = IzhikevichNetwork(400);
 
-mynet.noise = true;
-mynet.sigma_ex = 0.3*5;
-mynet.sigma_inh = 0.3*2;
+% mynet.noise = true;
+% mynet.sigma_ex = 5;
+% mynet.sigma_inh = 2;
 
 mynet.SetInitialConnectivity(0.5, 2, 2);
 
@@ -15,7 +15,7 @@ mynet.STDP = true;
 
 mynet.stimulation = true;
 
-stim1 = Stimulation(mynet, 100, 2, 30, 20, 0);
+stim1 = Stimulation(mynet, 100, 2, 30, 50, 0);
 
 mynet.scaling = false;
 mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
@@ -26,7 +26,7 @@ mynet.sampling = true;
 %% Run 
 
 for i = 1:1
-    mynet.run(50000)
+    mynet.run(100000, false)
 end
 
 data = mynet.getData();
@@ -379,8 +379,8 @@ figure('Name', "Raster Plot", 'Renderer', 'painters', 'Position', [100 100 1000 
 ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
 firings = data.firings;
 fsize = 20;
-start_time = 0; % in seconds
-end_time = 0.1; % in seconds
+start_time = 199; % in seconds
+end_time = 205; % in seconds
 
 
 ex_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) <= 320);
@@ -579,8 +579,8 @@ temp(temp == 0) = nan;
 %active_ex_cells = find(temp(end, :) ~= 0 & temp(end, :) <= mynet.Ne);
 %active_inh_cells = find(temp(end, :) ~= 0 & temp(end, :) > mynet.Ne);
 
-stable_order_ex = check_flag_save(end, 1:320);
-stable_order_inh = check_flag_save(end, 321:end)-320;
+stable_order_ex = check_flag_save(16000, 1:320);
+stable_order_inh = check_flag_save(16000, 321:end)-320;
 stable_order_ex(stable_order_ex == 0) = mynet.Ne-sum(stable_order_ex == 0)+1:mynet.Ne;
 stable_order_inh(stable_order_inh == -320) = mynet.Ni-sum(stable_order_inh == -320)+1:mynet.Ni;
 
@@ -611,7 +611,7 @@ stable_order = check_flag_save(end-1, :);
 
 % filter time window
 firings = transpose(data.firings);
-indices = firings(:,1) > 199900 & firings(:,1) < 200100; 
+indices = firings(:,1) > 9900 & firings(:,1) < 10100; 
 firings = firings(indices, :);
 for i = 1:size(firings, 1)
     firings(i, 2) = stable_order(firings(i, 2));
@@ -745,7 +745,7 @@ ylabel('SpearMan Correltion')
 %% Spearman Corr,, Matrix  Analysis (Poster Component)
 
 %corrmat = 1-squareform(pdist(check_flag_save(1:1:end, 1:320), 'spearman')); % Replace this with your actual data
-corrmat = corr(check_flag_save(1:end, 1:320)','type', 'spearman');
+corrmat = corr(check_flag_save(:, 1:320)','type', 'spearman');
 indices = [301:400, 901:1000, 1501:1600];
 submat = corrmat(1:end, 1:end);
 %submat(logical(eye(size(submat, 1)))) = 0;

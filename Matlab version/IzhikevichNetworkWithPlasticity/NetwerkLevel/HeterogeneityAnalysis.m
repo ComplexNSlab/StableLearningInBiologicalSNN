@@ -12,7 +12,7 @@ mynet.sampling = true;
 mynet.noise = true;
 %% Run network
 
-mynet.run(500000)
+mynet.run(500000, false)
 data = mynet.getData;
 %% 
 figure;
@@ -22,7 +22,7 @@ p2 = plot(data.time, data.A(mynet.Ne+1:end, :), 'r', DisplayName='Inh');
 xlabel("time (s)")
 ylabel("A (1/s)")
 legend([p1(1), p2(1)], {'Ex', 'Inh'})
-%%
+
 %% dynamic of synaptic weights in time
 x = data.time;  % Assuming meanValues is your array of mean values
 

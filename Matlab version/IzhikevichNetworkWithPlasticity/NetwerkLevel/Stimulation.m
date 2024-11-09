@@ -25,15 +25,16 @@ classdef Stimulation < handle
             obj.duration = duration;
             obj.amplitude = amplitude;
             obj.Ncells = Ncells;
+            obj.start_time = start_time;
             obj.ConstructStimSubset(false);
             obj.ConstructStimTimings();
             obj.ConstructStimCurrent();
-            obj.start_time = start_time;
             
             obj.network.stims = [obj.network.stims, obj]; % adding stim obj to the list of stims in the network 
         end
 
         function ConstructStimSubset(obj, connected)
+            rng('shuffle');
             if connected
                 obj.pattern_indices = [randsample(obj.network.Ne, 1)];
                 for i = 1:nNeurons-1
@@ -46,12 +47,12 @@ classdef Stimulation < handle
                     end
                 end
             else
-                obj.pattern_indices = randsample(setxor(1:obj.network.Ne, obj.pattern_indices), obj.Ncells, false);
+                obj.pattern_indices = randsample(1:obj.network.Ne, obj.Ncells, false);
             end
         end
         
         function ConstructStimTimings(obj)
-            obj.pattern_timings = (10 + 2*randn(obj.Ncells,1)) ;
+            obj.pattern_timings = (obj.start_time + 1*randn(obj.Ncells,1)) ;
         end
         
         function ConstructStimCurrent(obj)
@@ -60,6 +61,18 @@ classdef Stimulation < handle
             time_ = repmat(obj.network.dt:obj.network.dt:obj.interval, obj.Ncells, 1);
             indices = (time_ - repmat(obj.pattern_timings, 1, n_t)) <= obj.duration & (time_ - repmat(obj.pattern_timings, 1, n_t)) >= 0;
             obj.I_stim(obj.pattern_indices, :) = indices*obj.amplitude;
+        end
+
+        % Method to create a deep copy of the Stimulation object
+        function new_obj = copy(obj)
+            % Create a new Stimulation object with the same parameters
+            new_obj = Stimulation(obj.network, obj.interval, obj.duration, obj.amplitude, obj.Ncells, obj.start_time);
+            
+            % Copy the other properties manually
+            new_obj.pattern_indices = obj.pattern_indices;
+            new_obj.pattern_timings = obj.pattern_timings;
+            new_obj.on = obj.on;
+            new_obj.I_stim = obj.I_stim;
         end
         
     end

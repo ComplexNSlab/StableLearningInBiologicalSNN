@@ -3,6 +3,7 @@
 interval = 100; % ms 
 off_set_time = 0;
 
+check_flag_save2 = zeros(round(mynet.t/interval), mynet.N);
 check_flag_save = zeros(round(mynet.t/interval), mynet.N);
 total_spike_count = zeros(1, round(mynet.t/interval));
 ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
@@ -32,9 +33,11 @@ for patch_num = 1:mynet.PatchNumber-1
         spike_times = firings(indices, 1);
         neuron_indices = firings(indices, 2);    
     
-        order = TimeToFirstSpikeSort(spike_times, neuron_indices);
+        order = TimeToFirstSpikeSort(spike_times, neuron_indices, true, mynet.N, mynet.Ne);
+        order2 = TimeToFirstSpikeSort(spike_times, neuron_indices, false, mynet.N, mynet.Ne);
         trial_counter = trial_counter + 1;
         check_flag_save(trial_counter, :) = order;
+        check_flag_save2(trial_counter, :) = order2;
         total_spike_count(trial_counter) =  length(spike_times);
         ex_neurons_engagement_count(trial_counter) = sum(unique(neuron_indices)<=mynet.Ne);
         inh_neurons_engagement_count(trial_counter) = sum(unique(neuron_indices)>mynet.Ne);
@@ -46,3 +49,5 @@ for patch_num = 1:mynet.PatchNumber-1
 end
 
 close(f)
+
+% clearvars -except check_flag_save2 check_flag_save mynet

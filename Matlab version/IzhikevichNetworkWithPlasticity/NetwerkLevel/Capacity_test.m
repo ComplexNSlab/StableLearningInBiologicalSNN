@@ -5,207 +5,67 @@ clc
 mynet = IzhikevichNetwork(400);
 mynet.SetInitialConnectivity(0.5, 2, 2);
 mynet.STDP = true;
+%mynet.noise = true;
+%mynet.sigma_ex = 5;
+%mynet.sigma_inh = 2;
 mynet.stimulation = true;
-mynet.sampling = false;
+mynet.sampling = true;
+%mynet.AddHeterogeneity()
 
-%% *Learning Sequentially* 
+%% *Sequential Learning* 
 % Feeding the stims to the network to learn (In series)
-M_max = 80; % maximum number of memory to encode in the network
+M_max = 2; % maximum number of memory to encode in the network
 stims = []; 
-interval = 100; %ms
+interval = 100; %ms 
 N_trials = 1000;
 
+%f = waitbar(0, "Please Wait ...");
 for m = 1:M_max
     stims = [stims, Stimulation(mynet, interval, 2, 30, 50, 0)];
-  
-    mynet.run(N_trials*interval, true);
+    
+ %   waitbar(m/M_max, f, sprintf("Memory %d/%d being encoded!", m, M_max))
+    mynet.run(N_trials*interval, false);
     mynet.stims = []; % clear the stims list as it slows down the computaiton speed
 end
-%% Retrieval (After Sequential Learning)
-% reading stimulations protocols from files
-stims = [];
-for patch_num = 1:mynet.PatchNumber-1
-    patch_address = mynet.RecordingDirectory + filesep + 'Patch' + num2str(patch_num);
-    s = load(patch_address); 
-    net = getfield(s, 'obj');
-    stims = [stims, net.stims(1)];
-end
-%% Retrieval (After Sequential Learning)
+
+%close(f)
+
+%% Retrieval (At the end of Sequential Learning)
 % Retrieval of memories by N_retreivals stimulations per stim (In series)
-N_retrievals = 10; % number of retrieval per memory
+N_retrievals = 5; % number of retrieval per memory
+
+mynet.STDP = false;
+f = waitbar(0, "Please Wait ...");
+counter = 0;
 for m = 1:M_max
-    stims(m).on = true;
-    mynet.stims = [stims(m)];
+    waitbar(counter/M_max, f, sprintf("Retrieval %d/%d", counter, M_max))
+    patch_address = mynet.RecordingDirectory + filesep + 'Patch' + num2str(m);
+    s = load(patch_address, 'obj'); 
+    net = getfield(s, 'obj');
+    stim = net.stims(1);
+    stim.on = true;
+    mynet.stims = [stim];
     mynet.run(interval*N_retrievals, false)
+    mynet.stims = [];
+    counter = counter + 1;
 end
-
-data = mynet.getData();
-%% Alternating Learning
-% Feeding the stims to the network to learn (In Parallel)
-M_max = 5; % maximum number of memory to encode in the network
-stims = []; 
-interval = M_max*100; %ms
-N_trials = 1000;
-
-for m = 1:M_max
-    stims = [stims, Stimulation(mynet, interval, 2, 30, 50, (m-1)*100)];
-end 
-
-for m = 1:M_max
-    mynet.run(N_trials * 100)
-end
-
-data = mynet.getData();
-
-%% Computing the order vectors :)
-
-firings = transpose(data.firings);
-interval = 100; % ms 
-off_set_time = 0;
-
-check_flag_save = zeros(round(mynet.t/interval), mynet.N);
-%total_spike_count = zeros(1, round(mynet.t/interval));
-%ex_neurons_engagement_count = zeros(1, round(mynet.t/interval));
-%inh_neurons_engagement_count = zeros(1, round(mynet.t/interval));
-
-f = waitbar(0, "Computing First to Spike Orders ...");
-for trial_number = 1:round(mynet.t/interval)
-    % Computing the orders
-    check_flag = zeros(1, mynet.N);
-    
-    start_time = (firings(:, 1) > (trial_number-1) * interval + off_set_time);
-    end_time = (firings(:, 1) <= trial_number * interval + off_set_time);
-    indices = start_time & end_time;
-    spike_times = firings(indices, 1) - (trial_number-1)*interval - off_set_time;
-    neuron_indices = firings(indices, 2);    
-    
-    counter_ex = 1;
-    counter_inh = mynet.Ne+1;
-  
-    neuron_sorted_indices = zeros(size(spike_times, 1), 1);
-   
-    for i = 1:length(spike_times)
-        if true
-            if neuron_indices(i) <= mynet.Ne
-                if check_flag(neuron_indices(i)) == 0 % First excitatory spikes
-                    neuron_sorted_indices(i) = counter_ex;
-                    check_flag(neuron_indices(i)) = counter_ex;
-                    counter_ex = counter_ex + 1;
-                else % Repeated excitatory spikes
-                    neuron_sorted_indices(i) = check_flag(neuron_indices(i));
-                end
-            else
-                if check_flag(neuron_indices(i)) == 0 % First Inhibitory spikes
-                    neuron_sorted_indices(i) = counter_inh;
-                    check_flag(neuron_indices(i)) = counter_inh;
-                    counter_inh = counter_inh + 1;
-                else % Repeated Inhibitory spikes
-                    neuron_sorted_indices(i) = check_flag(neuron_indices(i));
-                end
-            end
-        end
-    end
-    
-    check_flag_save(trial_number, :) = check_flag;
-%    total_spike_count(trial_number) =  length(spike_times);
-%    ex_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)<=mynet.Ne);
-%    inh_neurons_engagement_count(trial_number) = sum(unique(neuron_indices)>mynet.Ne);
-    
-    waitbar(trial_number/round(mynet.t/interval), f, sprintf("Computing First to Spike Orders ..., trial %d", trial_number))
-end
-
 close(f)
-%% Spearman Corr Matrix  Analysis (Poster Component)
+mynet.STDP = true;
+%% reading stimulations pattern indices from files
+f = waitbar(0, "Please Wait ...");
+stims = zeros(2*M_max, 50); 
+for patch_num = 1:2*M_max
+    patch_address = mynet.RecordingDirectory + filesep + 'Patch' + num2str(patch_num);
+    s = load(patch_address, 'obj'); 
+    net = getfield(s, 'obj');
+    stim = net.stims(1);
+    stims(patch_num, :) = stim.pattern_indices; 
+    waitbar(patch_num/(mynet.PatchNumber-1), f, sprintf("patch number %d/%d", patch_num, mynet.PatchNumber-1))
+end
+close(f)
+%% Reading recorded data from patch files
+data = mynet.getData();
 
-% corrmat = 1-squareform(pdist(check_flag_save(1:1:end, 1:320), 'spearman')); % Replace this with your actual data
-
-%temp = [];
-%for m = 1:M_max
-%    temp = [temp; check_flag_save(m:M_max:end, :)]; 
-%end
-
-corrmat = corr(check_flag_save(121001:121200, 1:400)','type', 'spearman');
-
-submat = corrmat(1 :end, :);
-submat(logical(eye(size(submat, 1)))) = 0;
-
-% Create the heatmap
-
-figure('Renderer', 'painters', 'Position', [100 100 1000 1000]); % Adjust position and size as needed
-fsize = 25; % font size
-
-
-% Create axes with the desired position and size
-ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
-
-%imagesc(submat, 'Parent', ax, 'AlphaData', ~isnan(submat));
-imagesc(submat, 'Parent', ax)
-colormap(parula);
-c = colorbar;
-
-% Adjust the position of the colorbar to the left
-c.Units = 'normalized'; % Use normalized units
-c.Position = [0.15, 0.2, 0.03, 0.6]; % [left, bottom, width, height]
-% Move the colorbar title to the middle and set font properties
-
-c.Label.String = 'Spearman Rank Correlation';
-c.Label.Rotation = 90; % Rotate the label to be vertical
-c.Label.Position = [-2, 0.3, 0]; % Adjust the position to be centered and beside the colorbar
-c.Label.FontName = 'Arial'; % Set the font name
-c.Label.FontSize = fsize; % Set the font size
-c.Label.FontWeight = 'bold'; % Set the font weight to bold
-
-% Set the title and axis labels with consistent font properties
-xlabel('Learnt Sequence', 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
-ylabel('Learnt Sequence', 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold', 'Rotation', 90);
-
-% Fix the aspect ratio to square
-% axis square;
-
-set(gca, 'YDir', 'normal')
-
-% Define the x-tick positions and labels
-% xTickPositions = 0:200:size(corrmat, 1);
-% xTickPositions(1) = xTickPositions(1) + 1;
-% xTickLabels = xTickPositions;
-
-% Set the x-ticks and labels with consistent font properties
-% xticks(xTickPositions);
-% xticklabels(xTickLabels);
-xtickangle(-45)
-set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold'); % Set for x-tick labels
-
-% Similarly, you can set y-ticks if needed
-% yticks(xTickPositions);
-% yticklabels(xTickLabels);
-ytickangle(-45)
-set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold'); % Set for y-tick labels
-
-% Set x-ticks to top and y-ticks to right
-set(gca, 'XAxisLocation', 'origin', 'YAxisLocation', 'right');
-
-
-% Add text annotations for different phases using annotation
-% Add arrows or lines to span the phases at the bottom of the plot
-%starts = ([0, 1000, 1500, 2000]+25)*0.6/2500 + 0.2;
-%ends = ([1000, 1500, 2000, 2500]-25)*0.6/2500 + 0.2;
-%phases = ["Learning", "Stim + Noise", "Noise", "Stim + Noise"];
-%for i = 1:length(phases)
-%    annotation('line', [starts(i), ends(i)], [0.18 0.18], 'Color', 'black', 'LineWidth', 1.5); % Stimulation
-%    annotation('textbox', [starts(i)/2+ends(i)/2 - 0.05, 0.1, 0.1, 0.05], 'String', phases(i), 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold', 'HorizontalAlignment', 'center', 'EdgeColor', 'none')
-%end
-
-% Adjust paper size and position for saving as PDF
-set(gcf, 'PaperPositionMode', 'auto');
-set(gcf, 'PaperUnits', 'inches');
-set(gcf, 'PaperPosition', [0 0 10 10]); % [left, bottom, width, height]
-set(gcf, 'PaperSize', [10 10]); % [width, height]
-
-
-title("First to Spike Orders Correlation Matrix", 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold')
-% Save the figure as a PDF with higher resolution
-% print(gcf, 'Spearman_Corr_Matrix.pdf', '-dpdf', '-vector', '-r300');
-print(gcf, 'Spearman_Corr_Matrix.png', '-dpng', '-r300');
 %% Order of spikes analysis (In input mode!)
 figure('Name', "Single Neuron Spike Order")
 fsize = 15;
@@ -242,7 +102,7 @@ ylabel("Single Neuron Spike Order")
 title("First to Fire Order Vector")
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
 %% Raster plot in any time window (Poster Content)
-patch_num = 400;
+patch_num = 1;
 patch_address = mynet.RecordingDirectory + filesep + 'Patch' + num2str(patch_num);
 variable_name = "data" + num2str(patch_num);
 s = load(patch_address);
@@ -254,8 +114,8 @@ clear s
 figure('Name', "Raster Plot", 'Renderer', 'painters', 'Position', [100 100 1000 1000]); 
 ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
 fsize = 20;
-start_time = 200*100 + patch_num-200 -1; % in seconds
-end_time = 200*100 + patch_num-200; % in seconds
+start_time =0; % in seconds
+end_time = 5; % in seconds
 
 %start_time = (patch_num-1)*100 + 99; % in seconds
 %end_time = patch_num*100; % in seconds
@@ -338,7 +198,7 @@ ylabel('Spike Count')
 %% PCA on order vectors (For Sequential Learning)
 
 % Perform PCA
-[coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(1:M_max*N_trials, 1:400));
+[coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(:, 1:320));
 % coeff    - Principal component coefficients (eigenvectors)
 % score    - Principal component scores (projected data)
 % latent   - Principal component variances (eigenvalues)
@@ -378,7 +238,7 @@ indices = N_trials:N_trials:M_max*N_trials; % for in series mode
 scatter3(ax2, x(indices), y(indices), z(indices), 200, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= "Learnt M", HandleVisibility='on'); 
 
 %%%%%%%%%%%%%%%%% Plotting retrieved sequences
-temp = check_flag_save(M_max*N_trials+1:end, :);
+temp = check_flag_save(M_max*N_trials+1:end, 1:320);
 test_data_centered = bsxfun(@minus, temp, mu);
 score = test_data_centered * coeff;
 x = score(:, 1);
@@ -408,68 +268,6 @@ ylabel(cb2, 'Memories');
 %%Then add colorbars and get everything lined up
 set([ax1,ax2],'Position',[.17 .11 .685 .815]);
 
-
-xlabel('PC 1');
-ylabel('PC 2');
-zlabel('PC 3')
-title('Order Vector Evolution in PCA Space');
-legend(Location='best')
-%% PCA on order vectors (For Alternating Learning)
-% Perform PCA
-[coeff, score, latent, tsquared, explained, mu] = pca(check_flag_save(1:M_max*N_trials, :));
-
-% coeff    - Principal component coefficients (eigenvectors)
-% score    - Principal component scores (projected data)
-% latent   - Principal component variances (eigenvalues)
-% tsquared - Hotelling's T-squared statistic for each observation
-% explained- Percentage of total variance explained by each principal component
-% mu       - Estimated mean of each variable
-
-x = score(:, 1);
-y = score(:, 2);
-z = score(:, 3);
-
-mem_colors = hsv(M_max);
-colors = zeros(N_trials*M_max, 3);
-for m = 1:M_max
-    colors(m:M_max:end, :) = [flip(gray(N_trials-1)); mem_colors(m, :)];
-end
-
-figure;
-ax1 = axes;
-ax2 = axes;
-ax2.Position = ax1.Position; % Align the second axes with the first
-ax2.Color = 'none'; % Make the background of the second axes transparent
-linkprop([ax1, ax2], {'CameraPosition', 'CameraTarget', 'CameraUpVector', 'CameraViewAngle'});
-
-
-for m = 1:M_max
-    indices = m:M_max:M_max*N_trials;
-    scatter3(x(indices), y(indices), z(indices),10, colors(indices, :), Marker="o", MarkerFaceColor="flat", HandleVisibility='off');
-    %plot3(x(indices), y(indices), z(indices), 'k' )
-    hold on
-end
-
-hold on
-
-indices = N_trials*M_max-M_max+1:N_trials*M_max;
-
-scatter3(ax2, x(indices), y(indices), z(indices), 200, colors(indices, :), Marker="o", MarkerFaceColor="flat", DisplayName= "Learnt M", HandleVisibility='on'); % in series
-
-colormap(ax1, flipud(gray))
-clim(ax1,[0 1000]);
-cb1 = colorbar(ax1,'Position',[.05 .11 .0675 .810]);
-ylabel(cb1, 'Trial Number');
-
-colormap(ax2, mem_colors)
-clim(ax2, [0 M_max]);
-cb2 = colorbar(ax2,'Position',[.88 .11 .0675 .810]);
-cb2.Ticks = 0.5:1:M_max-0.5;
-cb2.TickLabels = 1:M_max ;
-ylabel(cb2, 'Memories');
-
-%%Then add colorbars and get everything lined up
-set([ax1,ax2],'Position',[.17 .11 .685 .815]);
 
 xlabel('PC 1');
 ylabel('PC 2');
@@ -643,4 +441,152 @@ plot(groupID, temp, 'ko-')
 xlabel('known group ID')
 ylabel('Sorted Cluster ID')
 title('Kmean Clustering of Retrieved Memories(Alternating Learning)')
+%% Memory sequence Vs. Learning Trial Sequence
+memnum = 1;
+trial_num = 1000;
 
+figure;
+
+x = check_flag_save2(N_trials*memnum, 1:mynet.N); y = check_flag_save2(N_trials*memnum-N_trials+trial_num, 1:mynet.N);
+plot(x, y, 'ko'); axis equal;
+hold on 
+stim_cells = stims(memnum, :);
+plot(x(stim_cells), y(stim_cells), Marker='o', LineStyle='none', MarkerFaceColor='r')
+
+plot([0 mynet.N], [0 mynet.N],'k--')
+xlabel("Learnt Order Vector")
+ylabel(sprintf("Trial %d Order Vector", trial_num))
+title(sprintf("Learnt memory %d Vs shaping memory in trial %d", memnum, trial_num))
+xlim([0 mynet.N])
+ylim([0 mynet.N])
+
+%% Memory sequence VS. Retrival Sequence
+memnum = 2;
+retnum = 2;
+
+indx = check_flag_save2(N_trials*memnum, 1:mynet.N) >= 0 & check_flag_save2(M_max*N_trials+(retnum-1)*N_retrievals+1, 1:mynet.N) >= 0;
+x = check_flag_save2(N_trials*memnum, indx); y = check_flag_save2(M_max*N_trials+(retnum-1)*N_retrievals+1, indx);
+
+figure;hold on; plot(x, y, 'ko'); axis equal;
+stim_cells = stims(memnum, :);
+plot(x(stim_cells), y(stim_cells), Marker='o', LineStyle='none', MarkerFaceColor='r')
+
+plot([0 mynet.N], [0 mynet.N],'k--')
+xlabel("Learnt Order Vector")
+ylabel("Retrieved Order Vector")
+title(sprintf("Learnt memory %d Vs Retrieved memory %d", memnum, retnum))
+xlim([0 mynet.N])
+ylim([0 mynet.N])
+
+%% Computing Spearman Correlation between Retrievals and final Learnt memories
+%sim_mat = zeros(1000, 5000);
+corr_mat = zeros(1000, 5000);
+f = waitbar(0, "Please Wait ...");
+for memnum = 1:1000
+    waitbar(memnum/1000, f, "Please Wait ...")
+    for retnum = 1:5000
+        stim_cells = stims(memnum, :);
+        non_stimulated_cells = true(1, 400);
+        %non_stimulated_cells(stim_cells) = 0;
+
+        indx = check_flag_save2(1000*memnum, 1:400) ~= 0 & check_flag_save2(M_max*1000+retnum, 1:400) ~= 0 & non_stimulated_cells;
+        x = check_flag_save2(1000*memnum, indx); y = check_flag_save2(M_max*1000+retnum, indx);
+    
+        %corrmat = cov(x + y, x - y);
+        %similarity = corrmat(1, 1)/(corrmat(2, 2)+corrmat(1,1));
+        
+        %sim_mat(memnum, retnum) = similarity;
+        corr_mat(memnum, retnum) = corr(x', y', "type", 'Spearman');
+    end
+end
+close(f)
+%% Computing Spearman Correlation between Retrievals and Retrievals
+corr_mat = zeros(5000, 5000);
+f = waitbar(0, "Please Wait ...");
+for retnum1 = 1:5000
+    waitbar(retnum1/5000, f, sprintf("Retrieval %d", retnum1))
+    for retnum2 = retnum1:5000
+        %stim_cells = stims(retnum1, :);
+        %non_stimulated_cells = true(1, 400);
+        %non_stimulated_cells(stim_cells) = 0;
+
+        indx = check_flag_save2(M_max*N_trials+retnum1, 1:400) ~= 0 & check_flag_save2(M_max*N_trials+retnum2, 1:400) ~= 0;
+        x = check_flag_save2(M_max*N_trials+retnum1, indx); y = check_flag_save2(M_max*N_trials+retnum2, indx);
+        
+        corr_mat(retnum1, retnum2) = corr(x', y', "type", 'Spearman');
+        corr_mat(retnum2, retnum1) = corr(x', y', "type", 'Spearman');
+
+    end
+end
+close(f)
+%%
+figure;
+imagesc(corr_mat')
+cb = colorbar;
+cb.Label.String = "Spearman Correlation";
+
+
+title("Spearman without zeros in order vector")
+xlabel("Learnt order")
+ylabel("Retrieved Order")
+set(gca, 'ydir', 'normal')
+
+xlim([0.5 20.5])
+ylim([0.5 100.5]) 
+
+%%
+memnum = 500;
+figure; plot(repelem(1:5000, 1), corr_mat(memnum, :), 'k*')
+xlabel("Retrival Number")
+title(sprintf("Corr of Memory %d with retrievals", memnum))
+ylabel("Spearman Correlation")
+ylim([0 1])
+set(gca, 'fontsize', 15)
+
+%%
+submat = corr_mat;
+
+y1 = zeros(5, 1000);
+y1_err = zeros(1, 1000);
+y2 = zeros(4995, 1000);
+y2_CI95 = zeros(1, 1000);
+y2_CI5 = zeros(1, 1000);
+for memnum = 1:1000
+    idx = false(1, 5000);
+    idx((memnum-1)*5 + (1:5)) = 1;
+    y1(:, memnum) = submat(memnum, idx);
+    y1_err(1, memnum) = std(submat(memnum, idx));
+
+    y2(:, memnum) = submat(memnum, ~idx); 
+    y2_CI95(1, memnum) = quantile(submat(memnum, ~idx), 0.995);
+    y2_CI5(1, memnum) = quantile(submat(memnum, ~idx)', 0.005);
+end
+
+figure;hold on;
+
+plot(y2', 'r.')
+%plot(y1', 'ko', MarkerFaceColor=0.7*[1 1 1])
+errorbar(mean(y1, 1), y1_err, LineStyle='none', Marker='o', CapSize=5, MarkerFaceColor=[1 1 1], Color='k')
+%plot(y1', Color='k', Marker='x', LineStyle='none')
+
+%plot(y2_CI5, 'b')
+%plot(y2_CI95, 'b')
+%plot(mean(y2, 1), 'bo')
+%errorbar(1:1000, mean(y2, 1), -y2_CI5+mean(y2, 1), y2_CI95-mean(y2, 1), LineStyle='none', Marker='o', CapSize=5, MarkerFaceColor=[1 1 1], Color='b')
+
+%xlim([0 1000])
+%ylim([0 1])
+title("Correlation between retrievals and memories")
+ylabel("Correlation")
+xlabel("Memory number")
+set(gca, 'fontsize', 15)
+%set(gca, 'fontsize', 15, 'XScale', 'log', 'YScale', 'log')
+%%
+figure; hold on;
+plot(corr_mat(1, 1:end), 'k.')
+
+%% Checking repetitions of stimulation subsets between all stimulations
+
+[x, y] = find(squareform(pdist(stims, 'euclidean'))==0);
+figure; plot(x, y, 'k.');set(gca,'ydir', 'normal'); xlabel("Learning + Retrieval stims");ylabel("Learning + Retrieval stims")
+title("Similarity of Stimulations")

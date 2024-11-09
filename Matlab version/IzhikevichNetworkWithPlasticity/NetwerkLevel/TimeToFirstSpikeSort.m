@@ -1,4 +1,4 @@
-function order = TimeToFirstSpikeSort(spike_times, neuron_indices)
+function order = TimeToFirstSpikeSort(spike_times, neuron_indices, separated, N, Ne)
     % TimeToFirstSpikeSort Sorting neurons based on first time to spike.
     %
     % Syntax:
@@ -11,19 +11,21 @@ function order = TimeToFirstSpikeSort(spike_times, neuron_indices)
     % Input Arguments:
     %   spike_times - an array of spike timings.
     %   neuron_indices - an array of neuron indices of spikes.
+    %   separated - if order excitatory and inhibitory spikes separately or
+    %   together
     %
     % Output Arguments:
     %   order - ordered indices of neurons by who spiked earlier.
     
-    N = 400; Ne = 320;
-    order = zeros(1, N);
-    counter_ex = 1;
-    counter_inh = Ne + 1;
-  
-    neuron_sorted_indices = zeros(size(spike_times, 1), 1);
    
-    for i = 1:length(spike_times)
-        if true
+    order = zeros(1, N); % a vector that labels cells by spike order
+    neuron_sorted_indices = zeros(size(spike_times, 1), 1); % sorted neuron indices signal
+    
+    if separated 
+        counter_ex = 1;
+        counter_inh = Ne + 1;
+      
+        for i = 1:length(spike_times)
             if neuron_indices(i) <= Ne
                 if order(neuron_indices(i)) == 0 % First excitatory spikes
                     neuron_sorted_indices(i) = counter_ex;
@@ -40,7 +42,21 @@ function order = TimeToFirstSpikeSort(spike_times, neuron_indices)
                 else % Repeated Inhibitory spikes
                     neuron_sorted_indices(i) = order(neuron_indices(i));
                 end
+            end  
+        end
+    end
+
+    if ~separated
+        counter = 1; 
+        for i = 1:length(spike_times)
+            if order(neuron_indices(i)) == 0 % First spike
+                neuron_sorted_indices(i) = counter;
+                order(neuron_indices(i)) = counter;
+                counter = counter + 1;
+            else % Repeated spike
+                neuron_sorted_indices(i) = order(neuron_indices(i));
             end
         end
     end
+
 end

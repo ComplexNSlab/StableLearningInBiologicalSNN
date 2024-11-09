@@ -199,6 +199,7 @@ for i = 2:n
   Vseq(:,S,i) = -Vseq(:,S,i);
   waitbar((i-1+n)/(2*n), f,sprintf("Matching eigen values/vectors in time : %d/%d", i, n));
 end
+playNotificationSound;
 close(f);
 
 % =================
@@ -207,11 +208,13 @@ close(f);
 % begin subfunctions
 % =================
 
-%%
+end
+
 function d = distancematrix(vec1,vec2)
 % simple interpoint distance matrix
 [vec1,vec2] = ndgrid(vec1,vec2);
 d = abs(vec1 - vec2);
+end
 
 function [assignment,cost] = munkres(costMat)
 % MUNKRES   Munkres (Hungarian) Algorithm for Linear Assignment Problem. 
@@ -385,6 +388,7 @@ starZ = starZ(1:nRows);
 vIdx = starZ <= nCols;
 assignment(rowIdx(vIdx)) = colIdx(starZ(vIdx));
 cost = trace(costMat(assignment>0,assignment(assignment>0)));
+end
 
 function [minval,rIdx,cIdx]=outerplus(M,x,y)
 [nx,ny]=size(M);
@@ -399,3 +403,4 @@ for r=1:nx
     end
 end
 [rIdx,cIdx]=find(M==minval);
+end
