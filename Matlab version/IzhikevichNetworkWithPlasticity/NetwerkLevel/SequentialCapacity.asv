@@ -1,0 +1,201 @@
+%% *Configuring the network* 
+clear 
+clc
+
+mynet = IzhikevichNetwork(400);
+mynet.SetInitialConnectivity(0.5, 2, 2);
+mynet.STDP = true;
+mynet.stimulation = true;
+mynet.sampling = false;
+
+%% *Sequential Learning* 
+% Feeding the stims to the network to learn (In series)
+M_max = 100; % maximum number of memory to encode in the network
+%stims = []; 
+interval = 100; %ms
+N_trials = 1000;
+
+%f = waitbar(0, "Please Wait ...");
+for m = 1:M_max
+    %stims = [stims, Stimulation(mynet, interval, 2, 30, 50, 0)];
+    
+ %   waitbar(m/M_max, f, sprintf("Memory %d/%d being encoded!", m, M_max));
+    Stimulation(mynet, interval, 2, 30, 50, 0);
+    mynet.run(N_trials*interval, false);
+    mynet.stims = []; % clear the stims list as it slows down the computaiton speed
+end
+%close(f)
+%% Retrieval (At the end of Sequential Learning)
+% Retrieval of memories by N_retreivals stimulations per stim (In series)
+N_retrievals = 5; % number of retrieval per memory
+
+mynet.STDP = false;
+f = waitbar(0, "Please Wait ...");
+counter = 0;
+for m = 1:M_max
+    waitbar(counter/M_max, f, sprintf("Retrieval %d/%d", counter, M_max))
+    patch_address = mynet.RecordingDirectory + filesep + 'Patch' + num2str(m);
+    s = load(patch_address, 'obj'); 
+    net = getfield(s, 'obj');
+    stim = net.stims(1);
+    stim.on = true;
+    mynet.stims = [stim];
+    mynet.run(interval*N_retrievals, false)
+    mynet.stims = [];
+    counter = counter + 1;
+end
+close(f)
+mynet.STDP = true;
+%% reading stimulations pattern indices from files
+f = waitbar(0, "Please Wait ...");
+stims = zeros(mynet.PatchNumber-1, 50); 
+for patch_num = 1:mynet.PatchNumber-1
+    patch_address = mynet.RecordingDirectory + filesep + 'Patch' + num2str(patch_num);
+    s = load(patch_address, 'obj'); 
+    net = getfield(s, 'obj');
+    stim = net.stims(1);
+    stims(patch_num, :) = stim.pattern_indices; 
+    waitbar(patch_num/(mynet.PatchNumber-1), f, sprintf("patch number %d/%d", patch_num, mynet.PatchNumber-1))
+end
+close(f)
+%% Computing order vectors from ComputeOrders.m script
+ComputeOrders;
+
+%% Checking repetitions of stimulation subsets between all stimulations
+
+[x, y] = find(squareform(pdist(stims, 'euclidean'))==0);
+figure; plot(x, y, 'k*');set(gca,'ydir', 'normal'); xlabel("Learning + Retrieval stims");ylabel("Learning + Retrieval stims")
+title("Similarity of Stimulations")
+%% Memory sequence Vs. Learning Trial Sequence
+memnum = 5;
+trial_num = 1;
+
+figure;
+
+x = check_flag_save2(N_trials*memnum, 1:400); y = check_flag_save2(N_trials*(memnum-1) +trial_num, 1:400);
+plot(x, y, 'ko'); axis equal;
+hold on 
+stim_cells = stims(memnum, :);
+plot(x(stim_cells), y(stim_cells), Marker='o', LineStyle='none', MarkerFaceColor='r')
+
+plot([0 400], [0 400],'k--')
+xlabel(sprintf("Memory %d", memnum))
+ylabel(sprintf("Trial %d", trial_num))
+title(sprintf("Comparison of Order Vectors within Memory %d", memnum))
+xlim([0 400])
+ylim([0 400])
+set(gca, 'fontsize', 15)
+%% Memory sequence VS. Retrival Sequence
+memnum = 2;
+retnum = 2;
+
+indx = check_flag_save2(N_trials*memnum, 1:400) >= 0 & check_flag_save2(M_max*N_trials+(retnum-1)*N_retrievals+1, 1:400) >= 0;
+x = check_flag_save2(N_trials*memnum, indx); y = check_flag_save2(M_max*N_trials+(retnum-1)*N_retrievals+1, indx);
+
+figure;hold on; plot(x, y, 'ko'); axis equal;
+stim_cells = stims(memnum, :);
+plot(x(stim_cells), y(stim_cells), Marker='o', LineStyle='none', MarkerFaceColor='r')
+
+plot([0 400], [0 400],'k--')
+xlabel(sprintf("Memory %d", memnum))
+ylabel(sprintf("Retrieval %d", retnum))
+title(sprintf("Comparison of Order Vectors (Memory %d, Retrival %d)", memnum, retnum))
+xlim([0 400])
+ylim([0 400])
+%% Computing Spearman Correlation between Retrievals and final Learnt memories
+
+corr_mat = zeros(M_max, M_max*N_retrievals); % All cells excluded 50
+corr_mat1 = zeros(M_max, M_max*N_retrievals); % All cells included 50
+corr_mat2 = zeros(M_max, M_max*N_retrievals); % Excitatory cells included 50 
+corr_mat3 = zeros(M_max, M_max*N_retrievals); % Excitatory cells included 50 
+
+f = waitbar(0, "Please Wait ...");
+for memnum = 1:M_max
+    waitbar(memnum/M_max, f, "Please Wait ...")
+    for retnum = 1:M_max*N_retrievals
+        stim_cells = stims(memnum, :);
+        
+        %%%%%%%%%%%%%%%%%%%%% All cells excluded 50
+        non_stimulated_cells = true(1, 400);
+        non_stimulated_cells(stim_cells) = 0;
+
+        indx = check_flag_save2(N_trials*memnum, 1:400) ~= 0 & check_flag_save2(M_max*N_trials+retnum, 1:400) ~= 0 & non_stimulated_cells;
+        x = check_flag_save2(N_trials*memnum, indx); y = check_flag_save2(M_max*N_trials+retnum, indx);
+    
+        corr_mat(memnum, retnum) = corr(x', y', "type", 'Spearman');
+        %%%%%%%%%%%%%%%%%%%%%  All cells included 50
+
+        indx = check_flag_save2(N_trials*memnum, 1:400) ~= 0 & check_flag_save2(M_max*N_trials+retnum, 1:400) ~= 0;
+        x = check_flag_save2(N_trials*memnum, indx); y = check_flag_save2(M_max*N_trials+retnum, indx]);
+    
+        corr_mat1(memnum, retnum) = corr(x', y', "type", 'Spearman');
+        %%%%%%%%%%%%%%%%%%%%%  Excitatory cells included 50 
+
+        indx = check_flag_save(N_trials*memnum, 1:320) ~= 0 & check_flag_save(M_max*N_trials+retnum, 1:320) ~= 0;
+        x = check_flag_save(N_trials*memnum, [indx, false(1,80)]); y = check_flag_save(M_max*N_trials+retnum, [indx, false(1,80)]);
+    
+        corr_mat2(memnum, retnum) = corr(x', y', "type", 'Spearman');
+    end
+end
+close(f)
+%%
+figure;
+imagesc(corr_mat')
+cb = colorbar;
+cb.Label.String = "Spearman Correlation";
+
+
+title("Spearman without zeros in order vector")
+xlabel("Memory")
+ylabel("Retrieval")
+set(gca, 'ydir', 'normal', 'fontsize', 15)
+%%
+memnum = 5;
+figure; plot(repelem(1:M_max, N_retrievals), corr_mat(memnum, :), 'k*')
+xlabel("Retrival Number")
+title(sprintf("Corr of Memory %d with retrievals", memnum))
+ylabel("Spearman Correlation")
+ylim([0 1])
+set(gca, 'fontsize', 15)
+
+%%
+submat = corr_mat;
+
+y1 = zeros(N_retrievals, M_max);
+y1_err = zeros(1, M_max);
+y2 = zeros(N_retrievals*M_max-N_retrievals, M_max);
+y2_CI95 = zeros(1, M_max);
+y2_CI5 = zeros(1, M_max);
+for memnum = 1:M_max
+    idx = false(1, M_max*N_retrievals);
+    idx((memnum-1)*N_retrievals + (1:N_retrievals)) = 1;
+    y1(:, memnum) = submat(memnum, idx);
+    y1_err(1, memnum) = std(submat(memnum, idx));
+
+    y2(:, memnum) = submat(memnum, ~idx); 
+    y2_CI95(1, memnum) = quantile(submat(memnum, ~idx), 0.995);
+    y2_CI5(1, memnum) = quantile(submat(memnum, ~idx)', 0.005);
+end
+
+figure;hold on;
+
+plot(y2', 'r.')
+%plot(y1', 'ko', MarkerFaceColor=0.7*[1 1 1])
+errorbar(mean(y1, 1), y1_err, LineStyle='none', Marker='o', CapSize=5, MarkerFaceColor=[1 1 1], Color='k')
+%plot(y1', Color='k', Marker='x', LineStyle='none')
+
+%plot(y2_CI5, 'b')
+%plot(y2_CI95, 'b')
+%plot(mean(y2, 1), 'bo')
+%errorbar(1:1000, mean(y2, 1), -y2_CI5+mean(y2, 1), y2_CI95-mean(y2, 1), LineStyle='none', Marker='o', CapSize=5, MarkerFaceColor=[1 1 1], Color='b')
+
+%xlim([0 1000])
+%ylim([0 1])
+title("Correlation between retrievals and memories")
+ylabel("Correlation")
+xlabel("Memory number")
+set(gca, 'fontsize', 15)
+%set(gca, 'fontsize', 15, 'XScale', 'log', 'YScale', 'log')
+
+%%
+save(mynet.RecordingDirectory + filesep + "Everything.mat", '-v7.3')
