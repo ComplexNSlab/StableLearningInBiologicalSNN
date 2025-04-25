@@ -14,7 +14,11 @@ Briefly describe what this part does in 2–3 sentences.
 1. `Step1_ScriptName.m` – [What it does]
 2. `Step2_ScriptName.m` – [What it does]
 3. ...
-   
+
+## Main Results
+!()[\Results\assembly_N100trials1000.png]
+
+
 ## Notes
 - Any specific settings, dependencies, or expected input formats.
 - Any assumptions or critical points to check before running.
