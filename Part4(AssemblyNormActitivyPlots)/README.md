@@ -16,8 +16,8 @@ Briefly describe what this part does in 2–3 sentences.
 3. ...
 
 ## Main Results
-!()[\Results\assembly_N100trials1000.png]
-
+![assembly size](Results/assembly_N100trials1000.png)
+![Normalized Response Size](Results/norm_A_N400trials1000.png)
 
 ## Notes
 - Any specific settings, dependencies, or expected input formats.
