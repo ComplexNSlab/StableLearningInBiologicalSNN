@@ -1,0 +1,20 @@
+%% Initialize Network Properties
+
+baseFolder = "./Data_Alternate/" + num2str(N_mems) + "memories" + filesep;
+net = IzhikevichNetwork(400, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, ...
+    'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);
+net.STDP = true;
+net.noise = false;
+net.sampling_rate = 5000;
+net.stimulation = true;
+
+%% Simulating to Learn N Memories Sequentially
+stims = [];
+for i = 1:N_mems
+    stims = [stims, Stimulation(net, 100 * N_mems, 2, 30, 50, 5 + (i-1) * 100)];
+end
+for i = 1:N_mems
+    net.run(100000);
+end
+
+

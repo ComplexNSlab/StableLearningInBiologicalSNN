@@ -1,0 +1,5 @@
+**/Data/        # Ignore any data folder in subdirectories
+**/Data_Alternate/
+**/Data_Sequential/
+*.asv
+**/Data/*
