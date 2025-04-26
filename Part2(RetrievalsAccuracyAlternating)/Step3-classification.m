@@ -1,11 +1,12 @@
 clear; clc;
 
 alpha_range = 5:5:95;
+N = 100; % Network Size
 
 % Get list of all items in the current directory
-for N_mems = [50]
+for N_mems = [3, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
-    items = dir("Data_Alternate/" +num2str(N_mems) + "memories/");
+    items = dir(fullfile("Data", "N" + num2str(N) ,num2str(N_mems) + "memories/"));
     folders = items([items.isdir]); % Keep only directories
     folders = folders(~ismember({folders.name}, {'.', '..'})); % Remove '.' and '..'
     
@@ -22,7 +23,7 @@ for N_mems = [50]
         % filePattern2 = fullfile(folderName, 'shuffle*');
     
         % Get list of matching files
-        matchingFiles = dir("Data_Alternate/" +num2str(N_mems) + "memories/" + filePattern);
+        matchingFiles = dir(fullfile("Data", "N" + num2str(N) , num2str(N_mems) + "memories", filePattern));
 
         results = containers.Map;
         roc_curves = cell(length(alpha_range), N_mems+1, 2);

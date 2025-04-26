@@ -4,18 +4,19 @@
 
 clear; clc;
 
+N = 100; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
-N_mems = 30;
+N_mems = 3;
 
-items = dir("Data_Alternate/" +num2str(N_mems) + "memories/");
+items = dir(fullfile("Data",  "N"+num2str(N),num2str(N_mems) + "memories/"));
 folders = items([items.isdir]); % Keep only directories
 folders = folders(~ismember({folders.name}, {'.', '..'})); % Remove '.' and '..'
 
 
 % loop over different partial recall ratios 
-for iter = 1:1
+for iter = 1:3
     figure; hold on;
     
     % Create title: show pattern and alpha
@@ -69,15 +70,21 @@ plot(FPR_micro, TPR_micro, 'b--', 'LineWidth', 2, ...
 
 clear; clc;
 
+N = 100; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
 N_mems = 50;
 
-items = dir("Data_Alternate/" +num2str(N_mems) + "memories/");
+folder_path = fullfile("Data",  "N"+num2str(N),num2str(N_mems) + "memories/");
+items = dir(folder_path);
 folders = items([items.isdir]); % Keep only directories
 folders = folders(~ismember({folders.name}, {'.', '..'})); % Remove '.' and '..'
 
+% Raise an error if no folders found
+if isempty(folders)
+    error('No subfolders found in path: %s', folder_path);
+end
 
 % Fetching metric values
 
@@ -133,7 +140,7 @@ for i = 1:4
     fig = plotMeanCurveWithCI(x_mems, x_rands, alpha_range, 95, s);
     
     % Save
-    filename = fullfile(pwd, 'Results/SVMResults/', sprintf('%s_Curve_%d_Mems.pdf', strrep(s, ' ', ''), N_mems));
+    filename = fullfile(pwd, 'Results','SVMResults', "N"+num2str(N), sprintf('%s_Curve_%d_Mems.pdf', strrep(s, ' ', ''), N_mems));
     exportgraphics(fig, filename, 'ContentType', 'vector');  % high-quality PDF
 end
 

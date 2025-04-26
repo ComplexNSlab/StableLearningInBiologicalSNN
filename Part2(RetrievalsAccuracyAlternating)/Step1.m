@@ -1,7 +1,8 @@
 %% Initialize Network Properties
 
-baseFolder = "./Data_Alternate/" + num2str(N_mems) + "memories" + filesep;
-net = IzhikevichNetwork(400, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, ...
+N = 100; 
+baseFolder = fullfile("./Data", "N"+num2str(N) , num2str(N_mems) + "memories");
+net = IzhikevichNetwork(N, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, ...
     'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);
 net.STDP = true;
 net.noise = false;
