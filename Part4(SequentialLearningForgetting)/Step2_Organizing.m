@@ -2,7 +2,7 @@
 
 clear; clc;
 nTrials = 1000;
-N = 100;
+N = 1600;
 nMems = 100;
 
 folderPath = fullfile(pwd, 'Data', "N" + num2str(N), "Trials" + num2str(nTrials));

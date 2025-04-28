@@ -1,5 +1,5 @@
 clc; clear;
-load("Data\N400\Trials1000\FinalRepresentations.mat")
+load("Data\N1600\Trials1000\FinalRepresentations.mat")
 
 %% Normalized Acitvity size with just participating cells
 figure; hold on;
@@ -21,11 +21,10 @@ fig.PaperSize = [fig.Position(3), fig.Position(4)];
 
 mean_curve = nan(size(norm_A,1), 21, nTrials*(nMems-1) + 20*nTrials);
 for iter = 1:size(norm_A,1)
-    for mem = 1:21
+    for mem = 18:21
         % Plot individual curves
-        if mod(iter, 1) == 0 && iter == 1
-            plot((nTrials+1:nMems*nTrials) - mem*nTrials, squeeze(norm_A(iter, mem, nTrials+1:end)), '-', 'Color', 0.8*[1 1 1], HandleVisibility='off', LineWidth=0.1);
-        end
+        plot((nTrials+1:nMems*  nTrials) - mem*nTrials, squeeze(norm_A(iter, mem, nTrials+1:end)), '-', 'Color', 0.8*[1 1 1], HandleVisibility='off', LineWidth=0.1);
+        
         % Construct aligned mean curve matrix
         mean_curve(iter, mem, :) = [nan(1, nTrials*(21-mem)), squeeze(norm_A(iter, mem, nTrials+1:end))', nan(1, (mem-1)*nTrials)];
     end
@@ -91,11 +90,11 @@ set(gca, 'FontSize', 20);  % Consistent large font
 
 savePath = fullfile(pwd, 'Results', "norm_A_N" + num2str(N) + "trials" + num2str(nTrials));
 
-%Save high-resolution PNG
-print(gcf, savePath, '-dpng', '-r1200');
-
-%Save high-quality PDF
-print(gcf, savePath, '-dpdf', '-r1200');
+% %Save high-resolution PNG
+% print(gcf, savePath, '-dpng', '-r1200');
+% 
+% %Save high-quality PDF
+% print(gcf, savePath, '-dpdf', '-r1200');
 %% Participation Rate of Cells
 figure; hold on;
 
@@ -176,11 +175,11 @@ set(gcf, 'Color', 'w', 'PaperPositionMode', 'auto');    % White background
 
 savePath = fullfile(pwd, 'Results', "assembly_N" + num2str(N) + "trials" + num2str(nTrials));
 
-%Save high-resolution PNG
-print(gcf, savePath, '-dpng', '-r1200');
-
-% Save high-quality PDF
-print(gcf, savePath, '-dpdf', '-r1200');
+% %Save high-resolution PNG
+% print(gcf, savePath, '-dpng', '-r1200');
+% 
+% % Save high-quality PDF
+% print(gcf, savePath, '-dpdf', '-r1200');
 %% 
 % Your data
 idx = length(x_valid)/2-500:length(x_valid)-50000;

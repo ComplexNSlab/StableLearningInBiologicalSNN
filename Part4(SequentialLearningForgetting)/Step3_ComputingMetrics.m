@@ -1,8 +1,8 @@
 %% Gathering quantities across all simulations of a type and saving them in a .mat file
 clc; clear;
 
-nTrials = 500;
-N = 400; Ne = floor(0.8*N); Ni = floor(0.2*N);
+nTrials = 1000;
+N = 1600; Ne = floor(0.8*N); Ni = floor(0.2*N);
 nMems = 100;
 
 parentFolder = fullfile(pwd, 'Data', "N" + num2str(N), "Trials" + num2str(nTrials));

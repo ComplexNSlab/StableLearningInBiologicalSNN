@@ -1,20 +1,23 @@
 
 clear; clc;
-filename = "Dec_22_2024_22_06_49";
-memory = 50;
-load(fullfile("Data/))
+memory = 60;
+N = 1600; Ne = round(0.8*N); Ni = round(0.2*N);
+nTrials = 1000; 
+nMems = 100;
+filename = fullfile(pwd, sprintf("Data/N%d/Trials%d/Apr_24_2025_11_09_45/Memory%dRecalls.mat", N, nTrials, memory));
+load(filename)
 
 %% Video of network first spike response to each trials 
 
 figure();
 
-p = plot(TTFS(:, 1), 1:400, 'k.');
-xlim([2, 40]);
+p = plot(TTFS(:, 1), 1:N, 'k.');
+xlim([2, 50]);
 tl = title("");
 xlabel("time, ms");
 
-for trial = 1:50000
-    tl.String = sprintf("Memroy %d Response in Trial %d/500 while learning memory %d", memory, mod(trial, 500), 1+floor(trial/500));
+for trial = 1*nTrials:nMems*nTrials
+    tl.String = sprintf("Memroy %d Response in Trial %d/%d while learning memory %d", memory, mod(trial, nTrials), nTrials, 1+floor(trial/nTrials));
     p.XData = TTFS(:, trial);
 
     pause(0.001);
@@ -22,12 +25,12 @@ end
 %% Plotting first time to spike of some example cells separately
 dt = TTFS(:, 2:end) - TTFS(:, 1:end-1);
 dt2 = dt.*dt;
-N = 10; 
+N_samples = 50; 
 dist = 35;
-selected_cells = randi(400, 1, N);
-figure; hold on; plot(TTFS(selected_cells, :)' + repmat(dist * (0:N-1), 50000, 1))
+selected_cells = randi(N, 1, N_samples);
+figure; hold on; plot(TTFS(selected_cells, :)' + repmat(dist * (0:N_samples-1), nTrials*nMems, 1))
 
-plot(repmat(dist * (0:N-1), 50000, 1), 'k-', HandleVisibility='off')
+plot(repmat(dist * (0:N_samples-1), nTrials*nMems, 1), 'k-', HandleVisibility='off')
 for i = 1:100
     if mod(i, 2) == 0
         a = 0.05;
@@ -40,25 +43,24 @@ for i = 1:100
         a = 0.3;
         c = 'g';
     end
-    fill(500*(i-1) + [0, 0, 500, 500], dist*N * [0, 1, 1, 0], c, 'EdgeColor','none', 'FaceAlpha', a, HandleVisibility='off')
+    fill(nTrials*(i-1) + [0, 0, nTrials, nTrials], dist*N_samples* [0, 1, 1, 0], c, 'EdgeColor','none', 'FaceAlpha', a, HandleVisibility='off')
 end
 
 yyaxis left
 yticks(dist:dist:dist*N)
 yticklabels(repmat([dist], 1, N))
-ylim([0, N*dist])
+ylim([0, N_samples*dist])
 ylabel("Time to First Spike, ms")
 
-
 yyaxis right
-yticks(dist/2:dist:dist*N)
+yticks(dist/2:dist:dist*N_samples)
 yticklabels("cell " + string(selected_cells))
-ylim([0, N*dist])
+ylim([0, N_samples*dist])
 
-xticks(250:500:50000)
+xticks(nTrials/2:nTrials: nTrials*nMems)
 xticklabels(1:100)
 
-xlabel("Memory Number Being Learnt (each has 500 trials)")
+xlabel(sprintf("Memory Number Being Learnt (each has %d trials)", nTrials))
 title("Response of Example Cells to Memory " + num2str(memory) + " recalls")
 
 ax = gca; % Get the current axes handle
@@ -70,8 +72,8 @@ TTFS_no_zeros(TTFS_no_zeros == 0) = NaN; % Replace zeros with NaN
 
 % Plot data
 % Calculate means
-mean1 = nanmean(TTFS_no_zeros(321:end, :)', 2);
-mean2 = nanmean(TTFS_no_zeros(1:320, :)', 2);
+mean1 = nanmean(TTFS_no_zeros(Ne+1:end, :)', 2);
+mean2 = nanmean(TTFS_no_zeros(1:Ne, :)', 2);
 
 % Calculate standard deviations
 std1 = nanstd(TTFS_no_zeros(321:end, :)', [], 2);
@@ -96,7 +98,7 @@ fill([1:length(mean2), fliplr(1:length(mean2))], [ci2_upper', fliplr(ci2_lower')
 plot(mean2, 'b', 'LineWidth', 1.5, DisplayName= "Excitatory");
 
 % Customize x-axis
-xticks(250:500:50000);
+xticks(nTrials/2:nTrials:nTrials*nMems);
 xticklabels(1:100);
 % Highlight regions
 for i = 1:100
@@ -111,7 +113,7 @@ for i = 1:100
         a = 0.3;
         c = 'g';
     end
-    fill(500*(i-1) + [0, 0, 500, 500], dist * [0, 1, 1, 0], c, 'EdgeColor', 'none', 'FaceAlpha', a, HandleVisibility='off')
+    fill(nTrials*(i-1) + [0, 0, nTrials, nTrials], dist * [0, 1, 1, 0], c, 'EdgeColor', 'none', 'FaceAlpha', a, HandleVisibility='off')
 end
 
 legend()
