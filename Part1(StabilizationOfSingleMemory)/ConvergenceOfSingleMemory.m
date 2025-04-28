@@ -1,12 +1,16 @@
 % This sctipt should be run when you have a recording directory of a simulation
 clc;clear;
 
+% Network Size
+N = 200; 
+
 % defualt selection of latest simulation
-sim_folders = dir("Data");
+folderPath = fullfile(pwd, "Data", "N" + num2str(N));
+sim_folders = dir(folderPath);
 sim_folders = sim_folders(~ismember({sim_folders.name}, {'.', '..'})); 
 [~, latestIdx] = max([sim_folders.datenum]);
 latestSim = sim_folders(latestIdx).name;
-filePath = fullfile("Data", latestSim);
+filePath = fullfile(folderPath, latestSim);
 
 % loading net object
 data_files = dir(filePath);
@@ -21,7 +25,11 @@ clearvars -except net;
 load(net.RecordingDirectory + filesep + "MemoryRepresentations.mat");
 
 %% Spike Order vs Trials (Separate)
-figure('Renderer', 'painters','Name', "Single Neuron Spike Order", 'Visible','off' )
+
+% Network Size
+N = net.N; Ne = net.Ne; Ni = net.Ni;
+
+figure('Renderer', 'painters','Name', "Single Neuron Spike Order", 'Visible','on' )
 fsize = 15;
 temp = orders_separate(1:1:end, :);
 temp(temp == 0) = nan;
@@ -29,26 +37,26 @@ temp(temp == 0) = nan;
 %active_ex_cells = find(temp(end, :) ~= 0 & temp(end, :) <= net.Ne);
 %active_inh_cells = find(temp(end, :) ~= 0 & temp(end, :) > net.Ne);
 
-stable_order_ex = orders_separate(end, 1:320);
-stable_order_inh = orders_separate(end, 321:end)-320;
+stable_order_ex = orders_separate(end, 1:Ne);
+stable_order_inh = orders_separate(end, Ne+1:end)-Ne;
 stable_order_ex(stable_order_ex == 0) = net.Ne-sum(stable_order_ex == 0)+1:net.Ne;
-stable_order_inh(stable_order_inh == -320) = net.Ni-sum(stable_order_inh == -320)+1:net.Ni;
+stable_order_inh(stable_order_inh == -Ne) = net.Ni-sum(stable_order_inh == -Ne)+1:net.Ni;
 
-colormap_ex = jet(320);
+colormap_ex = jet(Ne);
 colormap_ex = colormap_ex(stable_order_ex, :);
 
-colormap_inh = jet(80);
+colormap_inh = jet(Ni);
 colormap_inh = colormap_inh(stable_order_inh, :);
 
 hold on 
 wsize = 1.5;
-for cell_id =1:320
+for cell_id =1:Ne
     
     plot(temp(1:end, cell_id), 'color', colormap_ex(cell_id, :), LineWidth= wsize)
 end
-for cell_id = 321:400
+for cell_id = Ne+1:N
     
-    plot(temp(1:end, cell_id), 'color', colormap_inh(cell_id-320, :), LineWidth= wsize)
+    plot(temp(1:end, cell_id), 'color', colormap_inh(cell_id-Ne, :), LineWidth= wsize)
 end
 
 xlabel("Trial")
@@ -59,7 +67,7 @@ print(gcf, "Results" + filesep + 'SpikeOrderSeparate.pdf', '-dpdf', '-vector', '
 print(gcf, "Results" + filesep + 'SpikeOrderSeparate.png', '-dpng', '-r300');
 
 %% Spike Order vs Trials (Together)
-figure('Renderer', 'painters','Name', "Single Neuron Spike Order", 'Visible','off' )
+figure('Renderer', 'painters','Name', "Single Neuron Spike Order", 'Visible','on' )
 fsize = 15;
 temp = orders_together(1:1:end, :);
 temp(temp == 0) = nan;

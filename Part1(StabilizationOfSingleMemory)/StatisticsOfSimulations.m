@@ -4,15 +4,16 @@ clc; clear;
 
 lag = 100; 
 
-
-sim_folders = dir("Data");
+N = 200; % NetworkSize
+folderPath = fullfile(pwd, "Data", "N" + num2str(N));
+sim_folders = dir(folderPath);
 sim_folders = sim_folders(~ismember({sim_folders.name}, {'.', '..'}));
 
 signals = zeros(4, length(sim_folders), 1000-lag);
 mats = zeros(4, length(sim_folders), 1000, 1000);
 
 for i = 1:length(sim_folders)
-    load("Data" + filesep +  sim_folders(i).name + filesep + "MemoryRepresentations.mat");
+    load(fullfile(folderPath,  sim_folders(i).name, "MemoryRepresentations.mat"));
     
     counter = 1;
     for representation = ["spike counts",  "delays", "spike orders together", "spike orders separate"]
@@ -53,7 +54,7 @@ for representation = ["spike counts",  "delays", "spike orders together", "spike
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     signal = squeeze(signals(counter, :, :));
 
-    figure('Visible','off');hold on;
+    figure('Visible','on');hold on;
     plot(1- signal', 'Color', 0.5*[1 1 1], HandleVisibility='off')
     plot(mean(1-signal, 1), LineWidth=4, DisplayName="average across " + num2str(length(sim_folders)) + " simulations")
     xlabel("Trial (t)")
@@ -64,7 +65,7 @@ for representation = ["spike counts",  "delays", "spike orders together", "spike
     print(gcf, "Results" + filesep + "Convergence_"+representation, '-dpdf', '-r300');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    figure('Renderer', 'painters', 'Position', [100 100 1000 1000], 'Visible','off');
+    figure('Renderer', 'painters', 'Position', [100 100 1000 1000], 'Visible','on');
     fsize = 25;
     mat = squeeze(mean(mats, 2));
     mat =squeeze(mat(counter, :, :));
@@ -106,7 +107,7 @@ for representation = ["spike counts",  "delays", "spike orders together", "spike
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     mat = squeeze(mean(mats, 3));
     mat = squeeze(mat(counter, :, :));
-    figure(Visible="off"); hold on;
+    figure(Visible="on"); hold on;
     plot(mat', 'Color', 0.5*[1 1 1], HandleVisibility='off')
     plot(mean(mat, 1), DisplayName= sprintf("average on %d simulations", length(sim_folders)), LineWidth=4);
     title(representation + " Representation")
