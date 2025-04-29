@@ -2,10 +2,10 @@
 clc; clear;
 
 nTrials = 1000;
-N = 1600; Ne = floor(0.8*N); Ni = floor(0.2*N);
+N = 100; Ne = floor(0.8*N); Ni = floor(0.2*N);
 nMems = 100;
 
-parentFolder = fullfile(pwd, 'Data', "N" + num2str(N), "Trials" + num2str(nTrials));
+parentFolder = fullfile(pwd, 'Data', 'Scaled50/',"N" + num2str(N));
 items = dir(parentFolder);
 folderNames = {items([items.isdir]).name};
 subfolderNames = folderNames(~ismember(folderNames, {'.', '..'}));
@@ -44,5 +44,4 @@ angles = 180*acos(cos_ang)/pi;
 cos_ang_consec(cos_ang_consec > 1) = 1;
 angles_consec = 180*acos(cos_ang_consec)/pi;
 
-clearvars -except cos_ang cos_ang_consec norm_A participation_ex participation_inh angles angles_consec nTrials N Ne Ni nMems;
-save(fullfile('Data', "N" + num2str(N), "Trials" + num2str(nTrials), "FinalRepresentations.mat"));
+save(fullfile(parentFolder, "FinalRepresentations.mat"), "cos_ang", "cos_ang_consec", "norm_A", "participation_ex", "participation_inh", "angles", "angles_consec", "nTrials", "N", "Ne", "Ni", "nMems");

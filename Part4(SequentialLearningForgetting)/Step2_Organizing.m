@@ -2,10 +2,10 @@
 
 clear; clc;
 nTrials = 1000;
-N = 1600;
+N = 200;
 nMems = 100;
 
-folderPath = fullfile(pwd, 'Data', "N" + num2str(N), "Trials" + num2str(nTrials));
+folderPath = fullfile(pwd, 'Data', 'Scaled50', "N" + num2str(N));
 items = dir(folderPath);
 folderNames = {items([items.isdir]).name};
 subfolderNames = folderNames(~ismember(folderNames, {'.', '..'}));

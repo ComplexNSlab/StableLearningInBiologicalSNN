@@ -1,10 +1,15 @@
 % This script runs and simulate a network given your customize condition 
 
-clear; clc;
-N = 200; nTrials = 1000; trialLen = 100;
+% clear; clc;
+% N = 400; nTrials = 1000; trialLen = 100; scale50Flag = false;
 %% Initializing the Network properties
 
-baseFolder = fullfile(pwd, 'Data', "N" + num2str(N));
+if scale50Flag
+    scaleFolder = "Scaled50";
+else
+    scaleFolder = "constant50";
+end
+baseFolder = fullfile(pwd, 'Data', scaleFolder, "N" + num2str(N));
 net = IzhikevichNetwork(N, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, 'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);
 
 net.STDP = true;
@@ -13,7 +18,13 @@ net.noise = false;
 net.sampling_rate = 5000;
 %% Simulating 
 
-stim = Stimulation(net, trialLen, 2, 30, round(50*N/400), 5);
+if scale50Flag
+    N_stim = round(50*N/400);
+else
+    N_stim = 50;
+end
+
+stim = Stimulation(net, trialLen, 2, 30, N_stim, 5);
 net.stimulation = true;
 
 net.run(trialLen * nTrials);

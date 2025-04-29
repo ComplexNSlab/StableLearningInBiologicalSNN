@@ -1,13 +1,21 @@
 clc; clear;
-load("Data\N1600\Trials1000\FinalRepresentations.mat")
+scale50Flag = false;
+N = 1600;
+    
+if scale50Flag
+    scaleFolder = 'Scaled50';
+else
+    scaleFolder = 'Constant50';
+end
+load(fullfile(pwd, 'Data', scaleFolder, "N"+num2str(N), 'FinalRepresentations.mat'));
 
 %% Normalized Acitvity size with just participating cells
-figure; hold on;
+figure('Visible','off'); hold on;
 
 % Set figure size and position in inches (e.g., 10 inches wide x 6 inches tall)
 fig = gcf;
 fig.Units = 'inches';
-fig.Position = [1, 1, 12, 6];  % [x, y, width, height] in inches
+fig.Position = [1, 1, 12, 8];  % [x, y, width, height] in inches
 
 % Optional: enlarge axes content to use more space
 ax = gca;
@@ -21,7 +29,7 @@ fig.PaperSize = [fig.Position(3), fig.Position(4)];
 
 mean_curve = nan(size(norm_A,1), 21, nTrials*(nMems-1) + 20*nTrials);
 for iter = 1:size(norm_A,1)
-    for mem = 18:21
+    for mem = 1:21
         % Plot individual curves
         plot((nTrials+1:nMems*  nTrials) - mem*nTrials, squeeze(norm_A(iter, mem, nTrials+1:end)), '-', 'Color', 0.8*[1 1 1], HandleVisibility='off', LineWidth=0.1);
         
@@ -83,25 +91,29 @@ ax.TickLength = [0, 0];
 xticks([]);
 ylim([ymin, ymax])
 xlim(20*nTrials* [-1 5])
-title("Single Memory Tracked During Sequential Learning", 'FontSize', 22, 'FontWeight', 'bold');
+title(sprintf("Single Memory Tracked During Sequential Learning\n N = %d, nSimulations = %d", N, size(norm_A,1)), 'FontSize', 22, 'FontWeight', 'bold');
 xlabel("# New Memories", 'FontWeight', 'bold', 'FontSize', 20);
 
 set(gca, 'FontSize', 20);  % Consistent large font
 
-savePath = fullfile(pwd, 'Results', "norm_A_N" + num2str(N) + "trials" + num2str(nTrials));
+savePath = fullfile(pwd, 'Results', scaleFolder , "N" + num2str(N) );
+if ~exist(savePath, 'dir')
+    mkdir(savePath);
+end
 
-% %Save high-resolution PNG
-% print(gcf, savePath, '-dpng', '-r1200');
-% 
-% %Save high-quality PDF
-% print(gcf, savePath, '-dpdf', '-r1200');
+fig.PaperPositionMode = 'auto';
+%Save high-resolution PNG
+print(gcf, fullfile(savePath, "norm_A"), '-dpng', '-r600');
+
+%Save high-quality PDF
+print(gcf, fullfile(savePath, "norm_A"), '-dpdf', '-r600');
 %% Participation Rate of Cells
-figure; hold on;
+figure('Visible','off'); hold on;
 
 % Set figure size and position in inches (e.g., 10 inches wide x 6 inches tall)
 fig = gcf;
 fig.Units = 'inches';
-fig.Position = [1, 1, 12, 6];  % [x, y, width, height] in inches
+fig.Position = [1, 1, 12, 8];  % [x, y, width, height] in inches
 
 % Optional: enlarge axes content to use more space
 ax = gca;
@@ -168,39 +180,42 @@ ylabel("Assembly Size (%)", 'FontSize', 20, 'FontWeight', 'bold');
 legend('Location', 'south', 'FontSize', 12, 'Box', 'off');
 text(0, ymin + 0.04, "Pre Learning", 'FontSize', 20, 'FontWeight', 'bold');
 text(60 * nTrials, ymin + 0.04, "Post Learning", 'FontSize', 20, 'FontWeight', 'bold');
-title("Single Memory Tracked During Sequential Learning", 'FontSize', 22, 'FontWeight', 'bold');
+title(sprintf("Single Memory Tracked During Sequential Learning\n N = %d, nSimulations = %d", N, size(norm_A,1)), 'FontSize', 22, 'FontWeight', 'bold');
 
 set(gca, 'FontSize', 20);  % Consistent large font
 set(gcf, 'Color', 'w', 'PaperPositionMode', 'auto');    % White background
 
-savePath = fullfile(pwd, 'Results', "assembly_N" + num2str(N) + "trials" + num2str(nTrials));
+savePath = fullfile(pwd, 'Results', scaleFolder, "N"+num2str(N));
+if ~exist(savePath, 'dir')
+    mkdir(savePath);
+end
 
-% %Save high-resolution PNG
-% print(gcf, savePath, '-dpng', '-r1200');
-% 
-% % Save high-quality PDF
-% print(gcf, savePath, '-dpdf', '-r1200');
+%Save high-resolution PNG
+print(gcf, fullfile(savePath, "assembly"), '-dpng', '-r600');
+
+% Save high-quality PDF
+print(gcf,  fullfile(savePath, "assembly"), '-dpdf', '-r600');
 %% 
-% Your data
-idx = length(x_valid)/2-500:length(x_valid)-50000;
-x = x_valid(idx)'/nTrials;
-y = mean_valid(idx);
-
-% Define model: exponential decay with offset
-ft = fittype('a*(1 - exp(-b*x)) + c', 'independent', 'x');
-
-% Fit the model to data
-[fitresult, gof] = fit(x, y, ft, 'StartPoint', [1, 0.0001, 7]);
-
-% Display parameters
-disp(fitresult)
-
-% Plot the result
-figure; hold on; 
-plot(x_valid/nTrials, mean_valid)
-plot(fitresult, x, y)
-xlabel('x')
-ylabel('y')
-title('Exponential Decay Fit')
-legend('Data','Fitted Curve')
-
+% % Your data
+% idx = length(x_valid)/2-500:length(x_valid)-50000;
+% x = x_valid(idx)'/nTrials;
+% y = mean_valid(idx);
+% 
+% % Define model: exponential decay with offset
+% ft = fittype('a*(1 - exp(-b*x)) + c', 'independent', 'x');
+% 
+% % Fit the model to data
+% [fitresult, gof] = fit(x, y, ft, 'StartPoint', [1, 0.0001, 7]);
+% 
+% % Display parameters
+% disp(fitresult)
+% 
+% % Plot the result
+% figure; hold on; 
+% plot(x_valid/nTrials, mean_valid)
+% plot(fitresult, x, y)
+% xlabel('x')
+% ylabel('y')
+% title('Exponential Decay Fit')
+% legend('Data','Fitted Curve')
+% 
