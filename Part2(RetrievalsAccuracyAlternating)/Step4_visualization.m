@@ -4,11 +4,11 @@
 
 clear; clc;
 
-N = 100; % Network Size
+N = 400; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
-N_mems = 3;
+N_mems = 50;
 
 items = dir(fullfile("Data",  "N"+num2str(N),num2str(N_mems) + "memories/"));
 folders = items([items.isdir]); % Keep only directories
@@ -66,11 +66,11 @@ end
 plot(FPR_micro, TPR_micro, 'b--', 'LineWidth', 2, ...
      'DisplayName', sprintf('Micro-average (AUC = %.2f)', AUC_micro));
 
-%%
+%% Performance measures vs Alpha (partial recall ratio)
 
 clear; clc;
 
-N = 100; % Network Size
+N = 400; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
