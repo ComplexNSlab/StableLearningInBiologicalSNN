@@ -2,10 +2,11 @@
 clc;clear;
 
 % Network Size
-N = 100; 
+N = 400; 
+sclaleFolder = 'Constant50';
 
 % defualt selection of latest simulation
-folderPath = fullfile(pwd, "Data", "N" + num2str(N));
+folderPath = fullfile(pwd, "Data", sclaleFolder, "N" + num2str(N));
 sim_folders = dir(folderPath);
 sim_folders = sim_folders(~ismember({sim_folders.name}, {'.', '..'})); 
 [~, latestIdx] = max([sim_folders.datenum]);
