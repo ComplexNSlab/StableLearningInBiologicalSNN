@@ -1,6 +1,6 @@
 clc; clear;
-scale50Flag = false;
-N = 1600;
+scale50Flag = true;
+N = 800;
     
 if scale50Flag
     scaleFolder = 'Scaled50';
