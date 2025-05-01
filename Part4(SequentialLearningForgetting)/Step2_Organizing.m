@@ -2,7 +2,7 @@
 
 clear; clc;
 nTrials = 1000;
-N = 200;
+N = 100;
 nMems = 100;
 
 folderPath = fullfile(pwd, 'Data', 'Scaled50', "N" + num2str(N));
@@ -15,7 +15,6 @@ for iter = 1:length(subfolderNames)
 
     f = waitbar(0, "Please wait");
     for selected_mem = 1:21
-       
         TTFS = zeros(N, nTrials*100);
         for i = 1:nMems
             waitbar(((selected_mem-1)*nMems + i)/2100, f, sprintf("retreiving memory %d/21, while learning memory %d/100", selected_mem, i));
