@@ -1,6 +1,7 @@
 clear; clc;
 
-file = fullfile("Data", "Scaled50", "SpikeCountsThreshold.mat");
+rep = "Delays";
+file = fullfile("Data", "Scaled50", rep + "Threshold.mat");
 load(file, "thresholds");
 
 Ns = [];
@@ -107,6 +108,6 @@ xlim([50 650]);
 
 % Export
 set(gcf, 'PaperPositionMode', 'auto');
-print(gcf, fullfile('Results', 'StabilizationVsN'), '-dpdf', '-r300');  % Saves as PDF
+print(gcf, fullfile('Results', rep + "Thresholds"), '-dpdf', '-r300');  % Saves as PDF
 
 

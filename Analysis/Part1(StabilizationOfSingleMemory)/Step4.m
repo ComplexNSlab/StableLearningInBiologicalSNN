@@ -2,7 +2,7 @@
 % clc; clear;
 
 % N = 600; % NetworkSize
-nTrials = 1000;
+nTrials = 1500;
 scaleFolder = 'Scaled50';
 
 folderPath = fullfile(pwd,"Data", scaleFolder, "N" + num2str(N));
