@@ -1,11 +1,12 @@
 clear;clc;
+N = 400; %networkSize
+nTrials = 1000;
+stim_len = 100;
+N_mems = 3;
 
 %% Initializing the Network properties
-clc; clear;
-
-clear; clc;
-baseFolder = "." + filesep + "Data_Sequential" + filesep;
-net = IzhikevichNetwork(400, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, 'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);
+baseFolder = fullfile("Data");
+net = IzhikevichNetwork(N, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, 'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);
 
 net.STDP = true;
 net.noise = false;
@@ -14,18 +15,25 @@ net.sampling_rate = 5000;
 net.stimulation = true;
 %% Simulating to learn N memories sequentially
 
-N_mems = 4;
 stims = [];
 for i = 1:N_mems
-    stim = Stimulation(net, 100, 2, 30, 50, 5);
+    stim = Stimulation(net, stim_len, 2, 30, round(50*N/400), 5);
     stims = [stims, stim];
     net.stims = stim;
-    net.run(100000);
+    net.run(nTrials*stim_len);
+end
+
+%% 
+
+net.STDP = false;
+for i =1:N_mems
+    net.stims = stims(i);
+    net.run(100);
 end
 
 %% 
 [orders_together, orders_separate, spike_counts, delays] = computeOrders(net);
-% save(net.RecordingDirectory +  filesep +  "MemoryRepresentations", "orders_together", "orders_separate", "spike_counts", "delays");
+save(net.RecordingDirectory +  filesep +  "MemoryRepresentations", "orders_together", "orders_separate", "spike_counts", "delays");
 
 %% Simmilarity matrix of order vector 
 figure;
@@ -42,13 +50,15 @@ set(gca, 'ydir', 'normal');
 %% Simmilarity matrix of spike counts and time delays representations 
 
 figure;
-imagesc(1-squareform(pdist(delays(:, 1:net.Ne), "correlation")));
+delays_dist_mat = 1-squareform(pdist(delays(:, 1:net.Ne), "correlation"));
+imagesc(dist_mat);
 title("time delays Simmilarity Matrix");
 cb = colorbar(); cb.Label.String = "Pearson";
 set(gca, 'ydir', 'normal');
 
 figure;
-imagesc(1-squareform(pdist(spike_counts(:, 1:net.Ne), "spearman")));
+spikeCount_dist_mat = 1-squareform(pdist(spike_counts(:, 1:net.Ne), "correlation"));
+imagesc(dist_mat);
 title("Spike Counts Simmilarity Matrix");
 cb = colorbar(); cb.Label.String = "Pearson";
 set(gca, 'ydir', 'normal');
