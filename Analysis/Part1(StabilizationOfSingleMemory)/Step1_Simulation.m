@@ -1,7 +1,7 @@
 % This script runs and simulate a network given your customize condition 
 
-clear; clc;
-N = 400; nTrials = 1000; trialLen = 100; scale50Flag = true;
+% clear; clc;
+% N = 400; nTrials = 1000; trialLen = 100; scale50Flag = true;
 %% Initializing the Network properties
 
 if scale50Flag
