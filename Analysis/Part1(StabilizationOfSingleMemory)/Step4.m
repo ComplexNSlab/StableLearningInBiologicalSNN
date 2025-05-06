@@ -1,7 +1,8 @@
 %% Reading Responses in different representations and computing the distances
 % clc; clear;
 
-% N = 600; % NetworkSize
+show_figs = 'on';
+N = 100; % NetworkSize
 nTrials = 1500;
 scaleFolder = 'Scaled50';
 
@@ -20,14 +21,13 @@ end
 
 delays_data(delays_data == 0) = nan;
 
-
-%% === Figure 1: Delays Statistics ===
 savePath = fullfile('Results/', scaleFolder, "Trials1500" ,"N" + num2str(N), "Convergence");
 if ~exist(savePath, 'dir'), mkdir(savePath); end
 CI = 80;
 
+%% === Figure 1: Delays Statistics ===
 
-fig1 = figure('Units', 'inches', 'Position', [1 1 6 4], 'Color', 'w', 'Visible','off');
+fig1 = figure('Units', 'inches', 'Position', [1 1 6 4], 'Color', 'w', 'Visible',show_figs);
 hold on;
 
 ci_fill = [1.0 0.85 0.75];  % Light orange for CI
@@ -66,7 +66,7 @@ epsilon = 0.001;          % slope threshold (tune this!)
 [nCurves, nTrials] = size(Y);
 stabPoints = zeros(1, nCurves);
 
-figure('visible', 'off'); hold on;
+figure('visible', show_figs); hold on;
 yyaxis right
 plot([1, nTrials], epsilon*[1, 1], 'r')
 
@@ -129,7 +129,7 @@ save(thresholdPath, 'thresholds');
 
 %% === Figure 2: Spike Count vs Trial ===
 
-fig2 = figure('Units', 'inches', 'Position', [1 1 6 4], 'Color', 'w', 'Visible','off');
+fig2 = figure('Units', 'inches', 'Position', [1 1 6 4], 'Color', 'w', 'Visible',show_figs);
 hold on;
 
 x = 1:nTrials;
@@ -162,12 +162,11 @@ print(fig2, fullfile(savePath, 'spikeCount'), '-dpdf', '-r600');
 print(fig2, fullfile(savePath,'spikeCount'), '-dpng', '-r600');
 Y = y;
 %% Finding the thresholds
-epsilon = 0.005;          % slope threshold (tune this!)
-Y = y;
+epsilon = 0.002;          % slope threshold (tune this!)
 [nCurves, nTrials] = size(Y);
 stabPoints = zeros(1, nCurves);
 
-figure('visible', 'off'); hold on;
+figure('visible', show_figs); hold on;
 yyaxis right
 plot([1, nTrials], epsilon*[1, 1], 'r')
 
@@ -178,8 +177,7 @@ for i = 1:nCurves
     dy = abs(diff(y));
     dy_smooth = movmean(diff(y, 1), 100);
     
-    yyaxis left
-    plot(smooth(y), 'b-'); 
+
     yyaxis right 
     plot(dy_smooth, 'r-')
 
@@ -188,11 +186,15 @@ for i = 1:nCurves
     idx = find(dy_smooth > epsilon, 1, "last");
 
     % If not stable, return NaN
-    if isempty(idx) || idx == nTrials-1
+    if isempty(idx) || idx == nTrials-1 || y(idx) < 1
         stabPoints(i) = NaN;
+        yyaxis left
+        plot(smooth(y), 'b-'); 
     else
         stabPoints(i) = idx;
-        plot([idx, idx], [0, 0.04], 'g--')
+        plot([idx, idx], [0, 0.04], 'k--')
+        yyaxis left
+        plot(smooth(y), 'g-'); 
     end
     
 
