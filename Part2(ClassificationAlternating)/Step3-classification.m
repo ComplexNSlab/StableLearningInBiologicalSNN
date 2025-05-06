@@ -1,10 +1,10 @@
 clear; clc;
 
 alpha_range = 5:5:95;
-N = 400; % Network Size
+N = 100; % Network Size
 
 % Get list of all items in the current directory
-for N_mems = [50]
+for N_mems = 10:10:50
 
     items = dir(fullfile("Data", "N" + num2str(N) ,num2str(N_mems) + "memories/"));
     folders = items([items.isdir]); % Keep only directories
@@ -17,7 +17,7 @@ for N_mems = [50]
     shuffle_mats = zeros(length(folders), N_mems+1, N_mems+1);
     
     % Loop over each folder
-    for i = 3
+    for i = 1:length(folders)
         folderName = string(folders(i).name) + filesep + "recallsResponses";
         filePattern = fullfile(folderName, 'alpha_*'); % Look for files starting with "alpha_"
         % filePattern2 = fullfile(folderName, 'shuffle*');

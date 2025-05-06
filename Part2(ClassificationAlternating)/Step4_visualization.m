@@ -4,7 +4,7 @@
 
 clear; clc;
 
-N = 400; % Network Size
+N = 200; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
@@ -70,7 +70,7 @@ plot(FPR_micro, TPR_micro, 'b--', 'LineWidth', 2, ...
 
 clear; clc;
 
-N = 400; % Network Size
+N = 100; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
