@@ -5,7 +5,7 @@
 N = 800;
 n_mems = 100;
 n_trials = 1000;
-baseFolder = "./Data" + num2str(N) + "Cells" + num2str(n_trials) + "trials/";
+baseFolder = fullfile("Data", "Scaled50", "N" + num2str(N));
 net = IzhikevichNetwork(N, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, ...
     'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);
 
