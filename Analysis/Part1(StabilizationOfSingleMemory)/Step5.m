@@ -1,7 +1,7 @@
 clear; clc;
 
 rep = "Delays";
-file = fullfile("Data", "Scaled50", rep + "Threshold.mat");
+file = fullfile("Data", "Scaled50", "Trials1500", rep + "Threshold.mat");
 load(file, "thresholds");
 
 Ns = [];

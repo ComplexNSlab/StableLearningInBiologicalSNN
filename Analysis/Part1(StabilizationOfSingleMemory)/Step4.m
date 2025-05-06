@@ -5,7 +5,7 @@
 nTrials = 1500;
 scaleFolder = 'Scaled50';
 
-folderPath = fullfile(pwd,"Data", scaleFolder, "N" + num2str(N));
+folderPath = fullfile(pwd,"Data", scaleFolder, "Trials1500" , "N" + num2str(N));
 sim_folders = dir(folderPath);
 sim_folders = sim_folders(~ismember({sim_folders.name}, {'.', '..'}));
 
@@ -22,7 +22,7 @@ delays_data(delays_data == 0) = nan;
 
 
 %% === Figure 1: Delays Statistics ===
-savePath = fullfile('Results/', scaleFolder ,"N" + num2str(N), "Convergence");
+savePath = fullfile('Results/', scaleFolder, "Trials1500" ,"N" + num2str(N), "Convergence");
 if ~exist(savePath, 'dir'), mkdir(savePath); end
 CI = 80;
 
@@ -107,7 +107,7 @@ xlabel("Trials")
 hold off;
 
 %% Saving the thresholds results
-thresholdPath = fullfile("Data", "Scaled50", "DelaysThreshold.mat");
+thresholdPath = fullfile("Data", "Scaled50", "Trials1500", "DelaysThreshold.mat");
 
 % Try to load existing struct
 if isfile(thresholdPath)
@@ -208,7 +208,7 @@ xlabel("Trials")
 hold off;
 
 %% Saving the thresholds results
-thresholdPath = fullfile("Data", "Scaled50", "SpikeCountsThreshold.mat");
+thresholdPath = fullfile("Data", "Scaled50", "Trials1500", "SpikeCountsThreshold.mat");
 
 % Try to load existing struct
 if isfile(thresholdPath)
