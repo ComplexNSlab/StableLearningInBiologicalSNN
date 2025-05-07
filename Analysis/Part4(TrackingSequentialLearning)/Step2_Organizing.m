@@ -1,9 +1,12 @@
 %% Orginizing recalls of each memories in a separate file
 
 clear; clc;
-nTrials = 1000;
+%%%%%%% parameters to be set %%%%%%%%%%%%
 N = 100;
 nMems = 100;
+nTrials = 1000;
+scale50 = true;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 folderPath = fullfile(pwd, 'Data', 'Scaled50', "N" + num2str(N));
 items = dir(folderPath);

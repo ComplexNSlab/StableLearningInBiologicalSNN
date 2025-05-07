@@ -1,8 +1,8 @@
 %% Reading Responses in different representations and computing the distances
-% clc; clear;
+clc; clear;
 
-show_figs = 'on';
-N = 100; % NetworkSize
+show_figs = 'off';
+N = 1000; % NetworkSize
 nTrials = 1500;
 scaleFolder = 'Scaled50';
 

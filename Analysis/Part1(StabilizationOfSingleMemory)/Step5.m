@@ -124,4 +124,4 @@ legend(labels, 'Location', 'southeast', 'FontSize', 10, 'Box', 'off');
 exportgraphics(gcf, fullfile('Results', "DelaysVsSpikeCounts_Boxplot.pdf"), 'ContentType', 'vector', 'BackgroundColor', 'none');
 
 % print(gcf, fullfile('Results', "DelaysVsSpikeCounts_Boxplot"), '-dpdf', '-r300');
-% print(gcf, fullfile('Results', "DelaysVsSpikeCounts_Boxplot"), '-dpng', '-r300');
+print(gcf, fullfile('Results', "DelaysVsSpikeCounts_Boxplot"), '-dpng', '-r300');

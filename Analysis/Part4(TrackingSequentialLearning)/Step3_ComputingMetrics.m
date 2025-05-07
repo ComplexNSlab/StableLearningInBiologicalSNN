@@ -2,7 +2,7 @@
 clc; clear;
 
 nTrials = 1000;
-N = 800; Ne = floor(0.8*N); Ni = floor(0.2*N);
+N = 100; Ne = floor(0.8*N); Ni = floor(0.2*N);
 nMems = 100;
 
 parentFolder = fullfile(pwd, 'Data', 'Scaled50/',"N" + num2str(N));

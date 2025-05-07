@@ -1,6 +1,6 @@
 clc; clear;
 scale50Flag = true;
-N = 800;
+N = 100;
     
 if scale50Flag
     scaleFolder = 'Scaled50';
@@ -10,7 +10,7 @@ end
 load(fullfile(pwd, 'Data', scaleFolder, "N"+num2str(N), 'FinalRepresentations.mat'));
 
 %% Normalized Acitvity size with just participating cells
-figure('Visible','off'); hold on;
+figure('Visible','on'); hold on;
 
 % Set figure size and position in inches (e.g., 10 inches wide x 6 inches tall)
 fig = gcf;
@@ -102,11 +102,11 @@ if ~exist(savePath, 'dir')
 end
 
 fig.PaperPositionMode = 'auto';
-%Save high-resolution PNG
-print(gcf, fullfile(savePath, "norm_A"), '-dpng', '-r600');
-
-%Save high-quality PDF
-print(gcf, fullfile(savePath, "norm_A"), '-dpdf', '-r600');
+% %Save high-resolution PNG
+% print(gcf, fullfile(savePath, "norm_A"), '-dpng', '-r600');
+% 
+% %Save high-quality PDF
+% print(gcf, fullfile(savePath, "norm_A"), '-dpdf', '-r600');
 %% Participation Rate of Cells
 figure('Visible','off'); hold on;
 
