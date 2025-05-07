@@ -117,6 +117,11 @@ classdef IzhikevichNetwork < handle
         % Simlulate the network for time T in miliseond
         function run(obj,T)
            tic 
+           
+           if ~issparse(obj.w)
+                obj.w = sparse(obj.w);
+           end
+
            % github = false;
            if obj.stimulation
                I_stim = zeros(obj.N, round(obj.stims(1).interval/obj.dt));
@@ -145,7 +150,7 @@ classdef IzhikevichNetwork < handle
                 obj.v(obj.v > 30) = 30;
                 
                 if obj.sampling && mod(i, obj.sampling_rate) == 0    
-                    obj.A_save(:, round(i/obj.sampling_rate)) = obj.A;
+                    % obj.A_save(:, round(i/obj.sampling_rate)) = obj.A;
                     % obj.v_save(:, round(i/obj.sampling_rate)) = obj.v;
                     % obj.u_save(:, round(i/obj.sampling_rate)) = obj.u;
                     if obj.scaling || obj.STDP
@@ -175,12 +180,8 @@ classdef IzhikevichNetwork < handle
                 obj.v(fired) = obj.c(fired);
                 obj.u(fired) = obj.u(fired)+obj.d(fired);
                 
-                
                 I = obj.w * obj.I_syn;
-                % I = zeros(400, 1);
-                % for k = 1:length(val)
-                %     I(i_idx(k)) = I(i_idx(k)) + val(k) * obj.I_syn(j_idx(k));
-                % end
+                % I = obj.w * obj.I_syn;
 
                 if obj.noise
                     I_noise = [obj.sigma_ex*randn(obj.Ne,1); obj.sigma_inh*randn(obj.Ni,1)]/sqrt(obj.dt);
@@ -192,9 +193,8 @@ classdef IzhikevichNetwork < handle
                    I = I + I_stim(:, time_index);
                 end
     
-                obj.A = obj.A - obj.A *obj.dt/obj.tau_A;
-                obj.A(fired) = obj.A(fired) + 1000/obj.tau_A; 
-                %obj.A(fired) = obj.A(fired) + 1; 
+                % obj.A = obj.A - obj.A *obj.dt/obj.tau_A;
+                % obj.A(fired) = obj.A(fired) + 1000/obj.tau_A; 
     
                 if obj.scaling && mod(i, 20) == 0
                     dw = obj.alpha * (((obj.A_goal - obj.A) * obj.A') .* abs(obj.w)) * 20 * obj.dt;
@@ -209,7 +209,7 @@ classdef IzhikevichNetwork < handle
                 
                 % updates the waitbar status
                 if obj.saveSimulation
-                    if  mod(i, 2000) == 0      
+                    if  mod(i, 10000) == 0      
                         waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s, Ratio : %0.2f', round(100*i/n_t), obj.t/1000, T/1000, toc, i*obj.dt/1000/toc));
                     end
                 end
@@ -284,23 +284,52 @@ classdef IzhikevichNetwork < handle
         end
     end
     
-    methods (Static)
+    methods (Static)F
       % STDP Kernel for LTP and LTD 
-      function dw = STDP_kernel(w, t)  
-          if t >= 0 % LTP
-            % dw = exp(-t) - exp(-t/20);
-            % dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
-            a = 3;
-            w(w < 1.e-10) = 1.e-10;
-            dw =  0.015*3/a  * w *  log(a/abs(w)) * exp(-t/20);
+      % function dw = STDP_kernel(w, t)  
+      %     if t >= 0 % LTP
+      %       % dw = exp(-t) - exp(-t/20);
+      %       % dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
+      %       a = 3;
+      %       w(w < 1.e-10) = 1.e-10;
+      %       dw =  0.015*3/a  * w *  log(a/abs(w)) * exp(-t/20);
+      % 
+      %     else % LTD
+      %        % dw = exp(t/5) * t * (19/20);
+      %        dw =  - 0.03 * w *  exp(-abs(t)/20);
+      %     end
+      %     dw = 1 * dw;
+      % 
+      % end
+      function dw = STDP_kernel(w, t)
+            % Ensure column vectors
+            w = w(:);
+            t = t(:);
 
-          else % LTD
-             % dw = exp(t/5) * t * (19/20);
-             dw =  - 0.03 * w *  exp(-abs(t)/20);
-          end
-          dw = 1 * dw;
-          
-      end
+            % Safeguard against log(0)
+            w(w < 1e-10) = 1e-10;
+
+            % Preallocate
+            dw = zeros(size(w));
+
+            % LTP
+            isLTP = t >= 0;
+            if any(isLTP)
+                a = 3;
+                w_ltp = w(isLTP);
+                t_ltp = t(isLTP);
+                dw(isLTP) = 0.015 * 3 / a * w_ltp .* log(a ./ abs(w_ltp)) .* exp(-t_ltp / 20);
+            end
+
+            % LTD
+            isLTD = ~isLTP;
+            if any(isLTD)
+                w_ltd = w(isLTD);
+                t_ltd = t(isLTD);
+                dw(isLTD) = -0.03 * w_ltd .* exp(-abs(t_ltd) / 20);
+            end
+        end
+
     end
     
     methods (Access = private)
@@ -381,38 +410,79 @@ classdef IzhikevichNetwork < handle
         end
     
         function applySTDP(obj, fired)
-            %%%%%%%%%% Previous algorithm %%%%%%%%%%%%
+            % Update timer for all newly fired neurons
             obj.timer_vector(fired) = 50;
-    
-            for fired_neuron = fired.'
+            % obj.w = full(obj.w);
+            for fired_neuron = fired.'  % Keep outer loop: neurons fire in order
                 if fired_neuron <= obj.Ne
-                    input_cells = obj.in_cells(fired_neuron); % If they have fired within a time window, they cause LTP
-                    output_cells = obj.out_cells(fired_neuron); % If they have fired within a time window, they cause LTD
-    
-                    % LTP
-                    for in_idx = input_cells
-                        delta_t = 50 - obj.timer_vector(in_idx);
-                        if delta_t < 50 && in_idx <= obj.Ne
-                            dw = IzhikevichNetwork.STDP_kernel(obj.w(fired_neuron, in_idx), delta_t);
-                            obj.w(fired_neuron, in_idx) = obj.w(fired_neuron, in_idx) + dw;
-                        end
+                    % ----- LTP -----
+                    input_cells = obj.in_cells(fired_neuron);
+                    input_cells = input_cells(input_cells <= obj.Ne);  % Excitatory only
+
+                    delta_t_in = 50 - obj.timer_vector(input_cells);
+                    valid_in = delta_t_in < 50;
+
+                    if any(valid_in)
+                        in_idx = input_cells(valid_in);
+                        delta_t_valid = delta_t_in(valid_in);
+                        w_current = obj.w(fired_neuron, in_idx);
+                        dw = IzhikevichNetwork.STDP_kernel(w_current, delta_t_valid);
+                        obj.w(fired_neuron, in_idx) = w_current + dw';
                     end
-    
-                    % LTD
-                    for out_idx = output_cells
-                        delta_t = 50 - obj.timer_vector(out_idx);
-                        if delta_t < 50 && out_idx <= obj.Ne
-                            dw = IzhikevichNetwork.STDP_kernel(obj.w(out_idx, fired_neuron), -delta_t);
-                            obj.w(out_idx, fired_neuron) = obj.w(out_idx, fired_neuron) + dw;
-                        end
+
+                    % ----- LTD -----
+                    output_cells = obj.out_cells(fired_neuron);
+                    output_cells = output_cells(output_cells <= obj.Ne);  % Excitatory only
+
+                    delta_t_out = 50 - obj.timer_vector(output_cells);
+                    valid_out = delta_t_out < 50;
+
+                    if any(valid_out)
+                        out_idx = output_cells(valid_out);
+                        delta_t_valid = -delta_t_out(valid_out);  % Note sign for LTD
+                        w_current = obj.w(out_idx, fired_neuron);
+                        dw = IzhikevichNetwork.STDP_kernel(w_current, delta_t_valid);
+                        obj.w(out_idx, fired_neuron) = w_current + dw;
                     end
                 end
             end
+            % obj.w = sparse(obj.w);
         end
-    
+
+
+        % function applySTDP(obj, fired)
+        % 
+        %     obj.timer_vector(fired) = 50;
+        % 
+        %     for fired_neuron = fired.'
+        %         if fired_neuron <= obj.Ne
+        %             input_cells = obj.in_cells(fired_neuron); % If they have fired within a time window, they cause LTP
+        %             output_cells = obj.out_cells(fired_neuron); % If they have fired within a time window, they cause LTD
+        % 
+        %             % LTP
+        %             for in_idx = input_cells
+        %                 delta_t = 50 - obj.timer_vector(in_idx);
+        %                 if delta_t < 50 && in_idx <= obj.Ne
+        %                     dw = IzhikevichNetwork.STDP_kernel(obj.w(fired_neuron, in_idx), delta_t);
+        %                     obj.w(fired_neuron, in_idx) = obj.w(fired_neuron, in_idx) + dw;
+        %                 end
+        %             end
+        % 
+        %             % LTD
+        %             for out_idx = output_cells
+        %                 delta_t = 50 - obj.timer_vector(out_idx);
+        %                 if delta_t < 50 && out_idx <= obj.Ne
+        %                     dw = IzhikevichNetwork.STDP_kernel(obj.w(out_idx, fired_neuron), -delta_t);
+        %                     obj.w(out_idx, fired_neuron) = obj.w(out_idx, fired_neuron) + dw;
+        %                 end
+        %             end
+        %         end
+        %     end
+        % end
+        
         function SaveRecordings(obj)
             if ~obj.STDP && ~obj.scaling 
-                obj.w_save = repmat(obj.w, 1, 1, size(obj.w_save, 3));
+                obj.w_save = repmat(full(obj.w), 1, 1, size(obj.w_save, 3));
             end
     
             if ~obj.sampling
