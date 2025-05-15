@@ -84,7 +84,7 @@ for g = 1:2
         vals = vals(~isnan(vals));
         jitter = (rand(size(vals)) - 0.5) * 0.10;
         scatter(x_val + jitter, vals, ...
-            6, 'k', 'filled', 'MarkerFaceAlpha', 0.3);
+            4, 'k', 'filled', 'MarkerFaceAlpha', 0.3);
     end
 end
 

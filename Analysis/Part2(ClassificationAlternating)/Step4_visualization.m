@@ -74,7 +74,7 @@ N = 400; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
-N_mems = 50;
+N_mems = 30;
 
 folder_path = fullfile("Data",  "N"+num2str(N),num2str(N_mems) + "memories/");
 items = dir(folder_path);
@@ -148,14 +148,14 @@ end
 
 
 function fig = plotMeanCurveWithCI(x_mems, x_rands, alpha_range, CI, metric_name)
-% PLOTMEANCURVEWITHCI Plot mean curves and CI bands for memory and random recall
-%
-% Inputs:
-%   x_mems       - [alpha × sims × mems] matrix of memory performance values
-%   x_rands      - [alpha × sims] matrix of random recall performance values
-%   alpha_range  - vector of alpha values (x-axis)
-%   CI           - confidence interval percentage (e.g., 95)
-%   metric_name  - string for labeling the metric (e.g., 'Recall', 'Precision')
+    % PLOTMEANCURVEWITHCI Plot mean curves and CI bands for memory and random recall
+    %
+    % Inputs:
+    %   x_mems       - [alpha × sims × mems] matrix of memory performance values
+    %   x_rands      - [alpha × sims] matrix of random recall performance values
+    %   alpha_range  - vector of alpha values (x-axis)
+    %   CI           - confidence interval percentage (e.g., 95)
+    %   metric_name  - string for labeling the metric (e.g., 'Recall', 'Precision')
 
     % Figure setup
     fig = figure('Color', 'w', 'Visible', 'on'); hold on;
@@ -205,7 +205,7 @@ function fig = plotMeanCurveWithCI(x_mems, x_rands, alpha_range, CI, metric_name
     xlim([min(alpha_range), max(alpha_range)]);
     ylim([0 1]);  % Adjust as needed
 
-    grid on;
+    grid off;
     box on;
     set(gca, 'FontSize', 12);
 end

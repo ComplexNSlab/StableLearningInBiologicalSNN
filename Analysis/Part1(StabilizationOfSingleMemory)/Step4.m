@@ -1,8 +1,19 @@
 %% Reading Responses in different representations and computing the distances
-clc; clear;
 
-show_figs = 'off';
-N = 1000; % NetworkSize
+clc; clear;
+set(groot, 'DefaultAxesFontName', 'Times New Roman')
+set(groot, 'DefaultTextInterpreter', 'latex');
+set(groot, 'DefaultAxesTickLabelInterpreter', 'latex');
+set(groot, 'DefaultLegendInterpreter', 'latex');
+set(groot, 'DefaultAxesFontSize', 14);
+set(groot, 'DefaultTextFontSize', 14);
+set(groot, 'DefaultLegendFontSize', 13);
+
+
+%%
+
+show_figs = 'on';
+N = 400; % NetworkSize
 nTrials = 1500;
 scaleFolder = 'Scaled50';
 

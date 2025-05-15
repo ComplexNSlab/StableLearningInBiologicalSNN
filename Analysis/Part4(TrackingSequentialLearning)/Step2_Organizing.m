@@ -15,9 +15,14 @@ subfolderNames = folderNames(~ismember(folderNames, {'.', '..'}));
 
 for iter = 1:length(subfolderNames)
     fprintf("Organizing Simluation : " + subfolderNames{iter} + "\n");
+    
+
 
     f = waitbar(0, "Please wait");
     for selected_mem = 1:21
+        if exist(fullfile(folderPath, subfolderNames{iter}, sprintf("Memory%dRecalls.mat", selected_mem+39)), "file")
+            continue;
+        end
         TTFS = zeros(N, nTrials*100);
         for i = 1:nMems
             waitbar(((selected_mem-1)*nMems + i)/2100, f, sprintf("retreiving memory %d/21, while learning memory %d/100", selected_mem, i));

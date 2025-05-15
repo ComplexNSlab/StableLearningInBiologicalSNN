@@ -280,11 +280,11 @@ classdef IzhikevichNetwork < handle
             patch_address = obj.RecordingDirectory + filesep + "Patch" + num2str(patch_num) + ".mat";
             s = load(patch_address);
             network = getfield(s, 'obj');
- 
         end
+
     end
     
-    methods (Static)F
+    methods (Static)
       % STDP Kernel for LTP and LTD 
       % function dw = STDP_kernel(w, t)  
       %     if t >= 0 % LTP
@@ -399,7 +399,7 @@ classdef IzhikevichNetwork < handle
     
         function Constructor_RecordingContainers(obj, n_t)
             obj.RecordingFile = obj.RecordingDirectory + filesep + "Patch" + int2str(obj.PatchNumber);
-            obj.firings = zeros(3000000, 2);
+            obj.firings = zeros(3*n_t, 2);
             obj.time = obj.t / 1000 + (1:obj.sampling_rate:n_t) * obj.dt / 1000;
             % obj.spike_trains = zeros(obj.Ne + obj.Ni, n_t);
             obj.w_save = zeros(obj.Ne + obj.Ni, obj.Ne + obj.Ni, round(n_t / obj.sampling_rate));             

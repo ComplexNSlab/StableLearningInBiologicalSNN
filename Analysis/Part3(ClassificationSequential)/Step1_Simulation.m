@@ -5,7 +5,7 @@ stim_len = 100;
 N_mems = 3;
 
 %% Initializing the Network properties
-baseFolder = fullfile("Data");
+baseFolder = fullfile("Data", "N" + num2str(N), "nMems" + num2str(N_mems));
 net = IzhikevichNetwork(N, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, 'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);
 
 net.STDP = true;
@@ -19,71 +19,21 @@ stims = [];
 for i = 1:N_mems
     stim = Stimulation(net, stim_len, 2, 30, round(50*N/400), 5);
     stims = [stims, stim];
-    net.stims = stim;
+end
+
+save(fullfile(net.RecordingDirectory, "stimuli.mat"), "stims");
+
+for i = 1:N_mems
+    net.STDP = true;
+    net.stims = stims(i);
     net.run(nTrials*stim_len);
 end
-
-%% 
-
-net.STDP = false;
-for i =1:N_mems
-    net.stims = stims(i);
-    net.run(100);
-end
-
 %% 
 [orders_together, orders_separate, spike_counts, delays] = computeOrders(net);
+
+
 save(net.RecordingDirectory +  filesep +  "MemoryRepresentations", "orders_together", "orders_separate", "spike_counts", "delays");
 
-%% Simmilarity matrix of order vector 
-figure;
-imagesc(1-squareform(pdist(orders_separate(:, 1:net.Ne), "spearman")));
-title("Spike Order Separate Simmilarity Matrix");
-cb = colorbar(); cb.Label.String = "Spearman"; 
-set(gca, 'ydir', 'normal');
-
-figure;
-imagesc(1-squareform(pdist(orders_together(:, 1:net.Ne), "spearman")));
-title("Spike Order Together Simmilarity Matrix");
-cb = colorbar(); cb.Label.String = "Spearman";
-set(gca, 'ydir', 'normal');
-%% Simmilarity matrix of spike counts and time delays representations 
-
-figure;
-delays_dist_mat = 1-squareform(pdist(delays(:, 1:net.Ne), "correlation"));
-imagesc(dist_mat);
-title("time delays Simmilarity Matrix");
-cb = colorbar(); cb.Label.String = "Pearson";
-set(gca, 'ydir', 'normal');
-
-figure;
-spikeCount_dist_mat = 1-squareform(pdist(spike_counts(:, 1:net.Ne), "correlation"));
-imagesc(dist_mat);
-title("Spike Counts Simmilarity Matrix");
-cb = colorbar(); cb.Label.String = "Pearson";
-set(gca, 'ydir', 'normal');
-
-%% Assembly Activities Representation
-assemblies = spike_counts ~= 0;
-figure; imagesc(~assemblies'); colormap('hot');
-xlabel("Tirals", 'FontWeight','bold'); ylabel("Cell index", 'FontWeight','bold'); title("Assembly Representation of Activity");
-set(gca, 'ydir', 'normal', 'FontSize', 15);
-%% Similarity matrix of assembly representation excluding inhibitory cells (because of the bias they cause)
-mat = 1- squareform(pdist(1*assemblies(:, 1:net.Ne), "Hamming"));
-figure; imagesc(mat); cb = colorbar(); cb.Label.String = "Hamming";
-xlabel("Trials", FontWeight="bold"); ylabel("Trials", FontWeight="bold");
-title("Assembly Similarity Distance")
-set(gca, 'ydir', 'normal', 'FontSize', 15);
-
-
-%% Participation Rate of the Population
-figure; hold on;
-plot(100*sum(assemblies(:, 1:net.Ne), 2)/net.Ne, DisplayName="Ex");
-plot(100*sum(assemblies(:, net.Ne+1:end), 2)/net.Ni, DisplayName="Inh");
-plot(100*sum(assemblies, 2)/net.N, DisplayName="Both");
-legend(); xlabel("Trials", 'FontWeight', 'bold'); ylabel("Participation Rate", 'FontWeight', 'bold');
-title("Participation of the Population ")
-set(gca, 'FontName', 'arial', 'fontsize', 15)
 %% Functions 
 
 function [check_flag_save2, check_flag_save, total_spike_count, time_delays] = computeOrders(net, interval)
@@ -112,11 +62,11 @@ function [check_flag_save2, check_flag_save, total_spike_count, time_delays] = c
         variable_name = "data" + num2str(patch_num);
         s = load(patch_address);
         data = getfield(s, variable_name);
-        net = getfield(s, 'obj');
+        net_local = getfield(s, 'obj');
         firings = transpose(data.firings);
         firings(:, 1) = firings(:, 1) - time_keeper;
         
-        for trial_number = 1:round((net.t-time_keeper)/interval)
+        for trial_number = 1:round((net_local.t-time_keeper)/interval)
             % Computing the orders
             
             start_time = (firings(:, 1) > (trial_number-1) * interval + off_set_time);
@@ -138,7 +88,7 @@ function [check_flag_save2, check_flag_save, total_spike_count, time_delays] = c
             waitbar(patch_num/(net.PatchNumber-1), f, sprintf("Computing First to Spike Orders ... \n trial %d, patch %d/%d", trial_counter, patch_num, net.PatchNumber-1))
         end
     
-        time_keeper = net.t;
+        time_keeper = net_local.t;
     end
     
     close(f)

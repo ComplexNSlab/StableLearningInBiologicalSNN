@@ -1,9 +1,9 @@
 clear; clc;
 
 % Parameters
-N = 400;
+N = 200;
 alpha_range = 5:5:95;
-nMems_range = [3 5 10 15 20 25 30 50];
+nMems_range = [10:10:50];
 metric_names = {'F1', 'Precision', 'Recall', 'AUC'};
 nMetrics = numel(metric_names);
 

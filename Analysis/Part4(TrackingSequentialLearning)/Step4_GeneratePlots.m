@@ -1,13 +1,14 @@
 clc; clear;
 scale50Flag = true;
-N = 100;
+N = 400;
     
 if scale50Flag
     scaleFolder = 'Scaled50';
 else
     scaleFolder = 'Constant50';
 end
-load(fullfile(pwd, 'Data', scaleFolder, "N"+num2str(N), 'FinalRepresentations.mat'));
+data_folder = fullfile(pwd, 'Data', scaleFolder, "N"+num2str(N));
+load(fullfile(data_folder, 'FinalRepresentations.mat'));
 
 %% Normalized Acitvity size with just participating cells
 figure('Visible','on'); hold on;
@@ -101,14 +102,18 @@ if ~exist(savePath, 'dir')
     mkdir(savePath);
 end
 
-fig.PaperPositionMode = 'auto';
+xlim([30000, 50000])
+
+% fig.PaperPositionMode = 'auto';
 % %Save high-resolution PNG
 % print(gcf, fullfile(savePath, "norm_A"), '-dpng', '-r600');
 % 
 % %Save high-quality PDF
 % print(gcf, fullfile(savePath, "norm_A"), '-dpdf', '-r600');
+% 
+% save(fullfile(data_folder, "norm_A.mat"), 'mean_curve');
 %% Participation Rate of Cells
-figure('Visible','off'); hold on;
+figure('Visible','on'); hold on;
 
 % Set figure size and position in inches (e.g., 10 inches wide x 6 inches tall)
 fig = gcf;
@@ -190,11 +195,13 @@ if ~exist(savePath, 'dir')
     mkdir(savePath);
 end
 
-%Save high-resolution PNG
-print(gcf, fullfile(savePath, "assembly"), '-dpng', '-r600');
-
-% Save high-quality PDF
-print(gcf,  fullfile(savePath, "assembly"), '-dpdf', '-r600');
+% %Save high-resolution PNG
+% print(gcf, fullfile(savePath, "assembly"), '-dpng', '-r600');
+% 
+% % Save high-quality PDF
+% print(gcf,  fullfile(savePath, "assembly"), '-dpdf', '-r600');
+% 
+% save(fullfile(data_folder, "assembly.mat"), 'mean_curve_ex', 'mean_curve_inh');
 %% 
 % % Your data
 % idx = length(x_valid)/2-500:length(x_valid)-50000;
