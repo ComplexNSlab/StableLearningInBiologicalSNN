@@ -74,7 +74,7 @@ N = 400; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
-N_mems = 30;
+N_mems = 50;
 
 folder_path = fullfile("Data",  "N"+num2str(N),num2str(N_mems) + "memories/");
 items = dir(folder_path);
@@ -141,7 +141,9 @@ for i = 1:4
     
     % Save
     filename = fullfile(pwd, 'Results','SVMResults', "N"+num2str(N), sprintf('%s_Curve_%d_Mems.pdf', strrep(s, ' ', ''), N_mems));
+    filename = char(filename);
     exportgraphics(fig, filename, 'ContentType', 'vector');  % high-quality PDF
+    print(gcf, filename(1:end-3) + "png", '-dpng', '-r300');
 end
 
 %% functions

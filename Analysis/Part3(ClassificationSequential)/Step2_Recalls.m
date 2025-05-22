@@ -1,22 +1,22 @@
 %% Parameters
 N_retrievals = 100;
-N_rands = 200;
+N_rands = 100; n_repeats = N_mems;
 
 %%
-alpha = 0.7;
 
 bar = waitbar(0, "Please wait...");
-for patch_num = 1:N_mems
+for patch_num = N_mems
     load(fullfile(net.RecordingDirectory, sprintf("patch%d.mat", patch_num)), 'obj');
     netRecall = obj;
     netRecall.saveSimulation = false;
-    
+    netRecall.STDP = false;
+
     firings = [];
     % Memory Recalls
      for m = 1:N_mems
          for iter = 1:N_retrievals
             if mod(iter, 10) == 0
-                waitbar(((m-1)*N_retrievals + iter)/(N_rands+N_retrievals*N_mems), bar, sprintf("After Learning Memory %d/%d, Alpha: %.2f\n  Memory %d, Partial Recalling: %d/%d", patch_num, N_mems ,alpha, m, iter, N_retrievals));
+                waitbar(((m-1)*N_retrievals + iter)/(n_repeats*N_rands+N_retrievals*N_mems), bar, sprintf("After Learning Memory %d/%d, Alpha: %.2f\n  Memory %d, Partial Recalling: %d/%d", patch_num, N_mems ,alpha, m, iter, N_retrievals));
             end
 
             stim = stims(m).copy();
@@ -25,7 +25,7 @@ for patch_num = 1:N_mems
             stim.pattern_indices = stim.pattern_indices(sub_set);
             stim.pattern_timings = mod(stim.pattern_timings(sub_set), 100);
             stim.interval = 100;
-            stim.start_time = 10;
+            stim.start_time = 5;
             stim.ConstructStimCurrent();
             
             netRecall.stims = stim;
@@ -34,27 +34,40 @@ for patch_num = 1:N_mems
         end
     end
     
-    % Random Recalls
-    for iter = 1:N_rands
-        if mod(iter, 10) == 0
-            waitbar((iter+N_retrievals*N_mems)/(N_retrievals*N_mems+N_rands), bar, sprintf("Alpha: %.2f\n Random Recall: %d/%d", alpha, iter, N_rands));
+    for repeat = 1:n_repeats
+        stim_rand = Stimulation(netRecall, 100, 2, 30, ceil(stims(1).Ncells), 10);
+        % Random Recalls
+        for iter = 1:N_rands
+            if mod(iter, 10) == 0
+                waitbar(((repeat-1)*N_rands + iter + N_retrievals*N_mems)/(N_retrievals*N_mems+N_rands*n_repeats), bar, sprintf("Alpha: %.2f\n Random Recall: %d/%d", alpha, iter, N_rands));
+            end
+            
+            stim = stim_rand.copy();
+            stim.Ncells = ceil(alpha * stim_rand.Ncells);
+            sub_set = randperm(stim_rand.Ncells, stim.Ncells);
+            stim.pattern_indices = stim.pattern_indices(sub_set);
+            stim.pattern_timings = mod(stim.pattern_timings(sub_set), 100);
+            stim.interval = 100;
+            stim.start_time = 5;
+            stim.ConstructStimCurrent();
+            
+            netRecall.stims = stim;
+            
+            netRecall.stims = stim;
+            netRecall.run(100);
+            firings = [firings; netRecall.firings];
         end
-        
-        stim_rand = Stimulation(netRecall, 100, 2, 30, ceil(alpha * stims(1).Ncells), 10);
-        netRecall.stims = stim_rand;
-        netRecall.run(100);
-        firings = [firings; netRecall.firings];
     end
     
     
-    [orders_together, orders_separate, spikeCounts, delays] = computeRepresentations(netRecall, firings, patch_num*nTrials*stim_len, N_retrievals*N_mems + N_rands);
+    [orders_together, orders_separate, spikeCounts, delays] = computeRepresentations(netRecall, firings , patch_num*nTrials*stim_len, N_retrievals*N_mems + N_rands);
     groups = [];
     for m = 1:N_mems
         groups = [groups, repmat(sprintf("m%d", m), 1, N_retrievals)];
     end
-    groups = [groups, repmat("random", 1, N_rands)];
+    groups = [groups, repmat("random", 1, n_repeats*N_rands)];
     
-    savePath = fullfile(net.RecordingDirectory, "Recalls");
+    savePath = fullfile(net.RecordingDirectory, "Recalls", sprintf("alpha%d", round(100*alpha)));
     if ~exist(savePath, 'dir')
         mkdir(savePath);
     end

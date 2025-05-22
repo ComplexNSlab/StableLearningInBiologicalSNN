@@ -1,9 +1,3 @@
-clear;clc;
-N = 400; %networkSize
-nTrials = 1000;
-stim_len = 100;
-N_mems = 3;
-
 %% Initializing the Network properties
 baseFolder = fullfile("Data", "N" + num2str(N), "nMems" + num2str(N_mems));
 net = IzhikevichNetwork(N, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, 'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);
@@ -29,11 +23,10 @@ for i = 1:N_mems
     net.run(nTrials*stim_len);
 end
 %% 
-[orders_together, orders_separate, spike_counts, delays] = computeOrders(net);
-
-
-save(net.RecordingDirectory +  filesep +  "MemoryRepresentations", "orders_together", "orders_separate", "spike_counts", "delays");
-
+% [orders_together, orders_separate, spike_counts, delays] = computeOrders(net);
+% 
+% 
+% save(net.RecordingDirectory +  filesep +  "MemoryRepresentations", "orders_together", "orders_separate", "spike_counts", "delays");
 %% Functions 
 
 function [check_flag_save2, check_flag_save, total_spike_count, time_delays] = computeOrders(net, interval)
