@@ -6,7 +6,7 @@ for simulation_iter = 1:5
     stim_len = 100;
     N_mems = 25;
     Step1_Simulation;
-    for alpha = [30, 50, 70, 90]
+    for alpha = [0.3, 0.5, 0.7, 0.9]
         Step2_Recalls;
     end
 end

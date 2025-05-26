@@ -1,10 +1,10 @@
 clear; clc;
 
 alpha_range = 5:5:95;
-N = 100; % Network Size
+N = 400; % Network Size
 
 % Get list of all items in the current directory
-for N_mems = 10:10:50
+for N_mems = [35, 45]
 
     items = dir(fullfile("Data", "N" + num2str(N) ,num2str(N_mems) + "memories/"));
     folders = items([items.isdir]); % Keep only directories
@@ -18,10 +18,15 @@ for N_mems = 10:10:50
     
     % Loop over each folder
     for i = 1:length(folders)
+        if  exist(fullfile(folders(i).folder, folders(i).name, "ClassificationResults.mat"), 'file')
+            fprintf("Already Computed!\n");
+            continue;
+        end
+        
         folderName = string(folders(i).name) + filesep + "recallsResponses";
         filePattern = fullfile(folderName, 'alpha_*'); % Look for files starting with "alpha_"
         % filePattern2 = fullfile(folderName, 'shuffle*');
-    
+        
         % Get list of matching files
         matchingFiles = dir(fullfile("Data", "N" + num2str(N) , num2str(N_mems) + "memories", filePattern));
 

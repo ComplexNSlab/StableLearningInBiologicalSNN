@@ -1,7 +1,7 @@
 clear; clc;
 
 % Parameters
-N = 200;
+N = 100;
 alpha_range = 5:5:95;
 nMems_range = [10:10:50];
 metric_names = {'F1', 'Precision', 'Recall', 'AUC'};
