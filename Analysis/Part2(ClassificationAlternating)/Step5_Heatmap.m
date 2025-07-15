@@ -66,7 +66,7 @@ for m = 1:length(nMems_range)
     perf_mat_randoms(m,:,4) = squeeze(mean(auc_temp(:, :, end), [2,3], 'omitnan'));
 end
 
-%%
+%% Heatmap of Performance Measures across (Alpha and # of memories) for Memory class
 
 perf_mat = perf_mat_memories;
 % Plot one figure per metric
@@ -104,7 +104,8 @@ for metric_id = 1:nMetrics
     exportgraphics(gcf, filename, 'ContentType', 'vector');
     print(gcf, filename(1:end-3) + "png", '-dpng', '-r300');
 end
-%%
+%% Heatmap of Performance Measures across (Alpha and # of memories) for Random Cue class
+
 perf_mat = perf_mat_randoms;
 % Plot one figure per metric
 for metric_id = 1:nMetrics
