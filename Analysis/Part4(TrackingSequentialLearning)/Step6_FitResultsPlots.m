@@ -10,8 +10,11 @@ jumps2_all = {};
 
 b1 = zeros(size(Nlist));
 b2 = zeros(size(Nlist));
+b3 = zeros(size(Nlist));
+
 ci1 = zeros(numel(Nlist), 2);  % [lower, upper]
 ci2 = zeros(numel(Nlist), 2);
+ci3 = zeros(numel(Nlist), 2);
 
 for i = 1:numel(Nlist)
     N = Nlist(i);
@@ -25,15 +28,20 @@ for i = 1:numel(Nlist)
     % Extract fitted slope 'b' and its confidence interval
     f1 = results.(fname).f1;
     f2 = results.(fname).f2;
+    f3 = results.(fname).f3;
 
     b1(i) = f1.b;
     b2(i) = f2.b;
+    b3(i) = f3.b;
 
     ci = confint(f1);
     ci1(i, :) = ci(:, strcmp(coeffnames(f1), 'b'))';
 
     ci = confint(f2);
     ci2(i, :) = ci(:, strcmp(coeffnames(f2), 'b'))';
+
+    ci = confint(f3);
+    ci3(i, :) = ci(:, strcmp(coeffnames(f3), 'b'))';
 end
 
 %% Font and line settings
@@ -172,11 +180,14 @@ figure('Color','w', 'Position', [100, 100, 600, 500]); hold on;
 % Compute absolute slopes and CI bounds
 tau1 = abs(b1);  % f1 slopes
 tau2 = abs(b2);  % f2 slopes
+tau3 = abs(b3);  % f2 slopes
 
 ci1_lower = abs(ci1(:, 1)');
 ci1_upper = abs(ci1(:, 2)');
 ci2_lower = abs(ci2(:, 1)');
 ci2_upper = abs(ci2(:, 2)');
+ci3_lower = abs(ci3(:, 1)');
+ci3_upper = abs(ci3(:, 2)');
 
 % Shaded CI for f1
 x_fill = [Nlist, fliplr(Nlist)];
@@ -187,15 +198,20 @@ fill(x_fill, y_fill1, [0.5 0.5 1], 'FaceAlpha', 0.3, 'EdgeColor', 'none', 'Handl
 y_fill2 = [ci2_lower, fliplr(ci2_upper)];
 fill(x_fill, y_fill2, [1 0.5 0.5], 'FaceAlpha', 0.3, 'EdgeColor', 'none', HandleVisibility='off');
 
+% Shaded CI for f3
+y_fill3 = [ci3_lower, fliplr(ci3_upper)];
+fill(x_fill, y_fill3, [0.5 1 0.5], 'FaceAlpha', 0.3, 'EdgeColor', 'none', HandleVisibility='off');
+
 % Actual slope lines
-plot(Nlist, tau1, 'o-', 'Color', [0 0 1], 'LineWidth', 2, 'DisplayName', 'delays');
+plot(Nlist, tau1, 'o--', 'Color', [0 0 1], 'LineWidth', 2, 'DisplayName', 'Delays');
 plot(Nlist, tau2, 's--', 'Color', [1 0 0], 'LineWidth', 2, 'DisplayName', 'Assembly');
+plot(Nlist, tau3, 'h--', 'Color', [0 1 0], 'LineWidth', 2, 'DisplayName', 'Weights');
 
 % Labels and title
 xlabel('$N$', 'Interpreter', 'latex', 'FontSize', fs);
-ylabel('$\tau$ (\# of new memories)', 'Interpreter', 'latex', 'FontSize', fs);
-title('$\tau$ vs $N$', 'Interpreter', 'latex', 'FontSize', fs);
-legend('Location', 'best', 'FontSize', fs*0.5);
+ylabel('$m_0$ (\# of new memories)', 'Interpreter', 'latex', 'FontSize', fs);
+title('Decay Scale Vs. Network Size', 'Interpreter', 'latex', 'FontSize', fs);
+legend('Location', 'best', 'FontSize', fs*0.5, 'Box','off');
 
 % Axes settings
 set(gca, ...

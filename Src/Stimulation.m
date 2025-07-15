@@ -55,11 +55,13 @@ classdef Stimulation < handle
         end
         
         function ConstructStimCurrent(obj)
-            n_t = round(obj.interval/obj.network.dt);
-            obj.I_stim = zeros(obj.network.N, n_t);
-            time_ = repmat(obj.network.dt:obj.network.dt:obj.interval, obj.Ncells, 1);
-            indices = (time_ - repmat(obj.pattern_timings, 1, n_t)) <= obj.duration & (time_ - repmat(obj.pattern_timings, 1, n_t)) >= 0;
-            obj.I_stim(obj.pattern_indices, :) = indices*obj.amplitude;
+            % n_t = round(obj.interval/obj.network.dt);
+            obj.I_stim = zeros(obj.network.N, 1);
+            obj.I_stim(obj.pattern_indices) = obj.pattern_timings;
+
+            % time_ = repmat(obj.network.dt:obj.network.dt:obj.interval, obj.Ncells, 1);
+            % indices = (time_ - repmat(obj.pattern_timings, 1, n_t)) <= obj.duration & (time_ - repmat(obj.pattern_timings, 1, n_t)) >= 0;
+            % obj.I_stim(obj.pattern_indices, :) = indices*obj.amplitude;
         end
 
         % Method to create a deep copy of the Stimulation object

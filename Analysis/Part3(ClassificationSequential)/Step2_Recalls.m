@@ -71,7 +71,7 @@ for patch_num = N_mems
     if ~exist(savePath, 'dir')
         mkdir(savePath);
     end
-    save(fullfile(savePath, sprintf("recalls%d", patch_num)), 'groups', "orders_together", "orders_separate", "spikeCounts", "delays");
+    save(fullfile(savePath, sprintf("recalls%d", patch_num)), 'groups', "orders_together", "orders_separate", "spikeCounts", "delays", "firings");
 end
 close(bar); 
 

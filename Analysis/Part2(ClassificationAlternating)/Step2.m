@@ -48,7 +48,7 @@ for alpha = 0.05:0.05:0.95
             waitbar((iter+N_retrievals)/(N_retrievals+N_rands), bar, sprintf("Alpha: %.2f\n Random Recall: %d/%d", alpha, iter, N_rands));
         end
         
-        stim_rand = Stimulation(net, 100, 2, 30, ceil(alpha * stims(1).Ncells), 10);
+        stim_rand = Stimulation(net, 100, 2, 30, ceil(alpha * stims(1).Ncells), 5);
         net.stims = stim_rand;
         net.run(100);
         

@@ -1,8 +1,12 @@
+clc; clear;
+% profile on 
 
-for repeatition = 1:10
-    for N_mems = [35, 40, 45]
-        clc; clearvars -except N_mems repeatition;
-        Step1;
-        Step2;
+for N = [100]
+    for N_mems = [3]
+        for repeatition = 1:1
+                clc; clearvars -except N_mems repeatition N;
+                Step1;
+                Step2;
+        end
     end
 end

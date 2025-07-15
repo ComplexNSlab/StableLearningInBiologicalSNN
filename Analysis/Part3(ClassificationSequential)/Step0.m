@@ -1,4 +1,4 @@
-for simulation_iter = 1:5    
+for simulation_iter = 1:1   
     clc; clearvars -except simulation_iter;
 
     N = 400; %networkSize

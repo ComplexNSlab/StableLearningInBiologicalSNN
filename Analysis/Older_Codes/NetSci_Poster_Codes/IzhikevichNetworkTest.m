@@ -9,28 +9,28 @@ mynet.noise = false;
 mynet.sigma_ex = 0.7*5;
 mynet.sigma_inh = 0.7*2;
 
-mynet.SetInitialConnectivity(0.5, 2, 2);
+% mynet.SetInitialConnectivity(0.5, 2, 2);
 
 mynet.STDP = true;
 
 mynet.stimulation = true;
 
-stim1 = Stimulation(mynet, 1000, 2, 30, 50);
-stim2 = Stimulation(mynet, 1000, 2, 30, 50);
+stim1 = Stimulation(mynet, 100, 2, 30, 50, 5);
+% stim2 = Stimulation(mynet, 100, 2, 30, 50, 5);
 stim1.on = true;
 %stim2.on = false;
 
 mynet.stims = [stim1];
 
-mynet.scaling = false;
-mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
-mynet.alpha = 20;
+% mynet.scaling = false;
+% mynet.A_goal = [0.001*ones(mynet.Ne, 1); 0.002*ones(mynet.Ni, 1)];
+% mynet.alpha = 20;
 
-mynet.sampling_rate = 5000;
+mynet.sampling_rate = 1000;
 
 %% Run 
 
-mynet.run(1000000)
+mynet.run(100 * 1000)
 
 data = mynet.getData();
 
@@ -309,8 +309,8 @@ figure('Name', "Raster Plot", 'Renderer', 'painters', 'Position', [100 100 1000 
 ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
 firings = data.firings;
 fsize = 20;
-start_time = 0; % in seconds
-end_time = 300; % in seconds
+start_time = 99.9; % in seconds
+end_time = 100; % in seconds
 
 ex_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) <= 320);
 inh_indices = ((firings(1, :)/1000 > start_time) & (firings(1, :)/1000 < end_time)) & (firings(2, :) > 320);

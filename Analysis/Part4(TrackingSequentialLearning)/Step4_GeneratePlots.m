@@ -1,5 +1,7 @@
 clc; clear;
 scale50Flag = true;
+saveFig = false;
+showFig = 'on';
 N = 400;
     
 if scale50Flag
@@ -11,7 +13,7 @@ data_folder = fullfile(pwd, 'Data', scaleFolder, "N"+num2str(N));
 load(fullfile(data_folder, 'FinalRepresentations.mat'));
 
 %% Normalized Acitvity size with just participating cells
-figure('Visible','on'); hold on;
+figure('Visible', showFig); hold on;
 
 % Set figure size and position in inches (e.g., 10 inches wide x 6 inches tall)
 fig = gcf;
@@ -32,7 +34,7 @@ mean_curve = nan(size(norm_A,1), 21, nTrials*(nMems-1) + 20*nTrials);
 for iter = 1:size(norm_A,1)
     for mem = 1:21
         % Plot individual curves
-        plot((nTrials+1:nMems*  nTrials) - mem*nTrials, squeeze(norm_A(iter, mem, nTrials+1:end)), '-', 'Color', 0.8*[1 1 1], HandleVisibility='off', LineWidth=0.1);
+        % plot((nTrials+1:nMems*  nTrials) - mem*nTrials, squeeze(norm_A(iter, mem, nTrials+1:end)), '-', 'Color', 0.8*[1 1 1], HandleVisibility='off', LineWidth=0.1);
         
         % Construct aligned mean curve matrix
         mean_curve(iter, mem, :) = [nan(1, nTrials*(21-mem)), squeeze(norm_A(iter, mem, nTrials+1:end))', nan(1, (mem-1)*nTrials)];
@@ -59,7 +61,11 @@ plot(x_valid, mean_valid, 'Color', [0.8 0 0], 'LineWidth', 1.5, 'DisplayName', '
 patch([x_valid, flip(x_valid)], [mean_valid - error; flip(mean_valid + error)], ...
      [1 0.4 0.4], 'FaceAlpha', 0.4, 'EdgeColor', 'none', 'DisplayName', 'Mean ± CI');
 
-ymin = prctile(norm_A, 0.01, "all")-0.5; ymax = prctile(norm_A, 99, "all")+1;
+ymin = prctile(norm_A, 0.01, "all")-0.1; ymax = prctile(norm_A, 99, "all")+0.1;
+% ymin = floor(min(mean_valid - error)) - 0.2;
+% ymax = ceil(max(mean_valid + error)) + 0.2;
+% ylim([ymin, ymax]);
+
 % Background shading
 for i = -10:110
     if mod(i, 2) == 0
@@ -82,38 +88,46 @@ end
 
 % Add labels and settings
 
-ylabel("Response Time (ms)", 'FontWeight', 'bold', 'FontSize', 20);
-text(0, ymin + 0.2, "Pre Learning", 'FontSize',20, 'FontWeight', 'bold')
-text(60 * nTrials, ymin + 0.2, "Post Learning", 'FontSize',20, 'FontWeight', 'bold')
+ylabel("Response Time (ms)", 'FontWeight', 'normal', 'FontSize', 20);
+text(0, ymin + 0.2, "Pre Learning", 'FontSize',20, 'FontWeight', 'normal')
+text(60 * nTrials, ymin + 0.2, "Post Learning", 'FontSize',20, 'FontWeight', 'normal')
 
-legend('Location', 'northwest', 'Box', 'off', 'FontSize', 12);
+legend('Location', 'northwest', 'Box', 'off', 'FontSize', 16);
+
 ax = gca; % Get the current axes handle
 ax.TickLength = [0, 0];
 xticks([]);
 ylim([ymin, ymax])
 xlim(20*nTrials* [-1 5])
-title(sprintf("Single Memory Tracked During Sequential Learning\n N = %d, nSimulations = %d", N, size(norm_A,1)), 'FontSize', 22, 'FontWeight', 'bold');
-xlabel("# New Memories", 'FontWeight', 'bold', 'FontSize', 20);
+% title(sprintf("Single Memory Tracked During Sequential Learning\n N = %d, nSimulations = %d", N, size(norm_A,1)), 'FontSize', 22, 'FontWeight', 'normal');
+title({"Response Time Dynamics of a Single Memory During Sequential Learning", ...
+       sprintf("N = %d, Number of Simulations = %d", N, size(norm_A,1))}, ...
+       'FontSize', 22, 'FontWeight', 'normal');
 
-set(gca, 'FontSize', 20);  % Consistent large font
+% xlabel("# New Memories", 'FontWeight', 'normal', 'FontSize', 20);
+xlabel("Index of Sequentially Learned Memories", 'FontWeight', 'normal', 'FontSize', 20);
+
+set(gca, 'FontName', 'Times New Roman', 'FontSize', 20);  % if thesis uses this
 
 savePath = fullfile(pwd, 'Results', scaleFolder , "N" + num2str(N) );
 if ~exist(savePath, 'dir')
     mkdir(savePath);
 end
 
-xlim([30000, 50000])
+% xlim([30000, 50000])
 
-% fig.PaperPositionMode = 'auto';
-% %Save high-resolution PNG
-% print(gcf, fullfile(savePath, "norm_A"), '-dpng', '-r600');
-% 
-% %Save high-quality PDF
-% print(gcf, fullfile(savePath, "norm_A"), '-dpdf', '-r600');
-% 
-% save(fullfile(data_folder, "norm_A.mat"), 'mean_curve');
+if saveFig
+    fig.PaperPositionMode = 'auto';
+    %Save high-resolution PNG
+    print(gcf, fullfile(savePath, "norm_A"), '-dpng', '-r600');
+    
+    %Save high-quality PDF
+    print(gcf, fullfile(savePath, "norm_A"), '-dpdf', '-r600');
+    
+    save(fullfile(data_folder, "norm_A.mat"), 'mean_curve');
+end
 %% Participation Rate of Cells
-figure('Visible','on'); hold on;
+figure('Visible', showFig); hold on;
 
 % Set figure size and position in inches (e.g., 10 inches wide x 6 inches tall)
 fig = gcf;
@@ -136,8 +150,8 @@ mean_curve_inh = nan(size(participation_inh,1), 21, nTrials*(nMems-1) + 20*nTria
 for iter = 1:size(participation_ex,1)
     for mem = 1:21
         if mod(mem, 1) == 0 && iter == 1
-            plot((nTrials+1:nTrials*nMems) - mem*nTrials, squeeze(participation_ex(iter, mem, nTrials+1:end)/Ne), 'Color', 0.8*[1 1 1], HandleVisibility='off')
-            plot((nTrials+1:nTrials*nMems) - mem*nTrials, squeeze(participation_inh(iter, mem, nTrials+1:end)/Ni), 'Color', 0.8*[1 1 1], HandleVisibility='off')
+            % plot((nTrials+1:nTrials*nMems) - mem*nTrials, squeeze(participation_ex(iter, mem, nTrials+1:end)/Ne), 'Color', 0.8*[1 1 1], HandleVisibility='off')
+            % plot((nTrials+1:nTrials*nMems) - mem*nTrials, squeeze(participation_inh(iter, mem, nTrials+1:end)/Ni), 'Color', 0.8*[1 1 1], HandleVisibility='off')
         end
         mean_curve_ex(iter, mem, :) = [nan(1, nTrials*(21-mem)), squeeze(participation_ex(iter, mem, nTrials+1:end)/Ne)', nan(1, (mem-1)*nTrials)];
         mean_curve_inh(iter, mem, :) = [nan(1, nTrials*(21-mem)), squeeze(participation_inh(iter, mem, nTrials+1:end)/Ni)', nan(1, (mem-1)*nTrials)];
@@ -154,6 +168,7 @@ plot((1:size(mean_curve_inh, 3)) - nTrials*20, ...
 
 ymin = prctile(mean_curve_ex, 0.01, "all"); ymax = prctile(mean_curve_ex, 99, "all");
 ymin = 0.1*floor(ymin*10); ymax = 1;
+
 
 % Background shading
 for i = -10:110
@@ -178,30 +193,32 @@ end
 xlim(20*nTrials* [-1 5])
 ylim([ymin, 1]);
 yticks(ymin:0.1:1);
+
 yticklabels(ymin*100:10:100);
-xlabel("# New Memories", 'FontWeight', 'bold', 'FontSize', 20);
+xlabel("# New Memories", 'FontWeight', 'normal', 'FontSize', 20);
 xticks([]);
-ylabel("Assembly Size (%)", 'FontSize', 20, 'FontWeight', 'bold');
-legend('Location', 'south', 'FontSize', 12, 'Box', 'off');
-text(0, ymin + 0.04, "Pre Learning", 'FontSize', 20, 'FontWeight', 'bold');
-text(60 * nTrials, ymin + 0.04, "Post Learning", 'FontSize', 20, 'FontWeight', 'bold');
-title(sprintf("Single Memory Tracked During Sequential Learning\n N = %d, nSimulations = %d", N, size(norm_A,1)), 'FontSize', 22, 'FontWeight', 'bold');
+ylabel("Assembly Size (%)", 'FontSize', 20, 'FontWeight', 'normal');
+% legend('Location', 'south', 'FontSize', 12, 'Box', 'off');
+legend('Location', 'northwest', 'Box', 'off', 'FontSize', 16);
+text(0, ymin + 0.04, "Pre Learning", 'FontSize', 20, 'FontWeight', 'normal');
+text(60 * nTrials, ymin + 0.04, "Post Learning", 'FontSize', 20, 'FontWeight', 'normal');
+title(sprintf("Single Memory Tracked During Sequential Learning\n N = %d, nSimulations = %d", N, size(norm_A,1)), 'FontSize', 22, 'FontWeight', 'normal');
 
 set(gca, 'FontSize', 20);  % Consistent large font
 set(gcf, 'Color', 'w', 'PaperPositionMode', 'auto');    % White background
 
-savePath = fullfile(pwd, 'Results', scaleFolder, "N"+num2str(N));
-if ~exist(savePath, 'dir')
-    mkdir(savePath);
+if saveFig
+    savePath = fullfile(pwd, 'Results', scaleFolder, "N"+num2str(N));
+    if ~exist(savePath, 'dir')
+        mkdir(savePath);
+    end
+    
+    %Save high-resolution PNG
+    print(gcf, fullfile(savePath, "assembly"), '-dpng', '-r600');
+    % Save high-quality PDF
+    print(gcf,  fullfile(savePath, "assembly"), '-dpdf', '-r600');
+    save(fullfile(data_folder, "assembly.mat"), 'mean_curve_ex', 'mean_curve_inh');
 end
-
-% %Save high-resolution PNG
-% print(gcf, fullfile(savePath, "assembly"), '-dpng', '-r600');
-% 
-% % Save high-quality PDF
-% print(gcf,  fullfile(savePath, "assembly"), '-dpdf', '-r600');
-% 
-% save(fullfile(data_folder, "assembly.mat"), 'mean_curve_ex', 'mean_curve_inh');
 %% 
 % % Your data
 % idx = length(x_valid)/2-500:length(x_valid)-50000;

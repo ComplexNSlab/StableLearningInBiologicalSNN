@@ -3,8 +3,10 @@ clear; clc;
 % Parameters
 N = 100;
 alpha_range = 5:5:95;
-nMems_range = [10:10:50];
-metric_names = {'F1', 'Precision', 'Recall', 'AUC'};
+nMems_range = [10:10:200];
+% metric_names = {'F1', 'Precision', 'Recall', 'AUC'};
+metric_names = {'F1'};
+
 nMetrics = numel(metric_names);
 
 % Initialize: [nMems × alpha × metric]
@@ -75,7 +77,7 @@ for metric_id = 1:nMetrics
     imagesc(alpha_range, nMems_range, data);
 
     xlabel('Partial Recall Ratio $ \alpha $ (\%)', 'Interpreter', 'latex', 'FontSize', 14);
-    ylabel('Number of Memories', 'Interpreter', 'latex', 'FontSize', 14);
+    ylabel('Number of Memories, M', 'Interpreter', 'latex', 'FontSize', 14);
     title(sprintf('%s Heatmap (SVM Classification) for Memory Class', metric_names{metric_id}), 'FontSize', 14);
     yticks(nMems_range);
      
@@ -112,7 +114,7 @@ for metric_id = 1:nMetrics
     imagesc(alpha_range, nMems_range, data);
 
     xlabel('Partial Recall Ratio $ \alpha $ (\%)', 'Interpreter', 'latex', 'FontSize', 14);
-    ylabel('Number of Memories', 'Interpreter', 'latex', 'FontSize', 14);
+    ylabel('Number of Memories, M', 'Interpreter', 'latex', 'FontSize', 14);
     title(sprintf('%s Heatmap (SVM Classification) for Random Memory Class', metric_names{metric_id}), 'FontSize', 14);
     yticks(nMems_range);
      

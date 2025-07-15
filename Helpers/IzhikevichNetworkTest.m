@@ -9,8 +9,6 @@ mynet = IzhikevichNetwork(400);
 % mynet.sigma_ex = 5;
 % mynet.sigma_inh = 2;
 
-mynet.SetInitialConnectivity(0.5, 2, 2);
-
 mynet.STDP = true;
 
 mynet.stimulation = true;

@@ -4,11 +4,11 @@
 
 clear; clc;
 
-N = 200; % Network Size
+N = 100; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
-N_mems = 50;
+N_mems = 3;
 
 items = dir(fullfile("Data",  "N"+num2str(N),num2str(N_mems) + "memories/"));
 folders = items([items.isdir]); % Keep only directories
@@ -70,11 +70,11 @@ plot(FPR_micro, TPR_micro, 'b--', 'LineWidth', 2, ...
 
 clear; clc;
 
-N = 400; % Network Size
+N = 100; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
-N_mems = 50;
+N_mems = 3;
 
 folder_path = fullfile("Data",  "N"+num2str(N),num2str(N_mems) + "memories/");
 items = dir(folder_path);
@@ -146,9 +146,8 @@ for i = 1:4
     print(gcf, filename(1:end-3) + "png", '-dpng', '-r300');
 end
 
+
 %% functions
-
-
 function fig = plotMeanCurveWithCI(x_mems, x_rands, alpha_range, CI, metric_name)
     % PLOTMEANCURVEWITHCI Plot mean curves and CI bands for memory and random recall
     %
@@ -195,7 +194,7 @@ function fig = plotMeanCurveWithCI(x_mems, x_rands, alpha_range, CI, metric_name
     plot(alpha_range, rand_mean, 'Color', [0.8 0 0], 'LineWidth', 2.5);
 
     % --- Labels and styling ---
-    xlabel('Partial Recall Ratio, $\alpha$ (\%)', 'Interpreter', 'latex', 'FontSize', 14);
+    xlabel('Partial Retrieval Ratio, $\alpha$ (\%)', 'Interpreter', 'latex', 'FontSize', 14);
     ylabel(metric_name, 'FontSize', 14);
 
     title(sprintf('%s Performance — SVM Classification\n%d Memories, %d Simulations, %d%% CI', ...
@@ -209,5 +208,5 @@ function fig = plotMeanCurveWithCI(x_mems, x_rands, alpha_range, CI, metric_name
 
     grid off;
     box on;
-    set(gca, 'FontSize', 12);
+    set(gca, 'FontSize', 12, 'FontName', 'Times New Roman');
 end

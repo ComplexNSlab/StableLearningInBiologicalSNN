@@ -1,10 +1,13 @@
 clear; clc;
+profile on
 
 alpha_range = 5:5:95;
-N = 400; % Network Size
+N = 100; % Network Size
+
+ 
 
 % Get list of all items in the current directory
-for N_mems = [35, 45]
+for N_mems = [10:10:200]
 
     items = dir(fullfile("Data", "N" + num2str(N) ,num2str(N_mems) + "memories/"));
     folders = items([items.isdir]); % Keep only directories
@@ -93,8 +96,8 @@ function [confMat, x_roc, y_roc, auc] = classify(X, Y, split_ratio)
     Ytest  = Y(idxTest);
     
     % Train    
-    template = templateSVM('KernelFunction','rbf','KernelScale','auto','Standardize',true);
-    Mdl = fitcecoc(Xtrain, Ytrain, 'Learners', template, 'Coding', 'onevsone');
+    template = templateSVM('KernelFunction','rbf', 'KernelScale','auto','Standardize',true);
+    Mdl = fitcecoc(Xtrain, Ytrain, 'Learners', template, 'Coding', 'onevsall');
 
     % Predict
     [Ypred, scores] = predict(Mdl, Xtest);

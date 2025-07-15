@@ -122,27 +122,26 @@ classdef IzhikevichNetwork < handle
                 obj.w = sparse(obj.w);
            end
 
-           % github = false;
            if obj.stimulation
-               I_stim = zeros(obj.N, round(obj.stims(1).interval/obj.dt));
-               for stim = obj.stims
-                   if stim.on
-                       I_stim = I_stim + stim.I_stim;
-                   end
+               I_stim = zeros(obj.N, length(obj.stims));
+               for i = 1:numel(obj.stims)
+                    I_stim(:, i) = obj.stims(i).I_stim;
                end
+               I_stim_end = I_stim;
+               I_stim_end(I_stim ~=0) = I_stim(I_stim ~= 0) + 2;
            end
 
-           if obj.saveSimulation
+           % if obj.saveSimulation
+           if T > 100
                 f = waitbar(0,'Please wait...');
            end
+           % end
 
            n_t = round(T/obj.dt); % total integration step
           
            obj.Constructor_RecordingContainers(n_t)
            obj.spike_counter = 1;
             
-           % [i_idx, j_idx, val] = find(obj.w);
-           % obj.w = sparse(obj.w);
            for i=1:n_t % simulation of T in ms
                 
                 obj.t = obj.t + obj.dt;
@@ -150,7 +149,7 @@ classdef IzhikevichNetwork < handle
                 obj.v(obj.v > 30) = 30;
                 
                 if obj.sampling && mod(i, obj.sampling_rate) == 0    
-                    % obj.A_save(:, round(i/obj.sampling_rate)) = obj.A;
+                    obj.A_save(:, round(i/obj.sampling_rate)) = obj.A;
                     % obj.v_save(:, round(i/obj.sampling_rate)) = obj.v;
                     % obj.u_save(:, round(i/obj.sampling_rate)) = obj.u;
                     if obj.scaling || obj.STDP
@@ -189,30 +188,23 @@ classdef IzhikevichNetwork < handle
                 end
     
                 if obj.stimulation
-                   time_index = 1 + mod(round((obj.t)/obj.dt), stim.interval/obj.dt);
-                   I = I + I_stim(:, time_index);
-                end
-    
-                % obj.A = obj.A - obj.A *obj.dt/obj.tau_A;
-                % obj.A(fired) = obj.A(fired) + 1000/obj.tau_A; 
-    
-                if obj.scaling && mod(i, 20) == 0
-                    dw = obj.alpha * (((obj.A_goal - obj.A) * obj.A') .* abs(obj.w)) * 20 * obj.dt;
-                    if sum(dw > abs(obj.w)) ~= 0
-                        pause(1);
-                    end
-                    obj.w = obj.w + dw;
+                   t_relative = mod(obj.t, obj.stims(1).interval);
+                   active_stim_idx = floor(t_relative/100)+1;
+                   stim_mask = (t_relative >= I_stim(:,active_stim_idx)) & (t_relative <= I_stim_end(:,active_stim_idx));
+                   I = I + stim_mask * obj.stims(1).amplitude;
                 end
                 
                 obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
                 obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;
                 
                 % updates the waitbar status
-                if obj.saveSimulation
+                % if obj.saveSimulation
+                if T > 100 
                     if  mod(i, 10000) == 0      
                         waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s, Ratio : %0.2f', round(100*i/n_t), obj.t/1000, T/1000, toc, i*obj.dt/1000/toc));
                     end
                 end
+                % end
             end
             
            obj.firings = obj.firings(1:obj.spike_counter-1, :);
@@ -221,13 +213,10 @@ classdef IzhikevichNetwork < handle
            if obj.saveSimulation
                waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
                obj.SaveRecordings
-               close(f);
            end
-
-           % if github
-           %      obj.PushToGithub
-           % end
-            
+           if T > 100
+                close(f);
+           end
       end
     
         % Reading and retrieving previously recorded dataset from the file
@@ -286,21 +275,6 @@ classdef IzhikevichNetwork < handle
     
     methods (Static)
       % STDP Kernel for LTP and LTD 
-      % function dw = STDP_kernel(w, t)  
-      %     if t >= 0 % LTP
-      %       % dw = exp(-t) - exp(-t/20);
-      %       % dw = - 0.015 * w * log(abs(w)/3) * exp(-t/20);
-      %       a = 3;
-      %       w(w < 1.e-10) = 1.e-10;
-      %       dw =  0.015*3/a  * w *  log(a/abs(w)) * exp(-t/20);
-      % 
-      %     else % LTD
-      %        % dw = exp(t/5) * t * (19/20);
-      %        dw =  - 0.03 * w *  exp(-abs(t)/20);
-      %     end
-      %     dw = 1 * dw;
-      % 
-      % end
       function dw = STDP_kernel(w, t)
             % Ensure column vectors
             w = w(:);
@@ -315,10 +289,9 @@ classdef IzhikevichNetwork < handle
             % LTP
             isLTP = t >= 0;
             if any(isLTP)
-                a = 3;
                 w_ltp = w(isLTP);
                 t_ltp = t(isLTP);
-                dw(isLTP) = 0.015 * 3 / a * w_ltp .* log(a ./ abs(w_ltp)) .* exp(-t_ltp / 20);
+                dw(isLTP) = 0.015 * w_ltp .* log(3 ./ abs(w_ltp)) .* exp(-t_ltp / 20);
             end
 
             % LTD
@@ -448,37 +421,6 @@ classdef IzhikevichNetwork < handle
             end
             % obj.w = sparse(obj.w);
         end
-
-
-        % function applySTDP(obj, fired)
-        % 
-        %     obj.timer_vector(fired) = 50;
-        % 
-        %     for fired_neuron = fired.'
-        %         if fired_neuron <= obj.Ne
-        %             input_cells = obj.in_cells(fired_neuron); % If they have fired within a time window, they cause LTP
-        %             output_cells = obj.out_cells(fired_neuron); % If they have fired within a time window, they cause LTD
-        % 
-        %             % LTP
-        %             for in_idx = input_cells
-        %                 delta_t = 50 - obj.timer_vector(in_idx);
-        %                 if delta_t < 50 && in_idx <= obj.Ne
-        %                     dw = IzhikevichNetwork.STDP_kernel(obj.w(fired_neuron, in_idx), delta_t);
-        %                     obj.w(fired_neuron, in_idx) = obj.w(fired_neuron, in_idx) + dw;
-        %                 end
-        %             end
-        % 
-        %             % LTD
-        %             for out_idx = output_cells
-        %                 delta_t = 50 - obj.timer_vector(out_idx);
-        %                 if delta_t < 50 && out_idx <= obj.Ne
-        %                     dw = IzhikevichNetwork.STDP_kernel(obj.w(out_idx, fired_neuron), -delta_t);
-        %                     obj.w(out_idx, fired_neuron) = obj.w(out_idx, fired_neuron) + dw;
-        %                 end
-        %             end
-        %         end
-        %     end
-        % end
         
         function SaveRecordings(obj)
             if ~obj.STDP && ~obj.scaling 
@@ -505,15 +447,6 @@ classdef IzhikevichNetwork < handle
             obj.PatchNumber = obj.PatchNumber + 1;
     
             save(obj.RecordingFile, strcat('data', num2str(obj.PatchNumber - 1)), 'obj', '-v7.3');
-        end
-    
-        function PushToGithub(obj)
-            system(['git add ', char(obj.RecordingFile), '.mat'])
-    
-            commitMessage = ['running to ', num2str(obj.t), ' with ', num2str(length(obj.stims)), ' stims'];
-            system(['git commit ', char(obj.RecordingFile), '.mat', ' -m "', commitMessage, '"']);
-    
-            system('git push');
         end
     
         % Helper function to parse name-value pairs

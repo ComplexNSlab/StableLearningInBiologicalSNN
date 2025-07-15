@@ -2,50 +2,54 @@
 clear 
 clc
 
-mynet = IzhikevichNetwork(400);
-mynet.SetInitialConnectivity(0.5, 2, 2);
+mynet = IzhikevichNetwork(200);
 mynet.STDP = true;
 mynet.stimulation = true;
 mynet.sampling = true;
 mynet.sampling_rate = 5000;
 
 %% Simulation
-M_max = 4; % maximum number of memory to encode in the network
+M_max = 3; % maximum number of memory to encode in the network
 stims = []; 
 interval = 100; %ms
 N_trials = 2000;
-noise_len = 200; %s
+noise_len = 100; %s
 
 for m = 1:M_max
    if noise_len
+       mynet.stimulation = false;
        mynet.noise = true;
-       mynet.sigma_ex = 0.7*5;
-       mynet.sigma_inh = 0.7*2;
-       mynet.run(noise_len*1000, false);
+       mynet.sigma_ex = 1.2*5;
+       mynet.sigma_inh = 1.2*2;
+       mynet.run(noise_len*1000);
        mynet.noise = false;
    end
     
-   stims = [stims, Stimulation(mynet, interval, 2, 30, 50, 0)];
-
-   mynet.run(N_trials*interval, false);
+   stims = [stims, Stimulation(mynet, interval, 2, 30, 50, 5)];
+    
+   mynet.stimulation = true;
+   mynet.run(N_trials*interval);
    mynet.stims = []; % clear the stims list as it slows down the computaiton speed 
 end
 
 
 randorder = randperm(M_max); % reLearn the memories in a new random order
+randorder = 1:M_max; % reLearn the memories in a new random order
 
 for m = randorder
     if noise_len
+       mynet.stimulation = false;
        mynet.noise = true;
        mynet.sigma_ex = 0.7*5;
        mynet.sigma_inh = 0.7*2;
-       mynet.run(noise_len*1000, false);
+       mynet.run(noise_len*1000);
        mynet.noise = false;
     end
     
     mynet.stims = [stims(m)];
-
-    mynet.run(N_trials*interval, false);
+    
+    mynet.stimulation = true;
+    mynet.run(N_trials*interval);
     mynet.stims = []; % clear the stims list as it slows down the computaiton speed 
 end
 
@@ -54,13 +58,13 @@ playNotificationSound;
 data = mynet.getData();
 playNotificationSound;
 %% Computing EigenValues/Vectors in time
-[Vseq,Dseq] = eigenshuffle(abs(data.w(1:320, 1:320, :)));
+[Vseq,Dseq] = eigenshuffle(abs(data.w(1:mynet.Ne, 1:mynet.Ne, :)));
 %[Vseq1,Dseq1] = eigenshuffle(abs(data.w(:, :, :)));
 playNotificationSound();
 %% Imaginary Eigenvalues in time
 Dseqs = Dseq;
 time_points = (1:size(Dseqs, 2))*mynet.sampling_rate*mynet.dt/1000;
-noise_len = 200; Lrn_len = N_trials*interval/1000; win_len = Lrn_len+noise_len;
+Lrn_len = N_trials*interval/1000; win_len = Lrn_len+noise_len;
 
 [max_lambdas, order] = max(abs(imag(Dseqs)), [], 2); 
 [dummy, index] = sort(max_lambdas, 'descend');
@@ -77,15 +81,15 @@ colors = jet(M_max);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure; hold on;
 
-for i=0:M_max-1
-    area(noise_len + [i*win_len i*win_len+Lrn_len], [10 10], 'FaceColor', colors(i+1, :), 'FaceAlpha', 0.3, HandleVisibility='off')
-    area(noise_len + [i*win_len i*win_len+Lrn_len], [-10 -10], 'FaceColor', colors(i+1, :), 'FaceAlpha', 0.3, DisplayName="Mem" + num2str(i+1))
+for i=0:2*M_max-1
+    area(noise_len + [i*win_len i*win_len+Lrn_len], [10 10], 'FaceColor', colors(mod(i, M_max)+1, :), 'FaceAlpha', 0.3, HandleVisibility='off')
+    area(noise_len + [i*win_len i*win_len+Lrn_len], [-10 -10], 'FaceColor', colors(mod(i, M_max)+1, :), 'FaceAlpha', 0.3, DisplayName="Mem" + num2str(i+1))
     area([i*win_len i*win_len+noise_len], [-10 -10], 'FaceColor', 'k', FaceAlpha=0.1, HandleVisibility='off')
     area([i*win_len i*win_len+noise_len], [10 10], 'FaceColor', 'k', FaceAlpha=0.1, HandleVisibility='off')
 end
 i=M_max;
-area([i*win_len i*win_len+Lrn_len], [-10 -10], 'FaceColor', 'k', FaceAlpha=0.1, HandleVisibility='off')
-area([i*win_len i*win_len+Lrn_len], [10 10], 'FaceColor', 'k', FaceAlpha=0.1, DisplayName="Noise")
+% area([i*win_len i*win_len+Lrn_len], [-10 -10], 'FaceColor', 'k', FaceAlpha=0.1, HandleVisibility='off')
+% area([i*win_len i*win_len+Lrn_len], [10 10], 'FaceColor', 'k', FaceAlpha=0.1, DisplayName="Noise")
 
 plot(time_points,imag(Dseqs(:, :))', LineStyle="-", Color=[0 0 0 0.5], LineWidth=1, HandleVisibility='off')
 plot(time_points,imag(Dseqs(eig_indices, :))', LineStyle="-", LineWidth=3, HandleVisibility='off')
@@ -155,11 +159,11 @@ known_colormaps = ["spring", "summer", "autumn", "winter", "bone", "cool", "hot"
         "hsv", "jet", "parula", "pink", "sky", "turbo"];
 
 c = [];
-for m = 1:M_max/2
+for m = 1:M_max
     colorfunc = str2func(known_colormaps(m));
     c = [c; 0.5*ones(2*noise_len, 3); colorfunc(2*Lrn_len)];
 end
-for m = 1:M_max/2
+for m = randorder
     colorfunc = str2func(known_colormaps(m));
     c = [c; 0.5*ones(2*noise_len, 3); colorfunc(2*Lrn_len)];
 end
@@ -183,7 +187,8 @@ for m = 1:2*M_max
     pc_vectors(:, :, m) = coeff(:, 1:3);
 end
 
-known_colormaps = ["spring", "summer", "autumn", "winter", "bone", "cool", "hot", ...
+known_colormaps = ["" + ...
+    "spring", "summer", "autumn", "winter", "bone", "cool", "hot", ...
         "hsv", "jet", "parula", "pink", "sky", "turbo"];
 
 c = [];

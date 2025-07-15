@@ -3,7 +3,7 @@ clear; clc;
 visible = false;
 nMems = 25;
 N = 400;
-alpha = 0.9;
+alpha = 0.3;
 
 rootFolder = sprintf("Data\\N%d\\nMems%d\\", N, nMems);
 entries = dir(rootFolder);
@@ -32,7 +32,8 @@ for i = 1:length(entries)
     mean_inter_mat = cellfun(@(x) mean(x(:), 'omitnan'), inter_dists_all);
     all_inter_values(:, :, i) = mean_inter_mat;
 end
-% Plot intra cluster distances statistics
+
+%% Plot intra cluster distances statistics
 % Define desired label order
 nMems = 25;
 ordered_labels = [ ...
@@ -203,3 +204,52 @@ end
 print(gcf, savePath + filesep + 'statistics', '-dpng', '-r600');   % 600 DPI PNG
 % print(gcf, savePath + filesep + 'statistics', '-dpdf');           % Vector EPS
 
+%%
+
+intra_m = all_values(all_labels == "Intra: m");
+intra_rnd = all_values(all_labels == "Intra: rnd");
+
+% Path to file
+matFilePath = sprintf("Data\\N%d\\nMems%d\\distancesDataSet.mat", N, nMems);
+
+% Step 0: Load existing dictionary or initialize a new one
+if isfile(matFilePath)
+    loadedVars = load(matFilePath, "dictionary");
+    if isfield(loadedVars, "dictionary")
+        dictionary = loadedVars.dictionary;
+    else
+        dictionary = containers.Map("KeyType", "double", "ValueType", "any");
+    end
+else
+    % If file doesn't exist, initialize empty dictionary
+    dictionary = containers.Map("KeyType", "double", "ValueType", "any");
+    % Ensure the directory exists
+    outputDir = fileparts(matFilePath);
+    if ~exist(outputDir, 'dir')
+        mkdir(outputDir);
+    end
+end
+
+% Step 1: Compute summary stats
+intra_m_stats       = [mean(intra_m), prctile(intra_m, 95), prctile(intra_m, 5)];
+intra_rnd_stats     = [mean(intra_rnd), prctile(intra_rnd, 95), prctile(intra_rnd, 5)];
+m_vs_m_stats        = [mean(vals_m_vs_m), prctile(vals_m_vs_m, 95), prctile(vals_m_vs_m, 5)];
+m_vs_rnd_stats      = [mean(vals_m_vs_rnd), prctile(vals_m_vs_rnd, 95), prctile(vals_m_vs_rnd, 5)];
+rnd_vs_rnd_stats    = [mean(vals_rnd_vs_rnd), prctile(vals_rnd_vs_rnd, 95), prctile(vals_rnd_vs_rnd, 5)];
+
+% Step 2: Combine into a matrix
+summary_matrix = [intra_m_stats;
+                  intra_rnd_stats;
+                  m_vs_m_stats;
+                  m_vs_rnd_stats;
+                  rnd_vs_rnd_stats];
+
+% Step 3: Store in dictionary under this alpha
+dictionary(alpha) = summary_matrix;
+
+% Step 4: Save all to file (append if file existed, else new save)
+if isfile(matFilePath)
+    save(matFilePath, "dictionary", '-append');
+else
+    save(matFilePath, "dictionary");
+end

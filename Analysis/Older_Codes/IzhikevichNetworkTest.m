@@ -9,7 +9,7 @@ mynet = IzhikevichNetwork(400);
 % mynet.sigma_ex = 5;
 % mynet.sigma_inh = 2;
 
-mynet.SetInitialConnectivity(0.5, 2, 2);
+% mynet.SetInitialConnectivity(0.5, 2, 2);
 
 mynet.STDP = true;
 
@@ -26,7 +26,7 @@ mynet.sampling = true;
 %% Run 
 
 for i = 1:1
-    mynet.run(100000, false)
+    mynet.run(100000)
 end
 
 data = mynet.getData();
@@ -579,8 +579,8 @@ temp(temp == 0) = nan;
 %active_ex_cells = find(temp(end, :) ~= 0 & temp(end, :) <= mynet.Ne);
 %active_inh_cells = find(temp(end, :) ~= 0 & temp(end, :) > mynet.Ne);
 
-stable_order_ex = check_flag_save(16000, 1:320);
-stable_order_inh = check_flag_save(16000, 321:end)-320;
+stable_order_ex = check_flag_save(end, 1:320);
+stable_order_inh = check_flag_save(end, 321:end)-320;
 stable_order_ex(stable_order_ex == 0) = mynet.Ne-sum(stable_order_ex == 0)+1:mynet.Ne;
 stable_order_inh(stable_order_inh == -320) = mynet.Ni-sum(stable_order_inh == -320)+1:mynet.Ni;
 
