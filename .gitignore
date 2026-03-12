@@ -1,5 +1,58 @@
-**/Data/        # Ignore any data folder in subdirectories
+# ===== Simulation Data & Results =====
+**/Data/
+**/Results/
 **/Data_Alternate/
 **/Data_Sequential/
+Data/
+
+# ===== Generated Figures & Images =====
+*.png
+*.pdf
+*.fig
+*.eps
+*.svg
+*.tif
+*.tiff
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+
+# ===== PowerPoint / Office =====
+*.pptx
+*.ppt
+*.xlsx
+*.xls
+*.docx
+
+# ===== MATLAB Artifacts =====
 *.asv
-**/Data/*
+*.mex*
+*.mlappinstall
+*.slxc
+slprj/
+codegen/
+
+# ===== Exported / Intermediate Data =====
+*.mat
+*.csv
+*.h5
+*.hdf5
+*.json
+
+# ===== Logs =====
+*.log
+
+# ===== OS / Editor Junk =====
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ===== Figures folder outputs (keep scripts inside) =====
+Figures/Figures/
+Figures/PowerPointFigures/
+PaperFigures/
+
+# ===== Keep READMEs (override ignores) =====
+!README.md
+!**/README.md
