@@ -1,12 +1,9 @@
 % PlotSeparationVsAlpha_Shaded.m  (FigureScripts/)
 %
-% Enhanced version of PlotSeparationVsAlpha with shaded standard-error
-% bands (SEM). Produces a two-panel figure:
-%   Top panel  -- Mean cluster separation score (with shaded +/- SEM) for
-%                 Memory (blue) and Random (orange) clusters vs alpha.
-%   Bottom panel -- Delta-S (Memory mean - Random mean) vs alpha,
-%                   quantifying the separation advantage of learned
-%                   memories over random patterns (with propagated SEM).
+% Plots the mean cluster separation score (S) with shaded SEM bands for
+% Memory (blue) and Random (orange) clusters as a function of recall
+% precision (alpha). A one-sided Wilcoxon rank-sum test at each alpha
+% annotates significance (*** p<0.001, ** p<0.01, * p<0.05, n.s.).
 %
 % Requires: clusterDistanceMatrices.mat (produced by Step4_plots.m)
 % Run from: the Part3(ClassificationSequential) root directory.
@@ -15,7 +12,7 @@
 clear; clc;
 
 visible = true;
-doSave = true;
+doSave = false;
 
 N = 400;
 nMems = 25;
@@ -70,13 +67,10 @@ for aIdx = 1:numel(alphas)
 end
 
 deltaS = S_memory_mean - S_random_mean;
-deltaS_sem = sqrt(S_memory_sem.^2 + S_random_sem.^2);
 
-%% Plot: top = shaded summary, bottom = gap
-figure('Color','w','Position',[100 100 750 650],'Visible',visible);
-
-% -------- Top panel --------
-ax1 = subplot(2,1,1); hold on;
+%% Plot
+figure('Color','w','Position',[100 100 750 450],'Visible',visible);
+hold on;
 
 plot_shaded(alphas, S_memory_mean, S_memory_sem, [0.2 0.45 0.85]);
 plot_shaded(alphas, S_random_mean, S_random_sem, [0.90 0.45 0.10]);
@@ -89,6 +83,7 @@ plot(alphas, S_random_mean, '-o', 'LineWidth', 2.5, ...
 
 yline(1, '--k', 'LineWidth', 1.2);
 
+xlabel('\alpha', 'FontSize', 14, 'FontWeight', 'bold');
 ylabel('Cluster Separation Score', 'FontSize', 13, 'FontWeight', 'bold');
 title('\textbf{Cluster Separation vs Recall Precision}', ...
     'Interpreter', 'latex', 'FontSize', 18);
@@ -115,35 +110,13 @@ for aIdx = 1:numel(alphas)
         'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
 end
 
-% -------- Bottom panel --------
-ax2 = subplot(2,1,2); hold on;
-
-plot_shaded(alphas, deltaS, deltaS_sem, [0.35 0.35 0.35]);
-
-plot(alphas, deltaS, '-o', 'LineWidth', 2.5, ...
-    'Color', [0.35 0.35 0.35], 'MarkerFaceColor', [0.35 0.35 0.35], 'MarkerSize', 7);
-
-yline(0, '--k', 'LineWidth', 1.2);
-
-xlabel('\alpha', 'FontSize', 14, 'FontWeight', 'bold');
-ylabel('\Delta S', 'FontSize', 13, 'FontWeight', 'bold');
-
-title('\textbf{Separation Advantage of Memory over Random}', ...
-    'Interpreter', 'latex', 'FontSize', 15);
-
-set(gca, 'FontSize', 12, 'LineWidth', 1.2);
-box on;
-xlim([min(alphas)-0.02, max(alphas)+0.02]);
-yl = ylim; ylim([min(yl(1), 0 - 0.1*range(yl)), max(yl(2), 0 + 0.1*range(yl))]);
-
-linkaxes([ax1, ax2], 'x');
-
 if doSave
     savePath = fullfile("..", "Results", "N"+num2str(N), "nMems"+num2str(nMems));
     if ~exist(savePath, 'dir')
         mkdir(savePath);
     end
     print(gcf, fullfile(savePath, 'SeparationVsAlpha_Shaded'), '-dpng', '-r600');
+    print(gcf, fullfile(savePath, 'SeparationVsAlpha_Shaded'), '-dpdf');
 end
 
 %% Local function
