@@ -17,7 +17,7 @@ visible = true;
 N = 400;
 nMems = 25;
 
-alphas = [0.3 0.5 0.7 0.9];
+alphas = [0.1 0.3 0.5 0.7 0.9];
 
 clusterMatPath = fullfile("..", "Data", sprintf("N%d", N), sprintf("nMems%d", nMems), "clusterDistanceMatrices.mat");
 load(clusterMatPath, "clusterDictionary");
@@ -70,15 +70,22 @@ hold on
 
 errorbar(alphas,S_random_mean,S_random_std,'-o','LineWidth',2)
 
-yline(1,'--k')
+yline(1,'--k', 'Overlap Threshold', 'LineWidth', 1.2)
 
 xlabel('\alpha','FontSize',13,'FontWeight','bold')
 ylabel('Cluster Separation Score','FontSize',13,'FontWeight','bold')
 
-legend('Memory','Random','Location','northwest')
+legend('Memory','Random','Overlap Threshold','Location','northwest')
 
 title('\textbf{Cluster Separation vs Recall Precision}','Interpreter','latex')
 
 set(gca,'FontSize',12,'LineWidth',1.2)
 
 box on
+xlim([0 1])
+
+%% Save
+savePath = fullfile("..", "Results", "N"+num2str(N), "nMems"+num2str(nMems));
+if ~exist(savePath, 'dir'), mkdir(savePath); end
+print(gcf, fullfile(savePath, 'SeparationVsAlpha'), '-dpng', '-r600');
+print(gcf, fullfile(savePath, 'SeparationVsAlpha'), '-dpdf');
