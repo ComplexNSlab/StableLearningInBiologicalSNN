@@ -1,13 +1,11 @@
 # ===== Simulation Data & Results =====
 **/Data/
-**/Results/
 **/Data_Alternate/
 **/Data_Sequential/
 Data/
 
 # ===== Generated Figures & Images =====
-*.png
-*.pdf
+# Track .png and .pdf (research outputs)
 *.fig
 *.eps
 *.svg
