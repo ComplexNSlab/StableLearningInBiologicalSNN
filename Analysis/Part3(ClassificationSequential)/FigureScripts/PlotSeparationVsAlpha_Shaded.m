@@ -1,12 +1,12 @@
 % PlotSeparationVsAlpha_Shaded.m  (FigureScripts/)
 %
-% Enhanced version of PlotSeparationVsAlpha with shaded standard-deviation
-% bands. Produces a two-panel figure:
-%   Top panel  -- Mean cluster separation score (with shaded +/- std) for
+% Enhanced version of PlotSeparationVsAlpha with shaded standard-error
+% bands (SEM). Produces a two-panel figure:
+%   Top panel  -- Mean cluster separation score (with shaded +/- SEM) for
 %                 Memory (blue) and Random (orange) clusters vs alpha.
 %   Bottom panel -- Delta-S (Memory mean - Random mean) vs alpha,
 %                   quantifying the separation advantage of learned
-%                   memories over random patterns.
+%                   memories over random patterns (with propagated SEM).
 %
 % Requires: clusterDistanceMatrices.mat (produced by Step4_plots.m)
 % Run from: the Part3(ClassificationSequential) root directory.
@@ -26,8 +26,8 @@ load(clusterMatPath, "clusterDictionary");
 
 S_memory_mean = zeros(size(alphas));
 S_random_mean = zeros(size(alphas));
-S_memory_std  = zeros(size(alphas));
-S_random_std  = zeros(size(alphas));
+S_memory_sem  = zeros(size(alphas));
+S_random_sem  = zeros(size(alphas));
 
 for aIdx = 1:numel(alphas)
     alpha = alphas(aIdx);
@@ -58,11 +58,12 @@ for aIdx = 1:numel(alphas)
     S_memory_mean(aIdx) = mean(S_memory, 'omitnan');
     S_random_mean(aIdx) = mean(S_random, 'omitnan');
 
-    S_memory_std(aIdx) = std(S_memory, 'omitnan');
-    S_random_std(aIdx) = std(S_random, 'omitnan');
+    S_memory_sem(aIdx) = std(S_memory, 'omitnan') / sqrt(sum(is_memory));
+    S_random_sem(aIdx) = std(S_random, 'omitnan') / sqrt(sum(is_random));
 end
 
 deltaS = S_memory_mean - S_random_mean;
+deltaS_sem = sqrt(S_memory_sem.^2 + S_random_sem.^2);
 
 %% Plot: top = shaded summary, bottom = gap
 figure('Color','w','Position',[100 100 750 650],'Visible',visible);
@@ -70,8 +71,8 @@ figure('Color','w','Position',[100 100 750 650],'Visible',visible);
 % -------- Top panel --------
 ax1 = subplot(2,1,1); hold on;
 
-plot_shaded(alphas, S_memory_mean, S_memory_std, [0.2 0.45 0.85]);
-plot_shaded(alphas, S_random_mean, S_random_std, [0.90 0.45 0.10]);
+plot_shaded(alphas, S_memory_mean, S_memory_sem, [0.2 0.45 0.85]);
+plot_shaded(alphas, S_random_mean, S_random_sem, [0.90 0.45 0.10]);
 
 plot(alphas, S_memory_mean, '-o', 'LineWidth', 2.5, ...
     'Color', [0.2 0.45 0.85], 'MarkerFaceColor', [0.2 0.45 0.85], 'MarkerSize', 7);
@@ -85,13 +86,16 @@ ylabel('Cluster Separation Score', 'FontSize', 13, 'FontWeight', 'bold');
 title('\textbf{Cluster Separation vs Recall Precision}', ...
     'Interpreter', 'latex', 'FontSize', 18);
 
-legend({'', '', 'Memory \pm std','Random \pm std'}, 'Location', 'northwest');
+legend({'', '', 'Memory \pm SEM','Random \pm SEM'}, 'Location', 'northwest');
 set(gca, 'FontSize', 12, 'LineWidth', 1.2);
 box on;
 xlim([min(alphas)-0.02, max(alphas)+0.02]);
+yl = ylim; ylim([min(yl(1), 1 - 0.1*range(yl)), max(yl(2), 1 + 0.1*range(yl))]);
 
 % -------- Bottom panel --------
 ax2 = subplot(2,1,2); hold on;
+
+plot_shaded(alphas, deltaS, deltaS_sem, [0.35 0.35 0.35]);
 
 plot(alphas, deltaS, '-o', 'LineWidth', 2.5, ...
     'Color', [0.35 0.35 0.35], 'MarkerFaceColor', [0.35 0.35 0.35], 'MarkerSize', 7);
@@ -107,6 +111,7 @@ title('\textbf{Separation Advantage of Memory over Random}', ...
 set(gca, 'FontSize', 12, 'LineWidth', 1.2);
 box on;
 xlim([min(alphas)-0.02, max(alphas)+0.02]);
+yl = ylim; ylim([min(yl(1), 0 - 0.1*range(yl)), max(yl(2), 0 + 0.1*range(yl))]);
 
 linkaxes([ax1, ax2], 'x');
 
