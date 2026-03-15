@@ -2,12 +2,11 @@ clear; clc;
 profile on
 
 alpha_range = 5:5:95;
-N = 100; % Network Size
+N = 400; % Network Size
 
- 
 
-% Get list of all items in the current directory
-for N_mems = [10:10:200]
+% Get list of` all items in the current directory
+for N_mems = [5:5:60]
 
     items = dir(fullfile("Data", "N" + num2str(N) ,num2str(N_mems) + "memories/"));
     folders = items([items.isdir]); % Keep only directories

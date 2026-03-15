@@ -9,7 +9,7 @@ net.STDP = false;
 net.saveSimulation = false;
 
 bar = waitbar(0, "Please wait...");
-for alpha = 0.05:0.05:0.95
+for alpha = 0.10:0.05:0.40
     
     ff_partial = nan(N_mems, N_retrievals, N);
     ff_partial_null = nan(N_rands, N);
@@ -22,7 +22,7 @@ for alpha = 0.05:0.05:0.95
             waitbar(iter/(N_retrievals+N_rands), bar, sprintf("Alpha: %.2f\n Partial Recalling: %d/%d", alpha, iter, N_retrievals));
         end
         
-        net.PatchNumber = 11;
+        % net.PatchNumber = 11;
         for m = 1:N_mems
             stim = stims(m).copy();
             stim.Ncells = ceil(alpha * stims(m).Ncells);

@@ -1,9 +1,9 @@
 clear; clc;
 
 % Parameters
-N = 100;
+N = 400;
 alpha_range = 5:5:95;
-nMems_range = [10:10:200];
+nMems_range = [5:5:50];
 % metric_names = {'F1', 'Precision', 'Recall', 'AUC'};
 metric_names = {'F1'};
 
@@ -143,3 +143,25 @@ for metric_id = 1:nMetrics
     print(gcf, filename(1:end-3) + "png", '-dpng', '-r300');
 
 end
+%% F1 score vs Alpha
+
+figure; hold on;
+for m = [10, 20, 30]
+    idx = nMems_range == m;
+    plot(alpha_range, perf_mat_memories(idx, :, 1), Marker=".", DisplayName="M = " + num2str(m))
+end
+legend('Location','southeast', 'Box','off');
+ylabel("F1 score");
+xlabel("$\alpha$ (\%)", Interpreter="latex");
+title(sprintf("N = %d", N))
+%% F1 score Vs # of memories
+
+figure; hold on;
+for alpha = [10, 20, 30, 40, 50, 95]
+    idx = alpha_range == alpha;
+    plot(nMems_range, perf_mat_memories(:, idx, 1), Marker=".", DisplayName="$\alpha$ = " + num2str(alpha) + "\%")
+end
+legend('Location','southwest', 'Box','off', 'Interpreter','latex')
+ylabel("F1 score"); 
+xlabel("M", Interpreter="latex");
+title(sprintf("N = %d", N))

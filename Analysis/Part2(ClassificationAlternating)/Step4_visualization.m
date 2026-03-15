@@ -74,7 +74,7 @@ N = 100; % Network Size
 alpha_range = 5:5:95;
 
 % Get list of all items in the current directory
-N_mems = 3;
+N_mems = 50;
 
 folder_path = fullfile("Data",  "N"+num2str(N),num2str(N_mems) + "memories/");
 items = dir(folder_path);

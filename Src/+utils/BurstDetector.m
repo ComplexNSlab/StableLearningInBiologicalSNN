@@ -101,21 +101,21 @@
 % end
 
 
- function [bursts, fig] = BurstDetector(firings, threshold, visualize, subset, windsize, timebinsize)
+ function [bursts, fig] = BurstDetector(N, firings, threshold, visualize, subset, windsize, timebinsize)
     % Set default values for each argument
-    if nargin < 2 || isempty(threshold)
+    if nargin < 3 || isempty(threshold)
         threshold = []; % Will be calculated if empty
     end
-    if nargin < 3 || isempty(visualize)
+    if nargin < 4 || isempty(visualize)
         visualize = true; % Default to visualize
     end
-    if nargin < 4 || isempty(subset)
+    if nargin < 5 || isempty(subset)
         subset = 'All'; % Default to include all data
     end
-    if nargin < 5 || isempty(windsize)
+    if nargin < 6 || isempty(windsize)
         windsize = 3; % Default window size for smoothing
     end
-    if nargin < 6 || isempty(timebinsize)
+    if nargin < 7 || isempty(timebinsize)
         timebinsize = 3; % Default window size for smoothing
     end
 
@@ -123,9 +123,9 @@
     % Process data based on the subset type
     data = firings; 
     if strcmp(subset, 'Ex')
-        data = data(:, data(2, :) <= 320);
+        data = data(:, data(2, :) <= round(0.8*N));
     elseif strcmp(subset, 'Inh')
-        data = data(:, data(2, :) > 320);
+        data = data(:, data(2, :) > round(0.8*N));
     end
 
     % Define time range and bin size (adjust these parameters as needed)
@@ -176,7 +176,7 @@
         hold on;
 
         yyaxis("left")
-        plot(data(1, :)/1000, data(2, :), 'k.', 'MarkerSize', 1, 'HandleVisibility', 'off');
+        plot(data(1, :)/1000, data(2, :), 'k.', 'MarkerSize', 3, 'HandleVisibility', 'off');
 
         xlabel("t (s)");
         ylabel("cell index");
@@ -186,7 +186,7 @@
             if i > 1
                 hv = 'off';
             end
-            area(bursts(i, :)/1000, 400*[1, 1], 'FaceColor', 'g', 'FaceAlpha', 0.4, 'DisplayName', 'burst', 'HandleVisibility', hv);
+            area(bursts(i, :)/1000, N*[1, 1], 'FaceColor', 'g', 'FaceAlpha', 0.2, 'DisplayName', 'burst', 'HandleVisibility', hv, EdgeColor='none');
         end
 
         yyaxis("right")
@@ -195,7 +195,7 @@
         plot(time_centers/1000, smoothed_spike_density, 'r-', 'DisplayName', sprintf('smoothed (%d ms)', timebinsize));
         ylabel("spike density");
 
-        legend();
+        legend('Box','on', 'EdgeColor','white');
     end
 
     % Display detected bursts

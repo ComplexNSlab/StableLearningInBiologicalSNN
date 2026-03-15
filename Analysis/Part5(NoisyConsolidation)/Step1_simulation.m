@@ -15,7 +15,7 @@ net.sigma_ex = noise_strength*5;
 net.sigma_inh = noise_strength*2;
 
 for i = 1:n_mems
-    stim = Stimulation(net, trialLen, 2, 30, 50, 5);
+    stim = Stimulation(net, trialLen, 2, 30, round(50*net.N/400), 5);
     net.stimulation = true;
     net.stims = [stim];
     net.run(100000);

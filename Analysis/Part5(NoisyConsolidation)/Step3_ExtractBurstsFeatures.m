@@ -41,7 +41,7 @@ for k = 1:numel(key_list)
     
     key         = key_list{k};
     data        = fOrdered(key);            % value in correct sequence
-    [bt, fig]   = utils.BurstDetector(data, thresh, false, subset, windSize, timebinSize);
+    [bt, fig]   = utils.BurstDetector(N, data, thresh, false, subset, windSize, timebinSize);
 
     bursts      = [bursts; bt];
     num_burst(key) = size(bt,1);

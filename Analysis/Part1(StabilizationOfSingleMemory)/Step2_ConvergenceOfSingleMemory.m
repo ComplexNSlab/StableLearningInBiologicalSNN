@@ -3,7 +3,7 @@ clc;clear;
 
 % Network Size
 N = 400; 
-sclaleFolder = 'Constant50';
+sclaleFolder = 'Scaled50';
 
 % defualt selection of latest simulation
 folderPath = fullfile(pwd, "Data", sclaleFolder, "N" + num2str(N));
@@ -21,10 +21,11 @@ dataFiles = data_files(contains({data_files.name}, "Patch"));
 latestData = dataFiles(latestIdx).name;
 net = load(fullfile(filePath, latestData), 'obj'); net = net.obj;
 
-clearvars -except net;
+clearvars -except net filePath;
 
-load(net.RecordingDirectory + filesep + "MemoryRepresentations.mat");
+load(filePath + filesep + "MemoryRepresentations.mat");
 
+clearvars filePath
 %% Spike Order vs Trials (Separate)
 
 % Network Size
@@ -64,8 +65,8 @@ xlabel("Trial")
 ylabel("Single Neuron Spike Order")
 title("First to Fire Order Vector")
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
-print(gcf, "Results" + filesep + 'SpikeOrderSeparate.pdf', '-dpdf', '-vector', '-r300');
-print(gcf, "Results" + filesep + 'SpikeOrderSeparate.png', '-dpng', '-r300');
+% print(gcf, "Results" + filesep + 'SpikeOrderSeparate.pdf', '-dpdf', '-vector', '-r300');
+% print(gcf, "Results" + filesep + 'SpikeOrderSeparate.png', '-dpng', '-r300');
 
 %% Spike Order vs Trials (Together)
 figure('Renderer', 'painters','Name', "Single Neuron Spike Order", 'Visible','on' )
@@ -91,8 +92,8 @@ xlabel("Trial")
 ylabel("Single Neuron Spike Order")
 title("First to Fire Order Vector")
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
-print(gcf, "Results" + filesep + 'SpikeOrderTogether.pdf', '-dpdf', '-vector', '-r300');
-print(gcf, "Results" + filesep + 'SpikeOrderTogether.png', '-dpng', '-r300');
+% print(gcf, "Results" + filesep + 'SpikeOrderTogether.pdf', '-dpdf', '-vector', '-r300');
+% print(gcf, "Results" + filesep + 'SpikeOrderTogether.png', '-dpng', '-r300');
 
 %% Similarity Matrix of responses across Trials
 % choose your desired representation measure of the memory
@@ -117,7 +118,7 @@ corrmat = 1-squareform(pdist(data, dist_measure));
 
 % Create the heatmap
 
-figure('Renderer', 'painters', 'Position', [100 100 1000 1000], 'Visible','off' ); % Adjust position and size as needed
+figure('Renderer', 'painters', 'Position', [100 100 1000 1000], 'Visible','on'); % Adjust position and size as needed
 fsize = 25; % font size
 
 
@@ -166,8 +167,8 @@ set(gcf, 'PaperSize', [10 10]); % [width, height]
 
 title(representation + " Similarity Matrix", 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold')
 % Save the figure as a PDF with higher resolution
-print(gcf, "Results" + filesep + 'Spearman_Corr_Matrix.pdf', '-dpdf', '-vector', '-r300');
-print(gcf, "Results" + filesep + 'Spearman_Corr_Matrix.png', '-dpng', '-r300');
+% print(gcf, "Results" + filesep + 'Spearman_Corr_Matrix.pdf', '-dpdf', '-vector', '-r300');
+% print(gcf, "Results" + filesep + 'Spearman_Corr_Matrix.png', '-dpng', '-r300');
 
 %%
 figure('Renderer', 'painters','Visible','off');
@@ -177,12 +178,12 @@ xlabel('Trial');
 ylabel('Mean Spearman Correlation');
 title('Average Correlation Over Time');
 grid on;
-print(gcf, "Results" + filesep + 'aveCorr.pdf', '-dpdf', '-vector', '-r300');
-print(gcf, "Results" + filesep + 'aveCorr.png', '-dpng', '-r300');
+% print(gcf, "Results" + filesep + 'aveCorr.pdf', '-dpdf', '-vector', '-r300');
+% print(gcf, "Results" + filesep + 'aveCorr.png', '-dpng', '-r300');
 
 
 %% Consecutive distance converging to zero
-figure('Renderer', 'painters','Visible', 'off'); 
+figure('Renderer', 'painters','Visible', 'on'); 
 lag = 1;
 plot(1-diag(corrmat, lag))
 xlabel("Trial Number", 'FontWeight','bold')

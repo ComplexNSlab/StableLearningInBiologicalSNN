@@ -12,7 +12,7 @@ classdef Stimulation < handle
         
         pattern_indices % index of stimulated cells
         pattern_timings % start time of stimulation for each cell
-
+        
         on = true % whether stimulation is on or off momentarily 
         I_stim 
     end
@@ -58,7 +58,7 @@ classdef Stimulation < handle
             % n_t = round(obj.interval/obj.network.dt);
             obj.I_stim = zeros(obj.network.N, 1);
             obj.I_stim(obj.pattern_indices) = obj.pattern_timings;
-
+            
             % time_ = repmat(obj.network.dt:obj.network.dt:obj.interval, obj.Ncells, 1);
             % indices = (time_ - repmat(obj.pattern_timings, 1, n_t)) <= obj.duration & (time_ - repmat(obj.pattern_timings, 1, n_t)) >= 0;
             % obj.I_stim(obj.pattern_indices, :) = indices*obj.amplitude;

@@ -1,18 +1,18 @@
-function raster = getRasterPlot(firings, bin_size)
+function raster = getRasterPlot(firings, bin_size, T)
 %GETRASTERPLOT Returns binned spike counts as a raster matrix.
 %
-%   raster = getRasterPlot(firings, bin_size) bins the spike train data
-%   from `firings` (2 x N) into time bins of size `bin_size` (ms), and 
-%   returns a matrix of size [n_neurons x n_bins].
+%   raster = getRasterPlot(firings, bin_size)
+%   raster = getRasterPlot(firings, bin_size, T)
 %
 %   INPUT:
 %       firings   - 2 x N matrix [spike_time(ms); neuron_index]
 %       bin_size  - size of each time bin in milliseconds
+%       T (opt)   - total duration in ms (optional)
 %
 %   OUTPUT:
 %       raster    - matrix of spike counts (neurons x time bins)
 
-    % Ensure firings are oriented correctly
+    % Validate input
     if size(firings, 1) ~= 2
         error('Input firings must be a 2xN matrix [time; neuron_index].');
     end
@@ -20,20 +20,24 @@ function raster = getRasterPlot(firings, bin_size)
     spike_times = firings(1, :);         % in ms
     neuron_ids  = firings(2, :);         % integer neuron indices
 
-    % Get number of neurons and duration
+    % Number of neurons
     n_neurons = max(neuron_ids);
-    T = ceil(max(spike_times));          % total duration in ms
+
+    % Determine duration
+    if nargin < 3 || isempty(T)
+        T = ceil(max(spike_times));  % fallback: estimate T from data
+    end
     n_bins = ceil(T / bin_size);
 
-    % Initialize raster matrix
+    % Initialize raster
     raster = zeros(n_neurons, n_bins);
 
-    % Loop over all spikes
+    % Loop over spikes
     for i = 1:length(spike_times)
         t_bin = floor(spike_times(i) / bin_size) + 1;
         neuron = neuron_ids(i);
 
-        if t_bin <= n_bins
+        if t_bin <= n_bins && neuron <= n_neurons
             raster(neuron, t_bin) = raster(neuron, t_bin) + 1;
         end
     end
