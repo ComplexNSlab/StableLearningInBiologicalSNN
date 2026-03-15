@@ -1,3 +1,22 @@
+% Simulation_Alternating.m
+%
+% End-to-end exploratory script for alternating-stimulus sequential
+% learning in a heterogeneous Izhikevich spiking network.  The script:
+%   1. Initialises an IzhikevichNetwork with STDP enabled.
+%   2. Trains multiple memories sequentially (alternating stimuli).
+%   3. Extracts spike-order, spike-count, time-delay, and assembly
+%      representations for every trial.
+%   4. Plots similarity matrices (Spearman / Pearson / Hamming) across
+%      representations.
+%   5. Tracks participation rate of excitatory/inhibitory populations.
+%   6. Computes the pairwise inter-memory similarity over training time
+%      for five representation types and plots their evolution.
+%   7. Applies PCA to the delay representation and visualises learning
+%      trajectories in a 3-D principal-component space.
+%
+% Parameters: N_mems (number of memories), network hyper-parameters
+%             (set in the initialisation block).
+
 clear;clc;
 
 %% Initializing the Network properties

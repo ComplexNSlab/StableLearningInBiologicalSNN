@@ -1,3 +1,18 @@
+% Step1_Simulation.m  --  Sequential memory training.
+%
+% Creates a heterogeneous Izhikevich spiking neural network and trains it
+% on N_mems memories presented one at a time in sequence (each memory is
+% repeated for nTrials * stim_len ms).  STDP is enabled during training.
+%
+% Expected workspace variables (set by Step0.m or caller):
+%   N        - number of neurons
+%   N_mems   - number of memories to learn
+%   nTrials  - trials per memory
+%   stim_len - stimulus duration per trial (ms)
+%
+% Outputs: saves stimuli.mat and Patch*.mat files to the Data folder.
+% Contains helper functions: computeOrders, TimeToFirstSpikeSort.
+
 %% Initializing the Network properties
 baseFolder = fullfile("Data", "N" + num2str(N), "nMems" + num2str(N_mems));
 net = IzhikevichNetwork(N, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, 'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);

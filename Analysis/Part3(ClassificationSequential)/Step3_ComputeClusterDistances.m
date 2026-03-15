@@ -1,8 +1,26 @@
+% Step3_ComputeClusterDistances.m
+%
+% Computes pairwise Euclidean distances between all recall-evoked neural
+% representations (using the time-delay feature vector) and organises them
+% into intra-cluster and inter-cluster distance distributions. For every
+% simulation folder under Data/N<N>/nMems<nMems>/:
+%   1. Loads the recall data produced by Step2.
+%   2. Groups trials by memory label (m1..mK) and random label (rnd*).
+%   3. Builds a full pairwise distance matrix and extracts intra/inter
+%      cluster distance vectors.
+%   4. Saves ClusterDistances.mat (intra_dists_all, inter_dists_all,
+%      uniqueGroups) alongside the recall data.
+%
+% Also contains helper functions: classify (SVM-based ECOC classifier with
+% ROC/AUC), compute_confusion_metrics.
+%
+% Parameters: N, nMems, alpha (set below)
+
 clear; clc;
 
 nMems = 25;
 N = 400;
-alpha = 0.3;
+alpha = 0.1;
 
 rootFolder = sprintf("Data\\N%d\\nMems%d\\", N, nMems);
 entries = dir(rootFolder);

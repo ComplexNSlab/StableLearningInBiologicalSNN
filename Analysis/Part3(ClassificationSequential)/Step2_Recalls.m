@@ -1,3 +1,21 @@
+% Step2_Recalls.m  --  Partial-cue recall testing.
+%
+% For the final trained network state, performs recall trials with partial
+% cues (controlled by alpha = fraction of original pattern) for both
+% learned memories and random control patterns.  For each memory the
+% script:
+%   1. Presents a random alpha-fraction subset of the learned stimulus.
+%   2. Records the evoked spike train and extracts four neural
+%      representations: spike-order (together & separate), spike counts,
+%      and time-delays.
+%   3. Repeats the same procedure with random (untrained) stimuli.
+%   4. Saves all representations + group labels to a Recalls subfolder.
+%
+% Expected workspace variables (set by Step0.m or caller):
+%   net, stims, N_mems, nTrials, stim_len, alpha
+%
+% Contains helper functions: computeRepresentations, TimeToFirstSpikeSort.
+
 %% Parameters
 N_retrievals = 100;
 N_rands = 100; n_repeats = N_mems;
