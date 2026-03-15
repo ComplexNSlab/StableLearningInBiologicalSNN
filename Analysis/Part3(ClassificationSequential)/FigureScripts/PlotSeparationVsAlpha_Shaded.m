@@ -28,6 +28,9 @@ S_memory_mean = zeros(size(alphas));
 S_random_mean = zeros(size(alphas));
 S_memory_sem  = zeros(size(alphas));
 S_random_sem  = zeros(size(alphas));
+pvals         = zeros(size(alphas));
+S_memory_all  = cell(size(alphas));
+S_random_all  = cell(size(alphas));
 
 for aIdx = 1:numel(alphas)
     alpha = alphas(aIdx);
@@ -60,6 +63,10 @@ for aIdx = 1:numel(alphas)
 
     S_memory_sem(aIdx) = std(S_memory, 'omitnan') / sqrt(sum(is_memory));
     S_random_sem(aIdx) = std(S_random, 'omitnan') / sqrt(sum(is_random));
+
+    S_memory_all{aIdx} = S_memory;
+    S_random_all{aIdx} = S_random;
+    pvals(aIdx) = ranksum(S_memory, S_random, 'tail', 'right');
 end
 
 deltaS = S_memory_mean - S_random_mean;
@@ -86,11 +93,27 @@ ylabel('Cluster Separation Score', 'FontSize', 13, 'FontWeight', 'bold');
 title('\textbf{Cluster Separation vs Recall Precision}', ...
     'Interpreter', 'latex', 'FontSize', 18);
 
-legend({'', '', 'Memory \pm SEM','Random \pm SEM'}, 'Location', 'northwest');
+legend({'', '', 'Memory \pm SEM','Random \pm SEM'}, 'Location', 'west');
 set(gca, 'FontSize', 12, 'LineWidth', 1.2);
 box on;
 xlim([min(alphas)-0.02, max(alphas)+0.02]);
 yl = ylim; ylim([min(yl(1), 1 - 0.1*range(yl)), max(yl(2), 1 + 0.1*range(yl))]);
+
+% ---- Significance asterisks ----
+yl_top = ylim;
+for aIdx = 1:numel(alphas)
+    if pvals(aIdx) < 0.001
+        stars = '***';
+    elseif pvals(aIdx) < 0.01
+        stars = '**';
+    elseif pvals(aIdx) < 0.05
+        stars = '*';
+    else
+        stars = 'n.s.';
+    end
+    text(alphas(aIdx), yl_top(2) - 0.03*range(yl_top), stars, ...
+        'HorizontalAlignment', 'center', 'FontSize', 12, 'FontWeight', 'bold');
+end
 
 % -------- Bottom panel --------
 ax2 = subplot(2,1,2); hold on;
