@@ -16,7 +16,7 @@
 
 clear; clc;
 
-visible = false;
+visible = true;
 doSave  = true;
 
 % ---- Set parameters ----
