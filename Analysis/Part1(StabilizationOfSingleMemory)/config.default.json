@@ -26,5 +26,14 @@
     "lag": 10,
 
     "_trialsSubfolder_comment": "Subfolder for longer-run data, e.g. 'Trials1500'. Empty string '' means Data/{scaleFolder}/N{N} directly",
-    "trialsSubfolder": ""
+    "trialsSubfolder": "",
+
+    "_stabilityFrac_comment": "Fractional threshold for stabilisation detection. Step04: thr = plateau +/- frac*|initial-plateau|. Step06: thr = plateau + frac*(peak-plateau). Step09: thr = plateau + frac*(peak-plateau). Same parameter ensures fair comparison.",
+    "stabilityFrac": 0.10,
+
+    "_smoothTrials_comment": "Smoothing window in actual trials for stabilisation detection (Step04/06/09). Step06/09 convert to saved-snapshot units internally.",
+    "smoothTrials": 100,
+
+    "_holdTrials_comment": "Number of consecutive trials the criterion must hold (Step04/06/09). Step06/09 convert to saved-snapshot units internally.",
+    "holdTrials": 100
 }

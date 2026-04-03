@@ -28,6 +28,7 @@ Trains a single memory on an Izhikevich spiking neural network and measures how 
 | `Step08_WeightVsRepresentationComparison.m` | Paired comparison of structural vs functional stabilisation times. |
 | `Step09_RadialStabilization.m` | Radial (polar-decomposition) stabilisation — threshold on \|Δr\| → 0. Also stores Δθ. |
 | `Step10_RadialStabilizationPlots.m` | Visualisation of radial stabilisation results (Δr/Δθ traces, boxplots, trends). |
+| `Step11_RadialVsRepresentationComparison.m` | Paired comparison of radial vs functional stabilisation times. |
 
 ## Configuration
 
@@ -43,7 +44,10 @@ Parameters are read from `config.json` (git-ignored). Copy `config.default.json`
 | `scaleFolder` | Data subdirectory: `"Scaled50"` or `"Constant50"` |
 | `trialsSubfolder` | Subfolder for trial-count variants, e.g. `"Trials1500"`, `"Trials1000"`, or `""` |
 | `iterationsPerN` | Repeat simulations per N in Step00 |
-| `lag` | Lag for diagonal distance signal in Step3 |
+| `lag` | Lag for diagonal distance signal in Step03 |
+| `stabilityFrac` | Fractional threshold (α) for plateau-based stabilisation detection |
+| `smoothTrials` | Smoothing window in actual trials for stabilisation detection |
+| `holdTrials` | Consecutive-hold window in actual trials |
 
 ## Data Layout
 
@@ -52,4 +56,18 @@ Data/{scaleFolder}/{trialsSubfolder}/N{N}/{simID}/
     Patch1.mat                  — network object + weight snapshots
     MemoryRepresentations.mat   — orders_together, orders_separate, spike_counts, delays
 ```
+
+## Results Layout
+
+Analysis outputs are saved in a parameter-stamped subfolder so different configs don't overwrite each other:
+
+```
+Results/StabilizationResults/
+    DelaysThreshold_plateau_{paramTag}.mat         — from Step04
+    SpikeCountsThreshold_plateau_{paramTag}.mat    — from Step04
+    WeightStabilityResults_{paramTag}.mat           — from Step06
+    RadialStabilityResults_{paramTag}.mat           — from Step09
+```
+
+where `{paramTag}` = `frac{NNN}_smooth{S}_hold{H}` (e.g. `frac010_smooth100_hold100`).
 

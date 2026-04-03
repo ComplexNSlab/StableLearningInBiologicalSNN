@@ -31,21 +31,52 @@ set(groot, 'DefaultTextFontSize', 14);
 set(groot, 'DefaultLegendFontSize', 13);
 
 %% USER SETTINGS
-show_figs   = 'on';   % 'on' for diagnostics
-N_list      = 100:100:1000;
-nTrials     = 1500;
-scaleFolder = 'Scaled50';
+cfg = jsondecode(fileread('config.json'));
+N_list      = cfg.networkSizes(:)';
+scaleFolder = cfg.scaleFolder;
+if isfield(cfg, 'trialsSubfolder') && ~isempty(cfg.trialsSubfolder)
+    trialsSubfolder = cfg.trialsSubfolder;
+else
+    trialsSubfolder = '';
+end
 
-smoothWin   = 100;     % smoothing window on representation curves
-holdWin     = 50;      % must stay near plateau this many consecutive trials
+show_figs   = 'on';   % 'on' for diagnostics
+nTrials     = cfg.nTrials;
+
+% Smoothing & hold parameters from config (in trial units)
+if isfield(cfg, 'smoothTrials')
+    smoothWin = cfg.smoothTrials;
+else
+    smoothWin = 100;
+end
+if isfield(cfg, 'holdTrials')
+    holdWin = cfg.holdTrials;
+else
+    holdWin = 150;
+end
 tailFrac    = 0.20;    % last 20% used for plateau estimate
 tailMinPts  = 50;      % minimum tail length
-alphaDelay  = 0.10;    % tolerance fraction for delays
-alphaSpike  = 0.10;    % tolerance fraction for spike counts
+
+% Stability fraction: shared with Step06/Step09 for fair comparison
+if isfield(cfg, 'stabilityFrac')
+    alphaDelay = cfg.stabilityFrac;
+    alphaSpike = cfg.stabilityFrac;
+else
+    alphaDelay = 0.10;
+    alphaSpike = 0.10;
+end
+
+%% Build parameter-stamped results subfolder
+paramTag = sprintf('frac%03d_smooth%d_hold%d', ...
+    round(alphaDelay * 100), smoothWin, holdWin);
+resultsDir = fullfile(pwd, 'Results', 'StabilizationResults');
+if ~isfolder(resultsDir)
+    mkdir(resultsDir);
+end
 
 %% Load existing threshold structs if they exist
-delayPath = fullfile("Data", scaleFolder, "Trials1500", "DelaysThreshold_plateau.mat");
-spikePath = fullfile("Data", scaleFolder, "Trials1500", "SpikeCountsThreshold_plateau.mat");
+delayPath = fullfile(resultsDir, sprintf('DelaysThreshold_plateau_%s.mat', paramTag));
+spikePath = fullfile(resultsDir, sprintf('SpikeCountsThreshold_plateau_%s.mat', paramTag));
 
 if isfile(delayPath)
     S = load(delayPath, 'thresholds');
@@ -74,7 +105,7 @@ for iN = 1:numel(N_list)
     N = N_list(iN);
     fprintf('\nProcessing N = %d\n', N);
 
-    folderPath = fullfile(pwd, "Data", scaleFolder, "Trials1500", "N" + num2str(N));
+    folderPath = fullfile(pwd, "Data", scaleFolder, trialsSubfolder, "N" + num2str(N));
     sim_folders = dir(folderPath);
     sim_folders = sim_folders(~ismember({sim_folders.name}, {'.', '..'}));
 

@@ -35,12 +35,29 @@ baseRoot    = fullfile(pwd, "Data", scaleFolder, trialsSubfolder);
 
 % ---------------- ANALYSIS PARAMETERS ----------------
 saveStride  = 5;       % weights saved every 5 actual trials
-smoothWin   = 20;      % moving average window on saved samples
-holdWin     = 30;      % require criterion to hold for this many saved samples
+
+% Smoothing & hold parameters from config (converted to saved-snapshot units)
+if isfield(cfg, 'smoothTrials')
+    smoothWin = round(cfg.smoothTrials / saveStride);
+else
+    smoothWin = 20;
+end
+if isfield(cfg, 'holdTrials')
+    holdWin = round(cfg.holdTrials / saveStride);
+else
+    holdWin = 30;
+end
 
 tailFrac    = 0.20;    % last 20% of curve defines plateau
 tailMinPts  = 20;      % minimum number of points in tail
-alpha       = 0.10;    % threshold = plateau + alpha*(peak - plateau)
+
+% Stability fraction: read from config for consistency with Step09.
+% thr = plateau + stabilityFrac * (peak - plateau)
+if isfield(cfg, 'stabilityFrac')
+    alpha = cfg.stabilityFrac;
+else
+    alpha = 0.10;
+end
 
 % ------------------------------------------------
 Results = struct();
@@ -251,7 +268,9 @@ function closeWaitbarSafe(h)
 end
 %% Saving the results 
 
-saveFolder = fullfile(pwd, "Results");
+paramTag = sprintf('frac%03d_smooth%d_hold%d', ...
+    round(alpha * 100), smoothWin * saveStride, holdWin * saveStride);
+saveFolder = fullfile(pwd, 'Results', 'StabilizationResults');
 if ~isfolder(saveFolder)
     mkdir(saveFolder);
 end
@@ -265,8 +284,9 @@ analysisParams.holdWin    = holdWin;
 analysisParams.tailFrac   = tailFrac;
 analysisParams.tailMinPts = tailMinPts;
 analysisParams.alpha      = alpha;
+analysisParams.paramTag   = paramTag;
 
-partialFile = fullfile(saveFolder, "WeightStabilityResults.mat");
+partialFile = fullfile(saveFolder, sprintf('WeightStabilityResults_%s.mat', paramTag));
 save(partialFile, 'Results', 'analysisParams', '-v7.3');
 
-fprintf('Partial save completed after N=%d\n', N);
+fprintf('Saved to %s\n', partialFile);

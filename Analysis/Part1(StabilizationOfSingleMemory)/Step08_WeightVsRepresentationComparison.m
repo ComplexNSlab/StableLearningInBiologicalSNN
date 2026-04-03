@@ -22,13 +22,16 @@
 clc; clear; close all;
 
 %% Load data
-projectRoot = fileparts(fileparts(which('IzhikevichNetwork')));
-scriptDir   = fullfile(projectRoot, 'Analysis', 'Part1(StabilizationOfSingleMemory)');
+cfg = jsondecode(fileread('config.json'));
+if isfield(cfg, 'stabilityFrac'), frac = cfg.stabilityFrac; else, frac = 0.10; end
+if isfield(cfg, 'smoothTrials'),  smoo = cfg.smoothTrials;  else, smoo = 100;  end
+if isfield(cfg, 'holdTrials'),    hold_ = cfg.holdTrials;   else, hold_ = 100;  end
+paramTag = sprintf('frac%03d_smooth%d_hold%d', round(frac*100), smoo, hold_);
 
-S1 = load(fullfile(scriptDir, "Results", "WeightStabilityResults.mat"));
+S1 = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('WeightStabilityResults_%s.mat', paramTag)));
 Results = S1.Results;
 
-S2 = load(fullfile(scriptDir, "Data", "Scaled50", "Trials1500", "SpikeCountsThreshold_plateau.mat"));
+S2 = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('SpikeCountsThreshold_plateau_%s.mat', paramTag)));
 thresholds = S2.spikeThresholds;
 
 %% Compare structural vs delay-based stabilization

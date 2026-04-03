@@ -16,15 +16,21 @@
 
 clc; clear; close all;
 
-%% Load plateau-based thresholds
-S1 = load("Data\Scaled50\Trials1500\DelaysThreshold_plateau.mat");
+%% Load config and build paramTag
+cfg = jsondecode(fileread('config.json'));
+if isfield(cfg, 'stabilityFrac'), frac = cfg.stabilityFrac; else, frac = 0.10; end
+if isfield(cfg, 'smoothTrials'),  smoo = cfg.smoothTrials;  else, smoo = 100;  end
+if isfield(cfg, 'holdTrials'),    hold_ = cfg.holdTrials;   else, hold_ = 100;  end
+paramTag = sprintf('frac%03d_smooth%d_hold%d', round(frac*100), smoo, hold_);
+
+S1 = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('DelaysThreshold_plateau_%s.mat', paramTag)));
 delayThresholds = S1.delayThresholds;
 
-S2 = load("Data\Scaled50\Trials1500\SpikeCountsThreshold_plateau.mat");
+S2 = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('SpikeCountsThreshold_plateau_%s.mat', paramTag)));
 spikeThresholds = S2.spikeThresholds;
 
 %% Network sizes to plot
-N_list = 100:100:1000;
+N_list = cfg.networkSizes(:)';
 
 %% Gather data
 allVals = [];

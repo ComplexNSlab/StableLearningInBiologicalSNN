@@ -41,13 +41,30 @@ baseRoot = fullfile(pwd, "Data", scaleFolder, trialsSubfolder);
 
 % ---------------- ANALYSIS PARAMETERS ----------------
 saveStride  = 5;       % weights saved every 5 actual trials
-smoothWin   = 20;      % moving average window on saved samples
-holdWin     = 30;      % require criterion to hold for this many saved samples
 
-% Radial threshold: |Delta_r| must stay below this fraction of the peak
-% |Delta_r| to be considered stabilised. Since Delta_r converges to true
-% zero, a small fraction of the peak works robustly.
-radialFrac  = 0.05;    % threshold = radialFrac * peak(|Delta_r_smooth|)
+% Smoothing & hold parameters from config (converted to saved-snapshot units)
+if isfield(cfg, 'smoothTrials')
+    smoothWin = round(cfg.smoothTrials / saveStride);
+else
+    smoothWin = 20;
+end
+if isfield(cfg, 'holdTrials')
+    holdWin = round(cfg.holdTrials / saveStride);
+else
+    holdWin = 30;
+end
+
+tailFrac    = 0.20;    % last 20% of curve defines plateau
+tailMinPts  = 20;      % minimum number of points in tail
+
+% Stability fraction: read from config for consistency with Step04/Step06.
+% thr = plateau + stabilityFrac * (peak - plateau)
+% Plateau is computed from the tail, not assumed to be zero.
+if isfield(cfg, 'stabilityFrac')
+    alpha = cfg.stabilityFrac;
+else
+    alpha = 0.10;
+end
 
 % ------------------------------------------------
 Results = struct();
@@ -104,6 +121,7 @@ for iN = 1:numel(N_list)
     threshUsed    = nan(nItems, 1);
     peakAbsDr     = nan(nItems, 1);
     peakTrial     = nan(nItems, 1);
+    plateauUsed   = nan(nItems, 1);
 
     drCurvesRaw       = cell(nItems, 1);
     drCurvesSmooth    = cell(nItems, 1);
@@ -185,9 +203,15 @@ for iN = 1:numel(N_list)
         dtheta_s = movmean(dtheta, smoothWin);
 
         % ---- Stabilisation criterion on |Delta_r| ----
+        % Compute plateau from tail, same method as Step06 (not assumed zero)
         abs_dr_s = abs(dr_s);
         [peakVal, peakIdx] = max(abs_dr_s);
-        thr = radialFrac * peakVal;
+
+        nTail = max(tailMinPts, round(tailFrac * numel(abs_dr_s)));
+        nTail = min(nTail, numel(abs_dr_s));
+        plateauVal = median(abs_dr_s(end-nTail+1:end), 'omitnan');
+
+        thr = plateauVal + alpha * (peakVal - plateauVal);
 
         below = abs_dr_s <= thr;
 
@@ -217,6 +241,7 @@ for iN = 1:numel(N_list)
         threshUsed(k)   = thr;
         peakAbsDr(k)    = peakVal;
         peakTrial(k)    = peakIdx * saveStride;
+        plateauUsed(k)  = plateauVal;
 
         validMask(k) = true;
     end
@@ -230,6 +255,7 @@ for iN = 1:numel(N_list)
     Results(iN).threshold    = threshUsed(validMask);
     Results(iN).peakAbsDr    = peakAbsDr(validMask);
     Results(iN).peakTrial    = peakTrial(validMask);
+    Results(iN).plateauValue = plateauUsed(validMask);
 
     Results(iN).drRaw        = {drCurvesRaw{validMask}};
     Results(iN).drSmooth     = {drCurvesSmooth{validMask}};
@@ -258,7 +284,9 @@ waitbar(1, hWait, 'Done.');
 
 %% Saving the results
 
-saveFolder = fullfile(pwd, "Results");
+paramTag = sprintf('frac%03d_smooth%d_hold%d', ...
+    round(alpha * 100), smoothWin * saveStride, holdWin * saveStride);
+saveFolder = fullfile(pwd, 'Results', 'StabilizationResults');
 if ~isfolder(saveFolder)
     mkdir(saveFolder);
 end
@@ -269,12 +297,15 @@ analysisParams.baseRoot    = baseRoot;
 analysisParams.saveStride  = saveStride;
 analysisParams.smoothWin   = smoothWin;
 analysisParams.holdWin     = holdWin;
-analysisParams.radialFrac  = radialFrac;
+analysisParams.tailFrac    = tailFrac;
+analysisParams.tailMinPts  = tailMinPts;
+analysisParams.alpha       = alpha;
+analysisParams.paramTag    = paramTag;
 
-save(fullfile(saveFolder, "RadialStabilityResults.mat"), ...
-    'Results', 'analysisParams', '-v7.3');
+outFile = fullfile(saveFolder, sprintf('RadialStabilityResults_%s.mat', paramTag));
+save(outFile, 'Results', 'analysisParams', '-v7.3');
 
-fprintf('\nResults saved to Results/RadialStabilityResults.mat\n');
+fprintf('\nSaved to %s\n', outFile);
 
 % -------- helper function --------
 function closeWaitbarSafe(h)
