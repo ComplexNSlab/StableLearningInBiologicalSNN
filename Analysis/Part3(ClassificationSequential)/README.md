@@ -25,8 +25,15 @@ Part3(ClassificationSequential)/
 │   ├── analyze_cluster_separation.m     # Per-cluster S_i bar & violin
 │   ├── PlotDistancesVsAlpha.m           # Distance curves vs cue strength
 │   ├── PlotSeparationVsAlpha.m          # S vs alpha with error bars
-│   ├── PlotSeparationVsAlpha_Shaded.m   # Shaded-band version + Delta-S
+│   ├── PlotSeparationVsAlpha_Shaded.m   # Shaded-band version + significance
 │   └── SummaryFigure.m                  # Three-panel summary figure
+│
+├── ThesisFigures/                       # 4 compact thesis-ready figures
+│   ├── Fig1_DistanceDistributions.m     # Intra/inter distance KDE curves
+│   ├── Fig2_MeanDistancesVsAlpha.m      # Mean distance trends vs alpha
+│   ├── Fig3_SeparationScoreVsAlpha.m    # S score + significance stars
+│   ├── Fig4_PCA_RecallGeometry.m        # PCA scatter of recall clusters
+│   └── Output/                          # Saved PNG + PDF figures
 │
 ├── Simulation_Alternating.m             # Self-contained exploratory pipeline
 ├── PCAClusters.mlx                      # PCA live-script exploration

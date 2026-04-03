@@ -18,6 +18,8 @@ clc; clear;
 N = 400;             % network size
 N_mems = 25;
 alpha_array = [0.1];
+nTrials  = 1000;     % training trials per memory (needed by Step2_Recalls)
+stim_len = 100;      % stimulus length in ms      (needed by Step2_Recalls)
 
 baseFolder = fullfile(pwd, 'Data', sprintf('N%d', N), sprintf('nMems%d', N_mems));
 
@@ -27,7 +29,7 @@ entries = entries(~ismember({entries.name}, {'.', '..'}));
 
 for sim_id = 1:numel(entries)
     % remove variables from previous iteration, keep only important ones
-    clearvars -except N N_mems baseFolder entries sim_id alpha_array
+    clearvars -except N N_mems baseFolder entries sim_id alpha_array nTrials stim_len
     
     simFolder = fullfile(baseFolder, entries(sim_id).name);
     recallsFolder = fullfile(simFolder, 'Recalls');

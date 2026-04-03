@@ -104,8 +104,8 @@ savePath = fullfile("Results", "N"+num2str(N), "nMems" + num2str(nMems), "alpha"
 if ~exist(savePath, 'dir')
     mkdir(savePath);
 end
-% print(gcf, savePath + filesep + 'IntraCluster', '-dpng', '-r600');   % 600 DPI PNG
-% print(gcf, savePath + filesep + 'IntraCluster', '-dpdf');           % Vector EPS
+print(gcf, savePath + filesep + 'IntraCluster', '-dpng', '-r600');   % 600 DPI PNG
+print(gcf, savePath + filesep + 'IntraCluster', '-dpdf');           % Vector EPS
 
 %% Plot inter cluster distances heatmap
 
@@ -158,8 +158,8 @@ savePath = fullfile("Results", "N"+num2str(N), "nMems" + num2str(nMems), "alpha"
 if ~exist(savePath, 'dir')
     mkdir(savePath);
 end
-% print(gcf, savePath + filesep + 'InterCluster', '-dpng', '-r600');   % 600 DPI PNG
-% print(gcf, savePath + filesep + 'InterCluster', '-dpdf');           % Vector EPS
+print(gcf, savePath + filesep + 'InterCluster', '-dpng', '-r600');   % 600 DPI PNG
+print(gcf, savePath + filesep + 'InterCluster', '-dpdf');           % Vector EPS
 
 %% plot Statistics of all distances
 m_idx = 1:nMems;
@@ -225,8 +225,8 @@ savePath = fullfile("Results", "N"+num2str(N), "nMems" + num2str(nMems), "alpha"
 if ~exist(savePath, 'dir')
     mkdir(savePath);
 end
-% print(gcf, savePath + filesep + 'statistics', '-dpng', '-r600');   % 600 DPI PNG
-% print(gcf, savePath + filesep + 'statistics', '-dpdf');           % Vector EPS
+print(gcf, savePath + filesep + 'statistics', '-dpng', '-r600');   % 600 DPI PNG
+print(gcf, savePath + filesep + 'statistics', '-dpdf');           % Vector EPS
 
 %% Saving cluster-level matrix for downstream analyses
 

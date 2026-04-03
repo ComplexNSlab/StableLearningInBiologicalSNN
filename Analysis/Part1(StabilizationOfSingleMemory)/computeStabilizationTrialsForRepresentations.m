@@ -9,7 +9,7 @@ set(groot, 'DefaultTextFontSize', 14);
 set(groot, 'DefaultLegendFontSize', 13);
 
 %% USER SETTINGS
-show_figs   = 'off';   % 'on' for diagnostics
+show_figs   = 'on';   % 'on' for diagnostics
 N_list      = 100:100:1000;
 nTrials     = 1500;
 scaleFolder = 'Scaled50';

@@ -1,26 +1,70 @@
+% Step5_Statistics.m
+% =========================================================================
+% Aggregates and visualises Pearson similarity statistics from noisy-
+% consolidation simulations (Part 5).
+%
+% WORKFLOW:
+%   1. Loads similarityMatrices.mat from every simulation folder matching
+%      the (N, nMems, noise_strength) configuration.
+%   2. Concatenates the per-pair similarity values (finalData) and the
+%      summary statistics (data_stats_total) across simulations.
+%   3. Re-indexes the nMems x nMems similarity matrix by the diagonal
+%      offset  Delta_m = j - i  so that columns represent the "distance"
+%      between memory indices rather than absolute memory pairs.
+%   4. Plots the aligned similarity vs Delta_m with per-simulation traces
+%      (gray) and the grand mean +/- SEM (red).
+%   5. Exports the figure to PDF and PNG under Results/N{N}/.
+%   6. Saves the positive-tail of the mean curve (Delta_m >= 0, Y > 0) to
+%      Results/C(delta_m).mat, replacing any previous entry for the same N.
+%
+% DATA FOLDER STRUCTURE (relative to this script):
+%   Data/
+%     N{N}/
+%       nMems{nMems}/
+%         noise{noise_strength}%/
+%           {simID}/
+%             similarityMatrices.mat   (contains Data, memMemSimMat, data_stats)
+%
+% OUTPUTS:
+%   Results/N{N}/NoisyBursts_MemorySimilarity_{noise_strength}noise.pdf
+%   Results/N{N}/NoisyBursts_MemorySimilarity_{noise_strength}noise.png
+%   Results/C(delta_m).mat   (struct array allRecords with fields N, X, Y)
+% =========================================================================
+
 clc; clear;
 
+%% Resolve script directory
+% Try several possible working directories: pwd may be the project root,
+% the script folder itself, or somewhere else entirely.
+scriptDir = fullfile(pwd, 'Analysis', 'Part5(NoisyConsolidation)');
+if ~isfolder(fullfile(scriptDir, 'Data'))
+    scriptDir = pwd;  % pwd is already the script folder
+end
+if ~isfolder(fullfile(scriptDir, 'Data'))
+    error('Cannot locate Data folder. cd to the project root or the script folder before running.');
+end
+
 %% READING AND ACCUMULATING THE DATA
-% Get list of folders
-nMems = 20; N = 100; noise_strength = 100;
-folders = dir(fullfile("Data\N" + num2str(N), "nMems" + num2str(nMems) ,"\noise" + num2str(noise_strength) + "%\"));
+nMems = 20; N = 400; noise_strength = 100;
+folders = dir(fullfile(scriptDir, 'Data', ['N' num2str(N)], ...
+    ['nMems' num2str(nMems)], ['noise' num2str(noise_strength) '%']));
 
 isSubfolder = [folders.isdir] & ~ismember({folders.name}, {'.', '..'});
 folderPaths = fullfile({folders(isSubfolder).folder}, {folders(isSubfolder).name});
 
-% Initialize final 3×3 cell array to hold concatenated results
+% Initialize nMems x nMems cell array to hold concatenated similarity values
 finalData = cell(nMems,nMems);
 finalMemSimMat = zeros(numel(folderPaths), nMems*100, nMems*100);
 data_stats_total = zeros(numel(folderPaths), nMems, nMems, 4);
 
 % Loop over folders
 for fIdx = 1:numel(folderPaths)
-    clearvars -except fIdx folderPaths finalData nMems finalMemSimMat data_stats_total N noise_strength
-    load(fullfile(folderPaths{fIdx}, 'similarityMatrices.mat'), 'Data', 'memMemSimMat', 'data_stats');  % <- Assumes Daata is 3x3 cell array
+    clearvars -except fIdx folderPaths finalData nMems finalMemSimMat data_stats_total N noise_strength scriptDir
+    load(fullfile(folderPaths{fIdx}, 'similarityMatrices.mat'), 'Data', 'memMemSimMat', 'data_stats');
     finalMemSimMat(fIdx, :, :) = memMemSimMat;
     data_stats_total(fIdx, :, :, :) = data_stats;
 
-    % Loop over 3×3 elements
+    % Loop over nMems x nMems elements and concatenate
     for row = 1:nMems
         for col = 1:nMems
             if ~isempty(Data{row, col})
@@ -33,8 +77,8 @@ end
 %% ALIGNMENT OF DATA
 
 aligned_stats = nan(size(data_stats_total, 1), nMems, 2*nMems-1);
-alignedData = cell(1, 2*nMems-1);  % For offsets -2 to +2
-offsets = -(nMems-1):(nMems-1);            % Mapping from i - j to alignedData index
+alignedData = cell(1, 2*nMems-1);  % One bin per offset -(nMems-1) to +(nMems-1)
+offsets = -(nMems-1):(nMems-1);    % Diagonal offset values
 
 for i = 1:nMems
     for j = 1:nMems
@@ -47,72 +91,30 @@ for i = 1:nMems
     end
 end
 
-%% Plotting the decay
-% Convert to long format
-% allVals = [];
-% groupLabels = [];
-% Ymeans = [];
-% Ymedians = [];
-% upperCI = [];
-% lowerCI = [];
-% p = 10;
-% 
-% for i = 1:numel(alignedData)
-%     x = alignedData{i};
-%     Ymeans(i) = mean(x);
-%     Ymedians(i) = median(x);
-%     upperCI = [upperCI, mean(x) + std(x)/sqrt(6)];
-%     lowerCI = [lowerCI, mean(x) - std(x)/sqrt(6)]; 
-%     allVals = [allVals, x];
-%     groupLabels = [groupLabels, repmat(i, 1, length(x))];
-% end
-% 
-% % Create violin plot
-% figure; hold on;
-% % boxchart(groupLabels', allVals', 'JitterOutliers','on', 'MarkerStyle','.', 'MarkerSize', 5);  % groupLabels & allVals must be column
-% 
-% 
-% 
-% % Overlay mean and median
-% xPos = 1:numel(alignedData);
-% 
-% % Plot mean with red 'x'
-% plot(xPos, Ymeans, 'ro-', 'LineWidth', 1.5, 'MarkerSize', 8);
-% fill([xPos fliplr(xPos)], [lowerCI fliplr(upperCI)], 'r', 'FaceAlpha', 0.4, 'EdgeColor','none');
-% 
-% xticks(xPos);
-% xticklabels(offsets);
-% xlabel('$\Delta m$', 'Interpreter', 'latex');
-% ylabel('Correlation Value');
-% title('Distribution of NoisyBursts-Memory Similarity');
-% text(0.70*2*nMems, 0.7, "Post Learning");
-% text(0.20*2*nMems, 0.7, "Pre Learning");
-% % legend({'Violin', 'Mean'}, 'Location', 'best');
-%% Memories Similarity Statistics
-
-% averagedMat = squeeze(mean(finalMemSimMat, 1));
-% 
-% figure;
-% imagesc(averagedMat);
-% cb = colorbar();
-
-%%
-grayColor = 0.8*[1 1 1];  % Light gray
+%% PLOT: C(Delta_m) — similarity vs memory offset
+% Gray traces = individual simulations; red = grand mean +/- SEM.
+grayColor = 0.8*[1 1 1];
 
 figure(Position=[300 300 1000 600]); hold on;
 
 xPos = 1:numel(alignedData);
+
+% Vertical line at Delta_m = 0 (boundary between pre- and post-learning)
 xline(nMems, LineStyle='--', LineWidth=0.5, Alpha=0.4, HandleVisibility='off');
-plot([0], '-', 'Color', grayColor, HandleVisibility='on', DisplayName='single memory');
+
+% Per-simulation traces (gray)
+plot(NaN, NaN, '-', 'Color', grayColor, HandleVisibility='on', DisplayName='Single simulation');
 for i = 1:size(aligned_stats, 1)
     plot(squeeze(aligned_stats(i, :, :))', '-', 'Color', grayColor, HandleVisibility='off');
 end
 
+% Grand mean +/- SEM (red)
 Ymean = squeeze(nanmean(aligned_stats, [1, 2]))';
-plot(Ymean, 'ro-', 'LineWidth', 1, DisplayName = 'Mean', MarkerSize=3);
+plot(Ymean, 'r-', 'LineWidth', 1.5, DisplayName='Mean', MarkerSize=2, Marker='o');
 n_samples_per_DeltaM = squeeze(sum(~isnan(aligned_stats), [1, 2]))';
 err = squeeze(nanstd(aligned_stats, 0, [1, 2]))'./sqrt(n_samples_per_DeltaM);
-fill([xPos, fliplr(xPos)], [Ymean+err, fliplr(Ymean-err)], 'r', 'FaceAlpha', 0.2, 'EdgeColor','none', DisplayName='Mean Error');
+fill([xPos, fliplr(xPos)], [Ymean+err, fliplr(Ymean-err)], ...
+    'r', 'FaceAlpha', 0.2, 'EdgeColor','none', DisplayName='SEM');
 
 xticks(xPos);
 xticklabels(offsets);
@@ -128,42 +130,33 @@ set(gca, 'fontName', 'Times New Roman', 'fontsize', 16)
 
 set(gcf, 'Color', 'w');
 
-outputDir = fullfile("Results", "N" + num2str(N));
+%% EXPORT FIGURE
+outputDir = fullfile(scriptDir, 'Results', ['N' num2str(N)]);
 if ~exist(outputDir, 'dir')
     mkdir(outputDir);
 end
 fileName = "NoisyBursts_MemorySimilarity_" + num2str(noise_strength) + "noise";
-filePath = fullfile(outputDir, fileName);
-exportgraphics(gcf, filePath + ".pdf", 'ContentType', 'vector');
-exportgraphics(gcf, filePath + ".png", 'ContentType', 'image');
-%%
+outFilePath = fullfile(outputDir, fileName);
+exportgraphics(gcf, outFilePath + ".pdf", 'ContentType', 'vector');
+exportgraphics(gcf, outFilePath + ".png", 'ContentType', 'image');
+
+%% EXTRACT POSITIVE-TAIL DECAY CURVE
+% Keep only the Delta_m >= 0 portion (post-learning) where correlation > 0.
 Y = Ymean(nMems:end);
-X = 1+(0:nMems-1);
+X = 1 + (0:nMems-1);       % Delta_m values: 1, 2, ..., nMems
 valid = Y > 0;
 X = X(valid); Y = Y(valid);
 
-% fig = figure; hold on;
-% loglog(X, Y, 'ko-');
-% xlabel('$\Delta m$', 'Interpreter', 'latex');
-% ylabel('Pearson Correlation');
-% 
-% m = polyfit(log(X(1:7)), log(Y(1:7)), 1);
-% loglog(X, exp(m(2)) * X.^m(1), 'r--', 'LineWidth', 2);
-% legend('Data', sprintf('Fit: Y \\propto X^{%.2f}', m(1)), 'Location', 'best');
-% grid on;
-% set(gca, 'YScale', 'log', 'XScale', 'log'); 
-%%
-
-% Step 1: Prepare X, Y, and N as one structure
-record.N = N;    % assign your current N value here
+%% SAVE DECAY CURVE TO RESULTS — used by Step6_C_Delta_m_fit.m
+% Each record stores (N, X, Y). If a record for the same N already exists
+% it is replaced; otherwise the new record is appended.
+record.N = N;
 record.X = X;
 record.Y = Y;
 
-fname = fullfile("Results", "C(delta_m).mat");
+fname = fullfile(scriptDir, 'Results', 'C(delta_m).mat');
 
-% Step 2: Check if the file exists
 if isfile(fname)
-    % Load existing data
     data = load(fname, "allRecords");
     if isfield(data, "allRecords")
         allRecords = data.allRecords;
@@ -174,13 +167,11 @@ else
     allRecords = [];
 end
 
-% Step 3: Append the new record (replace if same N exists)
 idx = find(arrayfun(@(r) r.N == N, allRecords), 1);
 if isempty(idx)
     allRecords = [allRecords; record];
 else
-    allRecords(idx) = record; % Replace old entry for this N
+    allRecords(idx) = record;
 end
 
-% Step 4: Save
 save(fname, "allRecords");

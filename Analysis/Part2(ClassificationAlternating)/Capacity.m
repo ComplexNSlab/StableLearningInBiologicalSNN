@@ -4,7 +4,7 @@ T = readtable('classification_metrics_table.csv');
 F1_thresh = 0.70;    % Capacity threshold
 
 %% 5. F1 vs M with error bars (single N, alpha)
-alpha_target = 0.30;                 % Set your desired alpha
+alpha_target = 0.50;                 % Set your desired alpha
 
 Nvals = unique(T.N);                % All N values in your table
 c_map = lines(length(Nvals));
@@ -75,8 +75,8 @@ end
 
 set(gca, 'YScale', 'linear', 'XScale', 'log')
 % xlim([1, 10^6])
-exportgraphics(fig, fullfile("Results", "capacity", "capacityVsN.pdf"), 'ContentType', 'vector')
-exportgraphics(fig, fullfile("Results", "capacity", "capacityVsN.png"), 'ContentType', 'image')
+% exportgraphics(fig, fullfile("Results", "capacity", "capacityVsN.pdf"), 'ContentType', 'vector')
+% exportgraphics(fig, fullfile("Results", "capacity", "capacityVsN.png"), 'ContentType', 'image')
 
 disp('Fit parameters (F1 = a - b*log(M)) for each N:');
 results.M_star = exp((results.a - F1_thresh)./results.b);

@@ -28,16 +28,17 @@ entries = entries([entries.isdir] & ~ismember({entries.name}, {'.', '..'}));
 
 for i = 1:length(entries)
     retievalFolder = fullfile(entries(i).folder, entries(i).name, "Recalls", "alpha" + num2str(round(100*alpha)));
-
+    
+    load(retievalFolder + filesep + "recalls" + num2str(nMems) + ".mat");
+    
+    %.......... Computing Cluster Distances ....................%
+    X = delays;    
     if exist(retievalFolder + filesep + "ClusterDistances.mat", 'file')
         fprintf("Already Computed!\n");
         continue;
     end
     
-    load(retievalFolder + filesep + "recalls" + num2str(nMems) + ".mat");
-    
-    %.......... Computing Cluster Distances ....................%
-    X = delays;     
+ 
     
     % Build labels (if not already complete)
     for iter = nMems+1:2*nMems

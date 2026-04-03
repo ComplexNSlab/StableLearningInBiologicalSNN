@@ -1,4 +1,4 @@
-function sim = ComputePearsonSimilarity(A,B,minShared,blockRows)
+function sim = ComputePearsonSimilarity(A,B,minShared,blockRows,showWaitbar)
 % Pair-wise Pearson correlation with NaN handling and per-pair centring.
 %
 %   sim(i,j) = corr( A(i,:), B(j,:) )   over the dimensions where both rows
@@ -8,6 +8,7 @@ function sim = ComputePearsonSimilarity(A,B,minShared,blockRows)
 
     if nargin<3 || isempty(minShared), minShared = 50;   end
     if nargin<4 || isempty(blockRows), blockRows = 4000; end
+    if nargin<5 || isempty(showWaitbar), showWaitbar = true; end
 
     [nA,D] = size(A);          nB = size(B,1);
 
@@ -17,7 +18,9 @@ function sim = ComputePearsonSimilarity(A,B,minShared,blockRows)
     Bj2   = Bz.^2;                         % nB × D   squared terms
 
     sim   = NaN(nA,nB,'single');
-    wb    = waitbar(0,'Computing Pearson blocks …');
+    if showWaitbar
+        wb = waitbar(0,'Computing Pearson blocks …');
+    end
 
     for i1 = 1:blockRows:nA
         i2    = min(i1+blockRows-1,nA);
@@ -52,9 +55,9 @@ function sim = ComputePearsonSimilarity(A,B,minShared,blockRows)
         rho(valid)       = covAB(valid) ./ denom(valid);
         sim(idx,:)       = rho;
 
-        waitbar(i2/nA,wb);
+        if showWaitbar, waitbar(i2/nA,wb); end
     end
-    close(wb);
+    if showWaitbar, close(wb); end
 end
 
 
