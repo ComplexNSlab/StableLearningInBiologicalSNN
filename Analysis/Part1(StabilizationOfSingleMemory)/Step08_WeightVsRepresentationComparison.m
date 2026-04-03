@@ -1,4 +1,4 @@
-% Step8_WeightVsRepresentationComparison.m
+% Step08_WeightVsRepresentationComparison.m
 % =========================================================================
 % Compares structural (weight) vs functional (representation) stabilisation
 % on a per-run paired basis.
@@ -12,8 +12,8 @@
 %   5. Ratio of structural / representation stabilisation vs N.
 %
 % INPUTS:
-%   Results/WeightStabilityResults.mat           (from Step6)
-%   Data/.../SpikeCountsThreshold_plateau.mat    (from Step4_PlateauThreshold)
+%   Results/WeightStabilityResults.mat           (from Step06)
+%   Data/.../SpikeCountsThreshold_plateau.mat    (from Step04_PlateauThreshold)
 %
 % OUTPUTS:
 %   Figures displayed on screen; summary table printed to console.

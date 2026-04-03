@@ -1,7 +1,7 @@
-% Step5_SlopeBoxplot.m  (SUPERSEDED by newRepresentationStabilityTrialBoxPlot.m)
+% Step05_SlopeBoxplot.m  (SUPERSEDED by Step05_PlateauBoxplot.m)
 % =========================================================================
 % Grouped boxplot of slope-based stabilisation trials (delays vs spike
-% counts) across network sizes, using the thresholds from Step4_SlopeThreshold.
+% counts) across network sizes, using the thresholds from Step04_SlopeThreshold.
 %
 % NOTE: newRepresentationStabilityTrialBoxPlot.m produces the same style
 %       of plot but uses the improved plateau-based thresholds from

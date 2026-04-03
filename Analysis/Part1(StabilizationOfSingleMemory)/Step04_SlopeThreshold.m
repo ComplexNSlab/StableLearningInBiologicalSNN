@@ -1,4 +1,4 @@
-% Step4_SlopeThreshold.m  (SUPERSEDED by computeStabilizationTrialsForRepresentations.m)
+% Step04_SlopeThreshold.m  (SUPERSEDED by Step04_PlateauThreshold.m)
 % =========================================================================
 % Detects the trial at which delay and spike-count representations
 % stabilise, using a SLOPE-THRESHOLD method (smoothed |dY/dt| < epsilon).

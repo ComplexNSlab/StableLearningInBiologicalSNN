@@ -9,7 +9,7 @@
 %   - Angular  Delta_theta(t) = arccos( g(t) . g(t+1) / (||g(t)|| ||g(t+1)||) )
 %     How much the weight vector rotates (structural reorganisation).
 %
-% These are compared side-by-side with the existing L1 measure from Step6:
+% These are compared side-by-side with the existing L1 measure from Step06:
 %   Delta_W(t) = mean_i |w_i(t+1) - w_i(t)|
 %
 % Run on a single simulation for quick visual inspection.
@@ -76,7 +76,7 @@ fprintf('nSyn (EE only) = %d, Tsave = %d\n', nSyn, Tsave);
 
 %% Compute the three measures
 
-% 1) L1: mean absolute change per synapse (same as Step6_WeightStabilization)
+% 1) L1: mean absolute change per synapse (same as Step06_WeightStabilization)
 dW_L1 = mean(abs(diff(W2, 1, 2)), 1);   % [1 x (Tsave-1)]
 
 % 2) Radial: change in L2 norm of the weight vector

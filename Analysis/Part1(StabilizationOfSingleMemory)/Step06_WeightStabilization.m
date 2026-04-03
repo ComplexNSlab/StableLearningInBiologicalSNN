@@ -1,4 +1,4 @@
-% Step6_WeightStabilization.m
+% Step06_WeightStabilization.m
 % =========================================================================
 % Structural (synaptic weight) stabilisation analysis.
 %

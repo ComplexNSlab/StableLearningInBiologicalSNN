@@ -1,4 +1,4 @@
-% Step4_PlateauThreshold.m
+% Step04_PlateauThreshold.m
 % =========================================================================
 % Plateau-based stabilisation detection for delay and spike-count
 % representations across all network sizes.
@@ -10,7 +10,7 @@
 %   4. Finds the first trial where the smoothed curve stays within the
 %      band for holdWin consecutive trials — this is the stabilisation trial.
 %
-% This is the PREFERRED method over Step4_SlopeThreshold.m.
+% This is the PREFERRED method over Step04_SlopeThreshold.m.
 %
 % INPUTS:
 %   Data/{scaleFolder}/Trials{X}/N{N}/*/MemoryRepresentations.mat

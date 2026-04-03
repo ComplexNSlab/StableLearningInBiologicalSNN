@@ -1,8 +1,8 @@
-% Step7_WeightStabilizationPlots.m
+% Step07_WeightStabilizationPlots.m
 % =========================================================================
 % Visualisation of structural (synaptic) stabilisation results.
 %
-% Loads WeightStabilityResults.mat from Step6_WeightStabilization and
+% Loads WeightStabilityResults.mat from Step06_WeightStabilization and
 % produces four figures:
 %   1. Single-run delta-W trace (raw + smoothed) with threshold, plateau,
 %      peak, and stability landmarks.

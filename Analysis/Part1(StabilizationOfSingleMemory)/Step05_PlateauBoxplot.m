@@ -1,9 +1,9 @@
-% Step5_PlateauBoxplot.m
+% Step05_PlateauBoxplot.m
 % =========================================================================
 % Grouped boxplot of plateau-based stabilisation times (delays vs spike
 % counts) across network sizes.
 %
-% Loads the thresholds produced by Step4_PlateauThreshold and displays
+% Loads the thresholds produced by Step04_PlateauThreshold and displays
 % side-by-side boxplots for each N, annotated with sample counts.
 %
 % INPUTS:
