@@ -22,10 +22,18 @@
 %% Querying on the raw data to get delta w signals (this block takes time)
 clear; clc;
 
-% ---------------- USER SETTINGS ----------------
-N_list      = 100:100:1000;
-baseRoot    = fullfile(pwd, "Data", "Scaled50", "Trials1500");
+% ---------------- SETTINGS FROM CONFIG ----------------
+cfg = jsondecode(fileread('config.json'));
+N_list      = cfg.networkSizes(:)';
+scaleFolder = cfg.scaleFolder;
+if isfield(cfg, 'trialsSubfolder') && ~isempty(cfg.trialsSubfolder)
+    trialsSubfolder = cfg.trialsSubfolder;
+else
+    trialsSubfolder = '';
+end
+baseRoot    = fullfile(pwd, "Data", scaleFolder, trialsSubfolder);
 
+% ---------------- ANALYSIS PARAMETERS ----------------
 saveStride  = 5;       % weights saved every 5 actual trials
 smoothWin   = 20;      % moving average window on saved samples
 holdWin     = 30;      % require criterion to hold for this many saved samples
@@ -119,6 +127,7 @@ for iN = 1:numel(N_list)
         obj = S.obj;
         W = single(obj.w_save);             % N x N x Tsave
         A = logical(obj.Adjacency_matrix);  % N x N
+        Ne = obj.Ne;
 
         if ndims(W) ~= 3
             warning('Skipping %s because w_save is not 3D.', matFile);
@@ -131,12 +140,22 @@ for iN = 1:numel(N_list)
             continue;
         end
 
-        % Flatten weights to [N^2 x Tsave], then keep existing edges only
+        % Restrict to excitatory-to-excitatory (EE) synapses only —
+        % STDP only modifies EE weights, so EI/IE/II are static.
+        A_ee = false(size(A));
+        A_ee(1:Ne, 1:Ne) = A(1:Ne, 1:Ne);
+
+        % Flatten weights to [N^2 x Tsave], then keep existing EE edges only
         W2 = reshape(W, N*N, Tsave);
-        W2 = W2(A(:), :);    % [nEdges x Tsave]
+        W2 = W2(A_ee(:), :);    % [nEdges_ee x Tsave]
+
+        % Drop synapses that stay zero for the entire simulation
+        % (edge exists in adjacency but STDP never activates it)
+        activeMask = any(W2 ~= 0, 2);
+        W2 = W2(activeMask, :);
 
         if isempty(W2) || size(W2,2) < 2
-            warning('Skipping %s because no valid edge/time data.', matFile);
+            warning('Skipping %s because no valid EE edge/time data.', matFile);
             continue;
         end
 
