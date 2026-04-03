@@ -43,28 +43,15 @@ baseRoot = fullfile(pwd, "Data", scaleFolder, trialsSubfolder);
 saveStride  = 5;       % weights saved every 5 actual trials
 
 % Smoothing & hold parameters from config (converted to saved-snapshot units)
-if isfield(cfg, 'smoothTrials')
-    smoothWin = round(cfg.smoothTrials / saveStride);
-else
-    smoothWin = 20;
-end
-if isfield(cfg, 'holdTrials')
-    holdWin = round(cfg.holdTrials / saveStride);
-else
-    holdWin = 30;
-end
+assert(isfield(cfg, 'smoothTrials'),  'config.json missing "smoothTrials"');
+assert(isfield(cfg, 'holdTrials'),    'config.json missing "holdTrials"');
+assert(isfield(cfg, 'stabilityFrac'), 'config.json missing "stabilityFrac"');
+smoothWin = round(cfg.smoothTrials / saveStride);
+holdWin   = round(cfg.holdTrials / saveStride);
+alpha     = cfg.stabilityFrac;
 
 tailFrac    = 0.20;    % last 20% of curve defines plateau
 tailMinPts  = 20;      % minimum number of points in tail
-
-% Stability fraction: read from config for consistency with Step04/Step06.
-% thr = plateau + stabilityFrac * (peak - plateau)
-% Plateau is computed from the tail, not assumed to be zero.
-if isfield(cfg, 'stabilityFrac')
-    alpha = cfg.stabilityFrac;
-else
-    alpha = 0.10;
-end
 
 % ------------------------------------------------
 Results = struct();

@@ -18,10 +18,10 @@ clc; clear;
 
 %% Load data
 cfg = jsondecode(fileread('config.json'));
-if isfield(cfg, 'stabilityFrac'), frac = cfg.stabilityFrac; else, frac = 0.10; end
-if isfield(cfg, 'smoothTrials'),  smoo = cfg.smoothTrials;  else, smoo = 100;  end
-if isfield(cfg, 'holdTrials'),    hold_ = cfg.holdTrials;   else, hold_ = 100;  end
-paramTag = sprintf('frac%03d_smooth%d_hold%d', round(frac*100), smoo, hold_);
+assert(isfield(cfg, 'stabilityFrac'), 'config.json missing "stabilityFrac"');
+assert(isfield(cfg, 'smoothTrials'),  'config.json missing "smoothTrials"');
+assert(isfield(cfg, 'holdTrials'),    'config.json missing "holdTrials"');
+paramTag = sprintf('frac%03d_smooth%d_hold%d', round(cfg.stabilityFrac*100), cfg.smoothTrials, cfg.holdTrials);
 
 S           = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('WeightStabilityResults_%s.mat', paramTag)));
 Results     = S.Results;

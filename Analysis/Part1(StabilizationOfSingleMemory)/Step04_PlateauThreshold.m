@@ -44,27 +44,15 @@ show_figs   = 'on';   % 'on' for diagnostics
 nTrials     = cfg.nTrials;
 
 % Smoothing & hold parameters from config (in trial units)
-if isfield(cfg, 'smoothTrials')
-    smoothWin = cfg.smoothTrials;
-else
-    smoothWin = 100;
-end
-if isfield(cfg, 'holdTrials')
-    holdWin = cfg.holdTrials;
-else
-    holdWin = 150;
-end
+assert(isfield(cfg, 'smoothTrials'),  'config.json missing "smoothTrials"');
+assert(isfield(cfg, 'holdTrials'),    'config.json missing "holdTrials"');
+assert(isfield(cfg, 'stabilityFrac'), 'config.json missing "stabilityFrac"');
+smoothWin  = cfg.smoothTrials;
+holdWin    = cfg.holdTrials;
 tailFrac    = 0.20;    % last 20% used for plateau estimate
 tailMinPts  = 50;      % minimum tail length
-
-% Stability fraction: shared with Step06/Step09 for fair comparison
-if isfield(cfg, 'stabilityFrac')
-    alphaDelay = cfg.stabilityFrac;
-    alphaSpike = cfg.stabilityFrac;
-else
-    alphaDelay = 0.10;
-    alphaSpike = 0.10;
-end
+alphaDelay  = cfg.stabilityFrac;
+alphaSpike  = cfg.stabilityFrac;
 
 %% Build parameter-stamped results subfolder
 paramTag = sprintf('frac%03d_smooth%d_hold%d', ...
