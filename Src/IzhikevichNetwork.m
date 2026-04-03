@@ -133,7 +133,7 @@ classdef IzhikevichNetwork < handle
 
            % if obj.saveSimulation
            if T > 100
-                f = waitbar(0,'Please wait...');
+                f = waitbar(0,'Please wait...', 'Interpreter', 'none');
            end
            % end
 

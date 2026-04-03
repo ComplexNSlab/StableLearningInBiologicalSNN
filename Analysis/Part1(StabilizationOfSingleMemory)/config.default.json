@@ -1,0 +1,30 @@
+{
+    "_comment": "Copy this file to config.json and edit. config.json is git-ignored.",
+
+    "_N_comment": "Default network size used by Step2, Step3, Step4 (single-N scripts)",
+    "N": 400,
+
+    "_networkSizes_comment": "List of network sizes to loop over in Step0 batch simulations",
+    "networkSizes": [200, 300, 400, 500, 600],
+
+    "_nTrials_comment": "Number of training trials per simulation",
+    "nTrials": 1000,
+
+    "_trialLen_comment": "Duration of each trial in milliseconds",
+    "trialLen": 100,
+
+    "_scale50Flag_comment": "If true, stimulus size scales as 50*(N/400); if false, fixed at 50 neurons",
+    "scale50Flag": true,
+
+    "_scaleFolder_comment": "Data subdirectory name: 'Scaled50' (scaled stimulus) or 'Constant50' (fixed stimulus)",
+    "scaleFolder": "Scaled50",
+
+    "_iterationsPerN_comment": "Number of repeat simulations per network size in Step0",
+    "iterationsPerN": 10,
+
+    "_lag_comment": "Lag (in trials) for diagonal distance signal in Step3",
+    "lag": 10,
+
+    "_trialsSubfolder_comment": "Subfolder for longer-run data, e.g. 'Trials1500'. Empty string '' means Data/{scaleFolder}/N{N} directly",
+    "trialsSubfolder": ""
+}

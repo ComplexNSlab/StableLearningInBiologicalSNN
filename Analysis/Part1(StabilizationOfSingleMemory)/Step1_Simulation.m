@@ -1,3 +1,26 @@
+% Step1_Simulation.m
+% =========================================================================
+% Core simulation script for single-memory training.
+%
+% Creates an Izhikevich spiking neural network, trains it with a single
+% stimulus pattern for nTrials repetitions, then computes four memory
+% representations from the spike data:
+%   1. Spike order (excitatory/inhibitory ranked separately)
+%   2. Spike order (all neurons ranked together)
+%   3. Spike counts per neuron per trial
+%   4. Time-to-first-spike delays per neuron per trial
+%
+% EXPECTED WORKSPACE VARIABLES (set by Step0.m):
+%   N            — network size (number of neurons)
+%   nTrials      — number of training trials
+%   trialLen     — duration of each trial (ms)
+%   scale50Flag  — if true, stimulus targets 50*(N/400) neurons
+%
+% OUTPUTS:
+%   Data/{scaleFolder}/N{N}/{simID}/MemoryRepresentations.mat
+%     orders_together, orders_separate, spike_counts, delays
+% =========================================================================
+
 % This script runs and simulate a network given your customize condition 
 
 % clear; clc;
@@ -9,7 +32,10 @@ if scale50Flag
 else
     scaleFolder = "constant50";
 end
-baseFolder = fullfile(pwd, 'Data', scaleFolder, "N" + num2str(N));
+if ~exist('trialsSubfolder', 'var')
+    trialsSubfolder = '';
+end
+baseFolder = fullfile(pwd, 'Data', scaleFolder, trialsSubfolder, "N" + num2str(N));
 net = IzhikevichNetwork(N, 'heterogeneity', true, 'g_ee', 0.5, 'g_ei', 2, 'g_ie', 2, 'ExtoExDegree', 20, 'InhtoExDegree', 5, 'ExtoInhDegree', 5, 'baseFolder', baseFolder);
 
 net.STDP = true;

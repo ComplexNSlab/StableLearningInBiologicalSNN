@@ -1,12 +1,42 @@
-% This sctipt should be run when you have a recording directory of a simulation
-clc;clear;
+% Step2_ConvergenceOfSingleMemory.m
+% =========================================================================
+% Visualises convergence of a single simulation's memory representations.
+%
+% Loads the latest simulation for a given N and produces:
+%   1. Spike order vs trial (excitatory/inhibitory ranked separately)
+%      — each neuron is a colored line showing its rank drifting over trials.
+%   2. Spike order vs trial (all neurons ranked together).
+%   3. Trial-by-trial similarity (Pearson or Spearman) heatmap for a
+%      chosen representation (spike counts, delays, or spike orders).
+%   4. Mean correlation vs trial.
+%   5. Consecutive-trial distance D(t, t+lag) converging to zero.
+%
+% PARAMETERS (set at top of script):
+%   N           — network size to load
+%   scaleFolder — 'Scaled50' or 'Constant50'
+%
+% INPUTS:
+%   Data/{scaleFolder}/N{N}/{latestSim}/MemoryRepresentations.mat
+%   Data/{scaleFolder}/N{N}/{latestSim}/Patch*.mat  (for net object)
+%
+% OUTPUTS:
+%   Results/  — PDF and PNG of each figure (print calls currently commented out)
+% =========================================================================
 
-% Network Size
-N = 400; 
-sclaleFolder = 'Scaled50';
+% This script should be run when you have a recording directory of a simulation
+clc; clear;
 
-% defualt selection of latest simulation
-folderPath = fullfile(pwd, "Data", sclaleFolder, "N" + num2str(N));
+cfg = jsondecode(fileread('config.json'));
+N = cfg.N;
+scaleFolder = cfg.scaleFolder;
+if isfield(cfg, 'trialsSubfolder') && ~isempty(cfg.trialsSubfolder)
+    trialsSubfolder = cfg.trialsSubfolder;
+else
+    trialsSubfolder = '';
+end
+
+% default selection of latest simulation
+folderPath = fullfile(pwd, "Data", scaleFolder, trialsSubfolder, "N" + num2str(N));
 sim_folders = dir(folderPath);
 sim_folders = sim_folders(~ismember({sim_folders.name}, {'.', '..'})); 
 [~, latestIdx] = max([sim_folders.datenum]);
