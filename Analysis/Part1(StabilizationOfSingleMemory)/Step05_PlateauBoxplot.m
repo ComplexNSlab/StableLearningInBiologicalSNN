@@ -22,95 +22,115 @@ assert(isfield(cfg, 'stabilityFrac'), 'config.json missing "stabilityFrac"');
 assert(isfield(cfg, 'smoothTrials'),  'config.json missing "smoothTrials"');
 assert(isfield(cfg, 'holdTrials'),    'config.json missing "holdTrials"');
 paramTag = sprintf('frac%03d_smooth%d_hold%d', round(cfg.stabilityFrac*100), cfg.smoothTrials, cfg.holdTrials);
+resultsDir = fullfile(pwd, 'Results', 'StabilizationResults', paramTag);
 
-S1 = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('DelaysThreshold_plateau_%s.mat', paramTag)));
+S1 = load(fullfile(resultsDir, 'DelaysThreshold_plateau.mat'));
 delayThresholds = S1.delayThresholds;
 
-S2 = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('SpikeCountsThreshold_plateau_%s.mat', paramTag)));
+S2 = load(fullfile(resultsDir, 'SpikeCountsThreshold_plateau.mat'));
 spikeThresholds = S2.spikeThresholds;
 
-%% Network sizes to plot
-N_list = cfg.networkSizes(:)';
+%% Settings
+colors = {[0.6 0.7 1], [1 0.6 0.6]};  % Delays (blueish), SpikeCounts (reddish)
+labels = {'Delays', 'Spike Counts'};
+Ns = sort(cfg.networkSizes(:)');
+nGroups = numel(Ns);
 
 %% Gather data
-allVals = [];
-groupPos = [];
-groupColor = [];
-topLabels = strings(numel(N_list), 1);
+all_x = [];
+all_y = [];
+all_g = [];
 
-% positions for side-by-side boxplots
-xBase = 1:numel(N_list);
-offset = 0.18;
-
-for iN = 1:numel(N_list)
-    N = N_list(iN);
-    fieldName = sprintf('N%d', N);
-
-    if ~isfield(delayThresholds, fieldName) || ~isfield(spikeThresholds, fieldName)
-        warning('Missing thresholds for N=%d', N);
-        continue;
+for g = 1:2
+    if g == 1
+        data = delayThresholds;
+    else
+        data = spikeThresholds;
     end
 
-    delayVals = delayThresholds.(fieldName)(:);
-    spikeVals = spikeThresholds.(fieldName)(:);
+    for i = 1:nGroups
+        field = sprintf('N%d', Ns(i));
+        if ~isfield(data, field), continue; end
+        vals = data.(field);
+        vals = vals(~isnan(vals));
+        if isempty(vals), continue; end
 
-    delayVals = delayVals(~isnan(delayVals));
-    spikeVals = spikeVals(~isnan(spikeVals));
-
-    % store top annotation like (49|33)
-    topLabels(iN) = sprintf('(%d|%d)', numel(delayVals), numel(spikeVals));
-
-    % delays
-    allVals   = [allVals; delayVals];
-    groupPos  = [groupPos; (xBase(iN)-offset) * ones(numel(delayVals),1)];
-    groupColor = [groupColor; ones(numel(delayVals),1)];   % 1 = delay
-
-    % spike counts
-    allVals   = [allVals; spikeVals];
-    groupPos  = [groupPos; (xBase(iN)+offset) * ones(numel(spikeVals),1)];
-    groupColor = [groupColor; 2 * ones(numel(spikeVals),1)]; % 2 = spike
+        all_x = [all_x; repmat(Ns(i), numel(vals), 1)];
+        all_y = [all_y; vals(:)];
+        all_g = [all_g; repmat(g, numel(vals), 1)];
+    end
 end
+
+% Convert to categorical x with group offsets
+x_cat = categorical(all_x);
+x_double = double(x_cat);
+x_offset = x_double + (all_g - 1.5) * 0.25;
 
 %% Plot
-figure('Color','w'); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
 
-% Delay boxplots
-idxD = groupColor == 1;
-boxplot(allVals(idxD), groupPos(idxD), ...
-    'Positions', unique(groupPos(idxD)), ...
-    'Widths', 0.28, ...
-    'Colors', [0.3 0.5 0.9], ...
-    'Symbol', '.');
-
-% Spike-count boxplots
-idxS = groupColor == 2;
-boxplot(allVals(idxS), groupPos(idxS), ...
-    'Positions', unique(groupPos(idxS)), ...
-    'Widths', 0.28, ...
-    'Colors', [0.9 0.4 0.4], ...
-    'Symbol', '.');
-
-% Re-label x-axis
-set(gca, 'XTick', xBase, 'XTickLabel', string(N_list));
-
-xlabel('Network Size $N$');
-ylabel('Trial to stabilization');
-title('Plateau-based stabilization times for delay and spike-count representations');
-
-% Add top labels
-yl = ylim;
-yTop = yl(2) - 0.03*(yl(2)-yl(1));
-for iN = 1:numel(N_list)
-    text(xBase(iN), yTop, topLabels(iN), ...
-        'HorizontalAlignment', 'center', ...
-        'VerticalAlignment', 'bottom', ...
-        'FontSize', 10);
+% Plot each group boxchart
+for g = 1:2
+    idx = (all_g == g);
+    boxchart(x_offset(idx), all_y(idx), ...
+        'BoxFaceColor', colors{g}, ...
+        'MarkerStyle', 'none', ...
+        'BoxEdgeColor', 'none', ...
+        'WhiskerLineColor', colors{g}, ...
+        'BoxMedianLineColor', colors{g}, ...
+        'LineWidth', 1.2, ...
+        'WhiskerLineStyle', '-', ...
+        'BoxWidth', 0.2);
 end
 
-% Dummy legend
-h1 = plot(nan, nan, '-', 'Color', [0.3 0.5 0.9], 'LineWidth', 8);
-h2 = plot(nan, nan, '-', 'Color', [0.9 0.4 0.4], 'LineWidth', 8);
-legend([h1 h2], {'Delays', 'Spike Counts'}, 'Location', 'best');
+% Plot individual data points (with jitter)
+for g = 1:2
+    for i = 1:nGroups
+        x_val = i + (g - 1.5) * 0.25;
+        if g == 1
+            data = delayThresholds;
+        else
+            data = spikeThresholds;
+        end
+        field = sprintf('N%d', Ns(i));
+        if ~isfield(data, field), continue; end
+        vals = data.(field);
+        vals = vals(~isnan(vals));
+        jitter = (rand(size(vals)) - 0.5) * 0.10;
+        scatter(x_val + jitter, vals, ...
+            4, 'k', 'filled', 'MarkerFaceAlpha', 0.3);
+    end
+end
 
-grid on;
-box on;
+% Annotate sample sizes above (converged delays | converged spikes)
+for i = 1:nGroups
+    field = sprintf('N%d', Ns(i));
+    n1 = sum(~isnan(delayThresholds.(field)));
+    n2 = sum(~isnan(spikeThresholds.(field)));
+    text(i, max(all_y)+150, sprintf('(%d|%d)', n1, n2), ...
+        'HorizontalAlignment', 'center', ...
+        'FontSize', 10, ...
+        'FontName', 'Times New Roman', ...
+        'Interpreter', 'none');
+end
+
+% Labels
+xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
+ylabel({'Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex', 'FontSize', 14);
+
+% Axis settings
+ax = gca;
+ax.XTick = 1:nGroups;
+ax.XTickLabel = arrayfun(@num2str, Ns, 'UniformOutput', false);
+ax.FontSize = 12;
+ax.FontName = 'Times New Roman';
+ax.Box = 'off';
+ax.TickDir = 'out';
+ylim([min(all_y)-50, max(all_y)+100]);
+
+% Legend
+legend(labels, 'Location', 'southeast', 'FontSize', 10, 'Box', 'off');
+
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step05_RepresentationalStabilization_Plateau.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step05_RepresentationalStabilization_Plateau'), '-dpng', '-r300');

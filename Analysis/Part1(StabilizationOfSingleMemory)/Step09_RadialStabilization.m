@@ -273,7 +273,7 @@ waitbar(1, hWait, 'Done.');
 
 paramTag = sprintf('frac%03d_smooth%d_hold%d', ...
     round(alpha * 100), smoothWin * saveStride, holdWin * saveStride);
-saveFolder = fullfile(pwd, 'Results', 'StabilizationResults');
+saveFolder = fullfile(pwd, 'Results', 'StabilizationResults', paramTag);
 if ~isfolder(saveFolder)
     mkdir(saveFolder);
 end
@@ -289,7 +289,7 @@ analysisParams.tailMinPts  = tailMinPts;
 analysisParams.alpha       = alpha;
 analysisParams.paramTag    = paramTag;
 
-outFile = fullfile(saveFolder, sprintf('RadialStabilityResults_%s.mat', paramTag));
+outFile = fullfile(saveFolder, 'RadialStabilityResults.mat');
 save(outFile, 'Results', 'analysisParams', '-v7.3');
 
 fprintf('\nSaved to %s\n', outFile);

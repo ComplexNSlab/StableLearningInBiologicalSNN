@@ -22,8 +22,9 @@ assert(isfield(cfg, 'stabilityFrac'), 'config.json missing "stabilityFrac"');
 assert(isfield(cfg, 'smoothTrials'),  'config.json missing "smoothTrials"');
 assert(isfield(cfg, 'holdTrials'),    'config.json missing "holdTrials"');
 paramTag = sprintf('frac%03d_smooth%d_hold%d', round(cfg.stabilityFrac*100), cfg.smoothTrials, cfg.holdTrials);
+resultsDir = fullfile(pwd, 'Results', 'StabilizationResults', paramTag);
 
-S           = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('RadialStabilityResults_%s.mat', paramTag)));
+S           = load(fullfile(resultsDir, 'RadialStabilityResults.mat'));
 Results     = S.Results;
 saveStride  = S.analysisParams.saveStride;
 
@@ -97,32 +98,69 @@ set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
 
 allTrials = [];
 groupN    = [];
+totalPerN = [];
 
 for iN = 1:numel(Results)
     st = Results(iN).stabTrial;
     if isempty(st), continue; end
 
+    nTotal = numel(st);
     st = st(~isnan(st));
     allTrials = [allTrials; st(:)];
     groupN    = [groupN;    Results(iN).N * ones(numel(st), 1)];
+    totalPerN = [totalPerN; Results(iN).N, nTotal, numel(st)];
 end
 
-figure('Color', 'w'); hold on;
-boxplot(allTrials, groupN);
-
+x_cat = categorical(groupN);
+x_double = double(x_cat);
 uniqueN = unique(groupN);
-for k = 1:numel(uniqueN)
+nGroups = numel(uniqueN);
+
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+
+boxchart(x_double, allTrials, ...
+    'BoxFaceColor', [0.6 0.7 1], ...
+    'MarkerStyle', 'none', ...
+    'BoxEdgeColor', 'none', ...
+    'WhiskerLineColor', [0.6 0.7 1], ...
+    'BoxMedianLineColor', [0.6 0.7 1], ...
+    'LineWidth', 1.2, ...
+    'WhiskerLineStyle', '-', ...
+    'BoxWidth', 0.4);
+
+% Plot individual data points (with jitter)
+for k = 1:nGroups
     mask = groupN == uniqueN(k);
-    jitter = 0.2 * (rand(sum(mask), 1) - 0.5);
-    scatter(k + jitter, allTrials(mask), 15, [0.3 0.3 0.3], 'filled', ...
-        'MarkerFaceAlpha', 0.35);
+    jitter = (rand(sum(mask), 1) - 0.5) * 0.20;
+    scatter(k + jitter, allTrials(mask), ...
+        4, 'k', 'filled', 'MarkerFaceAlpha', 0.3);
 end
 
-xlabel('Network Size N');
-ylabel('Trial to radial stabilization');
-title('Radial stabilization time (|\Deltar| \rightarrow 0)');
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
+% Annotate converged sample sizes above
+for k = 1:nGroups
+    row = totalPerN(totalPerN(:,1) == uniqueN(k), :);
+    text(k, max(allTrials)+50, sprintf('%d', row(3)), ...
+        'HorizontalAlignment', 'center', ...
+        'FontSize', 10, ...
+        'FontName', 'Times New Roman', ...
+        'Interpreter', 'none');
+end
+
+xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
+ylabel({'Radial', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex', 'FontSize', 14);
+
+ax = gca;
+ax.XTick = 1:nGroups;
+ax.XTickLabel = arrayfun(@num2str, uniqueN(:)', 'UniformOutput', false);
+ax.FontSize = 12;
+ax.FontName = 'Times New Roman';
+ax.Box = 'off';
+ax.TickDir = 'out';
+ylim([min(allTrials)-50, max(allTrials)+100]);
+
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step10_RadialStabilization.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step10_RadialStabilization'), '-dpng', '-r300');
 
 %% 4. Median radial stabilisation trial vs N (error bars = IQR)
 

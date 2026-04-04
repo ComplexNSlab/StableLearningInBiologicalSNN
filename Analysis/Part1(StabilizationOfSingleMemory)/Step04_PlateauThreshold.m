@@ -57,14 +57,14 @@ alphaSpike  = cfg.stabilityFrac;
 %% Build parameter-stamped results subfolder
 paramTag = sprintf('frac%03d_smooth%d_hold%d', ...
     round(alphaDelay * 100), smoothWin, holdWin);
-resultsDir = fullfile(pwd, 'Results', 'StabilizationResults');
+resultsDir = fullfile(pwd, 'Results', 'StabilizationResults', paramTag);
 if ~isfolder(resultsDir)
     mkdir(resultsDir);
 end
 
 %% Load existing threshold structs if they exist
-delayPath = fullfile(resultsDir, sprintf('DelaysThreshold_plateau_%s.mat', paramTag));
-spikePath = fullfile(resultsDir, sprintf('SpikeCountsThreshold_plateau_%s.mat', paramTag));
+delayPath = fullfile(resultsDir, 'DelaysThreshold_plateau.mat');
+spikePath = fullfile(resultsDir, 'SpikeCountsThreshold_plateau.mat');
 
 if isfile(delayPath)
     S = load(delayPath, 'thresholds');

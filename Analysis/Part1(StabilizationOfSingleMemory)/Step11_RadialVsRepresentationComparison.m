@@ -30,11 +30,12 @@ assert(isfield(cfg, 'stabilityFrac'), 'config.json missing "stabilityFrac"');
 assert(isfield(cfg, 'smoothTrials'),  'config.json missing "smoothTrials"');
 assert(isfield(cfg, 'holdTrials'),    'config.json missing "holdTrials"');
 paramTag = sprintf('frac%03d_smooth%d_hold%d', round(cfg.stabilityFrac*100), cfg.smoothTrials, cfg.holdTrials);
+resultsDir = fullfile(pwd, 'Results', 'StabilizationResults', paramTag);
 
-S1 = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('RadialStabilityResults_%s.mat', paramTag)));
+S1 = load(fullfile(resultsDir, 'RadialStabilityResults.mat'));
 Results = S1.Results;
 
-S2 = load(fullfile(pwd, 'Results', 'StabilizationResults', sprintf('SpikeCountsThreshold_plateau_%s.mat', paramTag)));
+S2 = load(fullfile(resultsDir, 'SpikeCountsThreshold_plateau.mat'));
 thresholds = S2.spikeThresholds;
 
 %% Compare radial vs delay-based stabilization
@@ -48,6 +49,7 @@ groupN    = [];
 fracRadialLater = nan(size(Ns));
 medianDiff      = nan(size(Ns));
 nMatched        = zeros(size(Ns));
+nTotal_runs     = zeros(size(Ns));
 
 for iN = 1:numel(Ns)
     N = Ns(iN);
@@ -65,6 +67,7 @@ for iN = 1:numel(Ns)
 
     % Match lengths conservatively
     L = min(numel(radialVals), numel(delayVals));
+    nTotal_runs(iN) = L;
     radialVals = radialVals(1:L);
     delayVals  = delayVals(1:L);
 
@@ -111,30 +114,59 @@ set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
 grid on;
 axis square;
 
-%% 2) Violin plot of paired differences: radial - delay
+%% 2) Boxplot of paired differences: radial - delay
 uniqueN = unique(groupN);
-figure('Color', 'w'); hold on;
+nGroups_diff = numel(uniqueN);
+x_cat_diff = categorical(groupN);
+x_double_diff = double(x_cat_diff);
 
-for k = 1:numel(uniqueN)
-    vals = allDiff(groupN == uniqueN(k));
-    [f, xi] = ksdensity(vals, 'NumPoints', 200);
-    f = f / max(f) * 0.35;
-    fill([k+f fliplr(k-f)], [xi fliplr(xi)], [0.5 0.7 1], ...
-        'FaceAlpha', 0.4, 'EdgeColor', [0.2 0.4 0.8], 'LineWidth', 1);
-    jitter = 0.15 * (rand(numel(vals), 1) - 0.5);
-    scatter(k + jitter, vals, 15, [0.3 0.3 0.3], 'filled', ...
-        'MarkerFaceAlpha', 0.4);
-    plot(k, median(vals), 'w_', 'MarkerSize', 12, 'LineWidth', 2);
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+
+boxchart(x_double_diff, allDiff, ...
+    'BoxFaceColor', [0.5 0.7 1], ...
+    'MarkerStyle', 'none', ...
+    'BoxEdgeColor', 'none', ...
+    'WhiskerLineColor', [0.5 0.7 1], ...
+    'BoxMedianLineColor', [0.5 0.7 1], ...
+    'LineWidth', 1.2, ...
+    'WhiskerLineStyle', '-', ...
+    'BoxWidth', 0.4);
+
+% Plot individual data points (with jitter)
+for k = 1:nGroups_diff
+    mask = groupN == uniqueN(k);
+    vals = allDiff(mask);
+    jitter = (rand(numel(vals), 1) - 0.5) * 0.20;
+    scatter(k + jitter, vals, ...
+        4, 'k', 'filled', 'MarkerFaceAlpha', 0.3);
 end
 
 yline(0, '--k', 'LineWidth', 1.5);
-set(gca, 'XTick', 1:numel(uniqueN), 'XTickLabel', string(uniqueN));
-xlabel('Network Size N');
-ylabel('Radial - delay stabilization time (trials)');
-title('Paired difference: radial vs delay-based stabilization');
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
-grid on;
+
+% Annotate converged sample sizes above
+for k = 1:nGroups_diff
+    iN = find(Ns == uniqueN(k), 1);
+    text(k, max(allDiff)+50, sprintf('%d', nMatched(iN)), ...
+        'HorizontalAlignment', 'center', ...
+        'FontSize', 10, ...
+        'FontName', 'Times New Roman', ...
+        'Interpreter', 'none');
+end
+
+xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
+ylabel({'Radial $-$ Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex', 'FontSize', 14);
+
+ax = gca;
+ax.XTick = 1:nGroups_diff;
+ax.XTickLabel = arrayfun(@num2str, uniqueN(:)', 'UniformOutput', false);
+ax.FontSize = 12;
+ax.FontName = 'Times New Roman';
+ax.Box = 'off';
+ax.TickDir = 'out';
+
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step11_RadialVsRepresentational_Diff.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step11_RadialVsRepresentational_Diff'), '-dpng', '-r300');
 
 %% 3) Fraction of runs where radial is later
 validN = nMatched > 0;
@@ -171,26 +203,54 @@ disp(T);
 %% 5) Ratio of radial / representation stabilization vs N
 allRatio = allRadial ./ allDelay;
 uniqueN = unique(groupN);
+nGroups_ratio = numel(uniqueN);
+x_cat_ratio = categorical(groupN);
+x_double_ratio = double(x_cat_ratio);
 
-figure('Color', 'w'); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
 
-for k = 1:numel(uniqueN)
-    vals = allRatio(groupN == uniqueN(k));
-    [f, xi] = ksdensity(vals, 'NumPoints', 200);
-    f = f / max(f) * 0.35;
-    fill([k+f fliplr(k-f)], [xi fliplr(xi)], [1 0.7 0.5], ...
-        'FaceAlpha', 0.4, 'EdgeColor', [0.8 0.4 0.2], 'LineWidth', 1);
-    jitter = 0.15 * (rand(numel(vals), 1) - 0.5);
-    scatter(k + jitter, vals, 15, [0.3 0.3 0.3], 'filled', ...
-        'MarkerFaceAlpha', 0.4);
-    plot(k, median(vals), 'w_', 'MarkerSize', 12, 'LineWidth', 2);
+boxchart(x_double_ratio, allRatio, ...
+    'BoxFaceColor', [1 0.7 0.5], ...
+    'MarkerStyle', 'none', ...
+    'BoxEdgeColor', 'none', ...
+    'WhiskerLineColor', [1 0.7 0.5], ...
+    'BoxMedianLineColor', [1 0.7 0.5], ...
+    'LineWidth', 1.2, ...
+    'WhiskerLineStyle', '-', ...
+    'BoxWidth', 0.4);
+
+% Plot individual data points (with jitter)
+for k = 1:nGroups_ratio
+    mask = groupN == uniqueN(k);
+    vals = allRatio(mask);
+    jitter = (rand(numel(vals), 1) - 0.5) * 0.20;
+    scatter(k + jitter, vals, ...
+        4, 'k', 'filled', 'MarkerFaceAlpha', 0.3);
 end
 
 yline(1, '--k', 'LineWidth', 1.5);
-set(gca, 'XTick', 1:numel(uniqueN), 'XTickLabel', string(uniqueN));
-xlabel('Network Size N');
-ylabel('Radial / Representation stabilization trial');
-title('Ratio of radial to representation stabilization vs network size');
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
-grid on;
+
+% Annotate converged sample sizes above
+for k = 1:nGroups_ratio
+    iN = find(Ns == uniqueN(k), 1);
+    text(k, max(allRatio)+0.1, sprintf('%d', nMatched(iN)), ...
+        'HorizontalAlignment', 'center', ...
+        'FontSize', 10, ...
+        'FontName', 'Times New Roman', ...
+        'Interpreter', 'none');
+end
+
+xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
+ylabel({'Radial / Representational', 'Stabilization Time'}, 'Interpreter', 'latex', 'FontSize', 14);
+
+ax = gca;
+ax.XTick = 1:nGroups_ratio;
+ax.XTickLabel = arrayfun(@num2str, uniqueN(:)', 'UniformOutput', false);
+ax.FontSize = 12;
+ax.FontName = 'Times New Roman';
+ax.Box = 'off';
+ax.TickDir = 'out';
+
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step11_RadialVsRepresentational_Ratio.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step11_RadialVsRepresentational_Ratio'), '-dpng', '-r300');

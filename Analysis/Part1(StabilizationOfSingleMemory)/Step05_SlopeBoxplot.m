@@ -106,7 +106,7 @@ for g = 1:2
     end
 end
 
-% Annotate sample sizes above
+% Annotate sample sizes above (converged delays | converged spikes)
 for i = 1:nGroups
     field = sprintf('N%d', Ns(i));
     n1 = sum(~isnan(thresholds_delays.(field)));
@@ -114,12 +114,13 @@ for i = 1:nGroups
     text(i, max(all_y)+150, sprintf('(%d|%d)', n1, n2), ...
         'HorizontalAlignment', 'center', ...
         'FontSize', 10, ...
-        'FontName', 'Times New Roman');
+        'FontName', 'Times New Roman', ...
+        'Interpreter', 'none');
 end
 
 % Labels and title
 xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel(' Trial to Stability', 'Interpreter', 'latex', 'FontSize', 14);
+ylabel({'Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex', 'FontSize', 14);
 % t = title('Stabilization Thresholds: Delays vs Spike Counts', ...
 %     'FontSize', 14, 'Interpreter', 'latex');
 % t.Units = 'normalized';
@@ -139,7 +140,7 @@ ylim([min(all_y)-50, max(all_y)+100]);
 legend(labels, 'Location', 'southeast', 'FontSize', 10, 'Box', 'off');
 
 % Export
-exportgraphics(gcf, fullfile('Results', "DelaysVsSpikeCounts_Boxplot.pdf"), 'ContentType', 'vector', 'BackgroundColor', 'none');
-
-% print(gcf, fullfile('Results', "DelaysVsSpikeCounts_Boxplot"), '-dpdf', '-r300');
-print(gcf, fullfile('Results', "DelaysVsSpikeCounts_Boxplot"), '-dpng', '-r300');
+slopeResultsDir = fullfile('Results', 'StabilizationResults', 'slope');
+if ~isfolder(slopeResultsDir), mkdir(slopeResultsDir); end
+exportgraphics(gcf, fullfile(slopeResultsDir, 'Step05_RepresentationalStabilization_Slope.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(slopeResultsDir, 'Step05_RepresentationalStabilization_Slope'), '-dpng', '-r300');
