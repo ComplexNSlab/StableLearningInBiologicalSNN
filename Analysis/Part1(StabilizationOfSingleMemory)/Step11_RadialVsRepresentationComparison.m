@@ -36,8 +36,8 @@ resultsDir = fullfile(pwd, 'Results', 'StabilizationResults', paramTag);
 S1 = load(fullfile(resultsDir, 'RadialStabilityResults.mat'));
 Results = S1.Results;
 
-S2 = load(fullfile(resultsDir, 'SpikeCountsThreshold_plateau.mat'));
-thresholds = S2.spikeThresholds;
+S2 = load(fullfile(resultsDir, 'DelaysThreshold_plateau.mat'));
+thresholds = S2.delayThresholds;
 
 %% Compare radial vs latency-based stabilization
 Ns = [Results.N];
