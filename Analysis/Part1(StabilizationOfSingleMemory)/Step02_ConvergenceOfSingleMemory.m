@@ -90,6 +90,12 @@ end
 xlabel('Trial'); ylabel('First-Spike Order Rank');
 title('E/I Separate');
 xlim([1 nTrials]);
+% Colorbar: E and I indexed independently
+colormap(gca, [jet(Ne); jet(Ni)]);
+clim([1 N]);
+cb_ei = colorbar;
+cb_ei.Label.String = 'Neuron Index';
+cb_ei.Ticks = [1 80 160 240 320 N];
 
 % --- Panel 2: All Together ---
 nexttile; hold on;
@@ -106,6 +112,12 @@ end
 xlabel('Trial'); ylabel('First-Spike Order Rank');
 title('All Neurons');
 xlim([1 nTrials]);
+% Colorbar showing original neuron index
+colormap(gca, jet(N));
+clim([1 N]);
+cb_idx = colorbar;
+cb_idx.Label.String = 'Neuron Index';
+cb_idx.Ticks = [1 80 160 240 320 N];
 
 % --- Panel 3: Spearman Similarity Matrix ---
 nexttile;
@@ -117,7 +129,7 @@ colormap(gca, parula); cb = colorbar;
 cb.Label.String = 'Spearman Correlation';
 set(gca, 'YDir', 'normal');
 xlabel('Trial'); ylabel('Trial');
-title('Similarity Matrix');
+title('First Spike Order Similarity');
 xlim([0.5 nTrials+0.5]); ylim([0.5 nTrials+0.5]);
 
 % Save
