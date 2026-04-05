@@ -22,7 +22,8 @@
 %   Figures displayed on screen; summary table printed to console.
 % =========================================================================
 
-clc; clear; close all;
+clc; clearvars('-except', 'show_figs', 'runAllPlots__*'); close all;
+if ~exist('show_figs', 'var'), show_figs = 'on'; end
 
 %% Load config & data
 cfg = jsondecode(fileread('config.json'));
@@ -97,7 +98,7 @@ for iN = 1:numel(Ns)
 end
 
 %% 1) Scatter plot: delay vs radial
-figure('Color', 'w'); hold on;
+figure('Color', 'w', 'Visible', show_figs); hold on;
 scatter(allDelay, allRadial, 30, groupN, 'filled');
 mx = max([allDelay; allRadial]);
 plot([0 mx], [0 mx], '--k', 'LineWidth', 1.5);
@@ -120,7 +121,7 @@ nGroups_diff = numel(uniqueN);
 x_cat_diff = categorical(groupN);
 x_double_diff = double(x_cat_diff);
 
-figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5], 'Visible', show_figs); hold on;
 
 boxchart(x_double_diff, allDiff, ...
     'BoxFaceColor', [0.5 0.7 1], ...
@@ -171,7 +172,7 @@ print(gcf, fullfile(resultsDir, 'Step11_RadialVsRepresentational_Diff'), '-dpng'
 %% 3) Fraction of runs where radial is later
 validN = nMatched > 0;
 
-figure('Color', 'w'); hold on;
+figure('Color', 'w', 'Visible', show_figs); hold on;
 plot(Ns(validN), fracRadialLater(validN), 'o-', 'LineWidth', 2, 'Color', 'r');
 yline(0.5, '--k', 'LineWidth', 1.5);
 
@@ -184,7 +185,7 @@ set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
 grid on;
 
 %% 4) Median paired difference vs N
-figure('Color', 'w'); hold on;
+figure('Color', 'w', 'Visible', show_figs); hold on;
 plot(Ns(validN), medianDiff(validN), 's-', 'LineWidth', 2, 'Color', 'r');
 yline(0, '--k', 'LineWidth', 1.5);
 
@@ -207,7 +208,7 @@ nGroups_ratio = numel(uniqueN);
 x_cat_ratio = categorical(groupN);
 x_double_ratio = double(x_cat_ratio);
 
-figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5], 'Visible', show_figs); hold on;
 
 boxchart(x_double_ratio, allRatio, ...
     'BoxFaceColor', [1 0.7 0.5], ...

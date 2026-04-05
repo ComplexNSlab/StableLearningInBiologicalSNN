@@ -14,7 +14,8 @@
 %   Results/WeightStabilityResults.mat
 % =========================================================================
 
-clc; clear;
+clc; clearvars('-except', 'show_figs', 'runAllPlots__*');
+if ~exist('show_figs', 'var'), show_figs = 'on'; end
 
 %% Load data
 cfg = jsondecode(fileread('config.json'));
@@ -57,7 +58,7 @@ peakT    = Results(idxN).peakTrial(goodIdx);
 plateauV = Results(idxN).plateauValue(goodIdx);
 stabT    = Results(idxN).stabTrial(goodIdx);
 
-figure; hold on;
+figure('Visible', show_figs); hold on;
 plot(xRaw, d,  'Color', [0.75 0.75 0.75], 'LineWidth', 1);
 plot(xSm,  ds, 'b',                        'LineWidth', 2);
 yline(thr,      '--r', 'Threshold');
@@ -71,6 +72,10 @@ ylabel('\Delta W(t)');
 title(sprintf('Plateau-based structural stability', targetN, goodIdx));
 legend('Raw', 'Smoothed', 'Location', 'northeast');
 grid on;
+
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step07_DeltaW_SingleRun.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step07_DeltaW_SingleRun'), '-dpng', '-r300');
 
 %% Boxplot — structural stabilization time vs network size
 % Compare the distribution of stabilization trials across network sizes.
@@ -95,7 +100,7 @@ x_double = double(x_cat);
 uniqueN = unique(groupN);
 nGroups = numel(uniqueN);
 
-figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5], 'Visible', show_figs); hold on;
 
 boxchart(x_double, allTrials, ...
     'BoxFaceColor', [0.6 0.7 1], ...
@@ -157,7 +162,7 @@ for iN = 1:numel(Results)
     iqrVals(end+1) = iqr(st);
 end
 
-figure;
+figure('Visible', show_figs);
 errorbar(Ns, meds, iqrVals/2, 'o-', 'LineWidth', 2);
 xlabel('Network Size N');
 ylabel('Median structural stabilization trial');
@@ -178,7 +183,7 @@ for iN = 1:numel(Results)
     peakMeds(end+1) = median(pt);
 end
 
-figure;
+figure('Visible', show_figs);
 plot(Ns, peakMeds, 's-', 'LineWidth', 2);
 xlabel('Network Size N');
 ylabel('Median peak trial');

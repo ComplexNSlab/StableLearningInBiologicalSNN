@@ -16,7 +16,8 @@
 %   Results/DelaysVsSpikeCounts_Boxplot.pdf / .png
 % =========================================================================
 
-clear; clc;
+clearvars('-except', 'show_figs', 'runAllPlots__*'); clc;
+if ~exist('show_figs', 'var'), show_figs = 'on'; end
 
 % Load delays
 rep = "Delays";
@@ -71,7 +72,7 @@ x_double = double(x_cat);
 x_offset = x_double + (all_g - 1.5) * 0.25;  % shift left/right for grouping
 
 % --- Plot ---
-figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5], 'Visible', show_figs); hold on;
 
 % Plot each group boxchart
 for g = 1:2

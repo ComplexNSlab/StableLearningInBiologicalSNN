@@ -14,7 +14,8 @@
 %   Results/RadialStabilityResults.mat
 % =========================================================================
 
-clc; clear;
+clc; clearvars('-except', 'show_figs', 'runAllPlots__*');
+if ~exist('show_figs', 'var'), show_figs = 'on'; end
 
 %% Load data
 cfg = jsondecode(fileread('config.json'));
@@ -57,7 +58,7 @@ thr   = Results(idxN).threshold(goodIdx);
 peakT = Results(idxN).peakTrial(goodIdx);
 stabT = Results(idxN).stabTrial(goodIdx);
 
-figure('Color', 'w'); hold on;
+figure('Color', 'w', 'Visible', show_figs); hold on;
 plot(trials, dr,   'Color', [0.75 0.75 0.75], 'LineWidth', 0.5);
 plot(trials, dr_s, 'r', 'LineWidth', 2);
 yline(thr,  '--b', 'Threshold');
@@ -75,12 +76,16 @@ legend('Raw', 'Smoothed', 'Location', 'northeast', 'Box', 'off');
 set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
     'Box', 'off', 'TickDir', 'out');
 
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step10_DeltaR_SingleRun.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step10_DeltaR_SingleRun'), '-dpng', '-r300');
+
 %% 2. Matching Delta_theta trace
 
 dtheta   = Results(idxN).dthetaRaw{goodIdx};
 dtheta_s = Results(idxN).dthetaSmooth{goodIdx};
 
-figure('Color', 'w'); hold on;
+figure('Color', 'w', 'Visible', show_figs); hold on;
 plot(trials, rad2deg(dtheta),   'Color', [0.75 0.75 0.75], 'LineWidth', 0.5);
 plot(trials, rad2deg(dtheta_s), 'Color', [0.1 0.6 0.1],    'LineWidth', 2);
 if ~isnan(stabT)
@@ -93,6 +98,10 @@ title(sprintf('Angular change — N=%d, sim=%s', targetN, ...
 legend('Raw', 'Smoothed', 'Location', 'northeast', 'Box', 'off');
 set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
     'Box', 'off', 'TickDir', 'out');
+
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step10_DeltaTheta_SingleRun.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step10_DeltaTheta_SingleRun'), '-dpng', '-r300');
 
 %% 3. Boxplot — radial stabilisation trial vs network size
 
@@ -116,7 +125,7 @@ x_double = double(x_cat);
 uniqueN = unique(groupN);
 nGroups = numel(uniqueN);
 
-figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5], 'Visible', show_figs); hold on;
 
 boxchart(x_double, allTrials, ...
     'BoxFaceColor', [0.6 0.7 1], ...
@@ -178,7 +187,7 @@ for iN = 1:numel(Results)
     iqrVals(end+1) = iqr(st);
 end
 
-figure('Color', 'w');
+figure('Color', 'w', 'Visible', show_figs);
 errorbar(Ns, meds, iqrVals/2, 'o-', 'LineWidth', 2, 'Color', 'r');
 xlabel('Network Size N');
 ylabel('Median radial stabilization trial');
@@ -201,7 +210,7 @@ for iN = 1:numel(Results)
     peakMeds(end+1) = median(pt);
 end
 
-figure('Color', 'w');
+figure('Color', 'w', 'Visible', show_figs);
 plot(Ns, peakMeds, 's-', 'LineWidth', 2, 'Color', 'r');
 xlabel('Network Size N');
 ylabel('Median peak trial');

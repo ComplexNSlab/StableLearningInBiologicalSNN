@@ -19,7 +19,8 @@
 %   Figures displayed on screen; summary table printed to console.
 % =========================================================================
 
-clc; clear; close all;
+clc; clearvars('-except', 'show_figs', 'runAllPlots__*'); close all;
+if ~exist('show_figs', 'var'), show_figs = 'on'; end
 
 %% Load data
 cfg = jsondecode(fileread('config.json'));
@@ -95,7 +96,7 @@ for iN = 1:numel(Ns)
 end
 
 %% 1) Scatter plot: delay vs structural
-figure; hold on;
+figure('Visible', show_figs); hold on;
 scatter(allDelay, allStruct, 30, groupN, 'filled');
 mx = max([allDelay; allStruct]);
 plot([0 mx], [0 mx], '--k', 'LineWidth', 1.5);
@@ -116,7 +117,7 @@ nGroups_diff = numel(uniqueN);
 x_cat_diff = categorical(groupN);
 x_double_diff = double(x_cat_diff);
 
-figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5], 'Visible', show_figs); hold on;
 
 boxchart(x_double_diff, allDiff, ...
     'BoxFaceColor', [0.5 0.7 1], ...
@@ -167,7 +168,7 @@ print(gcf, fullfile(resultsDir, 'Step08_StructuralVsRepresentational_Diff'), '-d
 %% 3) Fraction of runs where structural is later
 validN = nMatched > 0;
 
-figure; hold on;
+figure('Visible', show_figs); hold on;
 plot(Ns(validN), fracStructLater(validN), 'o-', 'LineWidth', 2);
 yline(0.5, '--k', 'LineWidth', 1.5);
 
@@ -178,7 +179,7 @@ ylim([0 1]);
 grid on;
 
 %% 4) Median paired difference vs N
-figure; hold on;
+figure('Visible', show_figs); hold on;
 plot(Ns(validN), medianDiff(validN), 's-', 'LineWidth', 2);
 yline(0, '--k', 'LineWidth', 1.5);
 
@@ -199,7 +200,7 @@ nGroups_ratio = numel(uniqueN);
 x_cat_ratio = categorical(groupN);
 x_double_ratio = double(x_cat_ratio);
 
-figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5], 'Visible', show_figs); hold on;
 
 boxchart(x_double_ratio, allRatio, ...
     'BoxFaceColor', [1 0.7 0.5], ...

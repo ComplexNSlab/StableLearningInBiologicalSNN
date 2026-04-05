@@ -14,7 +14,8 @@
 %   Figure displayed on screen.
 % =========================================================================
 
-clc; clear; close all;
+clc; clearvars('-except', 'show_figs', 'runAllPlots__*'); close all;
+if ~exist('show_figs', 'var'), show_figs = 'on'; end
 
 %% Load config and build paramTag
 cfg = jsondecode(fileread('config.json'));
@@ -67,7 +68,7 @@ x_double = double(x_cat);
 x_offset = x_double + (all_g - 1.5) * 0.25;
 
 %% Plot
-figure('Units', 'inches', 'Position', [1, 1, 7, 4.5]); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 7, 4.5], 'Visible', show_figs); hold on;
 
 % Plot each group boxchart
 for g = 1:2
