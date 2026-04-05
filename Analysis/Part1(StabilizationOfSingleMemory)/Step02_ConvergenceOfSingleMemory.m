@@ -51,7 +51,7 @@ dataFiles = data_files(contains({data_files.name}, "Patch"));
 latestData = dataFiles(latestIdx).name;
 net = load(fullfile(filePath, latestData), 'obj'); net = net.obj;
 
-clearvars -except net filePath;
+clearvars -except net filePath cfg;
  
 load(filePath + filesep + "MemoryRepresentations.mat");
 
@@ -60,161 +60,129 @@ clearvars filePath
 %% Ensure output directory exists
 if ~isfolder('Results'), mkdir('Results'); end
 
-%% Spike Order vs Trials (Separate)
+%% Spike Order Combined Figure (1x3: Separate | Together | Similarity Matrix)
 
-% Network Size
 N = net.N; Ne = net.Ne; Ni = net.Ni;
+nTrials = size(orders_together, 1);
 
-figure('Renderer', 'painters','Name', "Single Neuron First-Spike Order", 'Visible','on' )
-fsize = 15;
-temp = orders_separate(1:1:end, :);
-temp(temp == 0) = nan;
+fig_order = figure('Units', 'inches', 'Position', [0.5 1 15 4.5], 'Visible', 'on');
+tl = tiledlayout(1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 
-%active_ex_cells = find(temp(end, :) ~= 0 & temp(end, :) <= net.Ne);
-%active_inh_cells = find(temp(end, :) ~= 0 & temp(end, :) > net.Ne);
+% --- Panel 1: E/I Separate ---
+nexttile; hold on;
+temp = orders_separate;
+temp(temp == 0) = NaN;
 
 stable_order_ex = orders_separate(end, 1:Ne);
-stable_order_inh = orders_separate(end, Ne+1:end)-Ne;
-stable_order_ex(stable_order_ex == 0) = net.Ne-sum(stable_order_ex == 0)+1:net.Ne;
-stable_order_inh(stable_order_inh == -Ne) = net.Ni-sum(stable_order_inh == -Ne)+1:net.Ni;
+stable_order_inh = orders_separate(end, Ne+1:end) - Ne;
+stable_order_ex(stable_order_ex == 0) = Ne - sum(stable_order_ex == 0) + 1:Ne;
+stable_order_inh(stable_order_inh == -Ne) = Ni - sum(stable_order_inh == -Ne) + 1:Ni;
 
-colormap_ex = jet(Ne);
-colormap_ex = colormap_ex(stable_order_ex, :);
+cm_ex = jet(Ne);  cm_ex = cm_ex(stable_order_ex, :);
+cm_inh = jet(Ni); cm_inh = cm_inh(stable_order_inh, :);
 
-colormap_inh = jet(Ni);
-colormap_inh = colormap_inh(stable_order_inh, :);
-
-hold on 
-wsize = 1.5;
-for cell_id =1:Ne
-    
-    plot(temp(1:end, cell_id), 'color', colormap_ex(cell_id, :), LineWidth= wsize)
+for c = 1:Ne
+    plot(temp(:, c), 'Color', cm_ex(c, :), 'LineWidth', 0.8);
 end
-for cell_id = Ne+1:N
-    
-    plot(temp(1:end, cell_id), 'color', colormap_inh(cell_id-Ne, :), LineWidth= wsize)
+for c = Ne+1:N
+    plot(temp(:, c), 'Color', cm_inh(c - Ne, :), 'LineWidth', 0.8);
 end
+xlabel('Trial'); ylabel('First-Spike Order Rank');
+title('E/I Separate');
+xlim([1 nTrials]);
 
-xlabel("Trial")
-ylabel("First-Spike Order Rank")
-title("First-Spike Order (E/I Separate)")
-print(gcf, "Results" + filesep + 'SpikeOrderSeparate.pdf', '-dpdf', '-vector', '-r300');
-print(gcf, "Results" + filesep + 'SpikeOrderSeparate.png', '-dpng', '-r300');
-
-%% Spike Order vs Trials (Together)
-figure('Renderer', 'painters','Name', "Single Neuron First-Spike Order", 'Visible','on' )
-fsize = 15;
-temp = orders_together(1:1:end, :);
-temp(temp == 0) = nan;
+% --- Panel 2: All Together ---
+nexttile; hold on;
+temp2 = orders_together;
+temp2(temp2 == 0) = NaN;
 
 stable_order = orders_together(end, :);
-stable_order(stable_order == 0) = net.N-sum(stable_order == 0)+1:net.N;
+stable_order(stable_order == 0) = N - sum(stable_order == 0) + 1:N;
+cm_all = jet(N); cm_all = cm_all(stable_order, :);
 
-cm = jet(net.N);
-cm = cm(stable_order, :);
+for c = 1:N
+    plot(temp2(:, c), 'Color', cm_all(c, :), 'LineWidth', 0.6);
+end
+xlabel('Trial'); ylabel('First-Spike Order Rank');
+title('All Neurons');
+xlim([1 nTrials]);
 
-hold on 
-wsize = 1.0;
-for cell_id =1:net.N
-    
-    plot(temp(1:end, cell_id), 'color', cm(cell_id, :), LineWidth= wsize)
+% --- Panel 3: Spearman Similarity Matrix ---
+nexttile;
+data_ord = orders_together;
+data_ord(data_ord == 0) = N + 1;  % non-spiking -> tied for last
+corrmat = 1 - squareform(pdist(data_ord, 'spearman'));
+imagesc(corrmat); axis square;
+colormap(gca, parula); cb = colorbar;
+cb.Label.String = 'Spearman Correlation';
+set(gca, 'YDir', 'normal');
+xlabel('Trial'); ylabel('Trial');
+title('Similarity Matrix');
+xlim([0.5 nTrials+0.5]); ylim([0.5 nTrials+0.5]);
+
+% Save
+exportgraphics(fig_order, 'Results/SpikeOrderPanel.pdf', 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(fig_order, 'Results/SpikeOrderPanel', '-dpng', '-r300');
+
+%% Convergence curves for all three representations
+% Shows how the three scalar convergence signals used by Step04 evolve
+% over trials for this single simulation: raw (light) + smoothed (dark).
+
+smoothWin = cfg.smoothTrials;
+nTrials = size(delays, 1);
+
+% 1. Mean first-spike latency per trial
+d = delays;
+d(d == 0) = NaN;
+conv_delay = nanmean(d, 2);         % [nTrials x 1]
+
+% 2. Mean spike count per trial
+conv_spike = mean(spike_counts, 2);  % [nTrials x 1]
+
+% 3. Spearman correlation with final-trial spike order
+%    Non-spiking neurons (order == 0) are assigned rank N+1 so they are
+%    treated as "tied for last" — slower than every neuron that fired.
+final_order = orders_together(end, :);
+final_order(final_order == 0) = N + 1;
+conv_order = nan(nTrials, 1);
+for t = 1:nTrials
+    a = orders_together(t, :);
+    a(a == 0) = N + 1;
+    conv_order(t) = corr(a', final_order', 'Type', 'Spearman');
 end
 
+% Smoothed versions
+conv_delay_s  = movmean(conv_delay,  smoothWin, 'omitnan');
+conv_spike_s  = movmean(conv_spike,  smoothWin);
+conv_order_s  = movmean(conv_order,  smoothWin, 'omitnan');
 
-xlabel("Trial")
-ylabel("First-Spike Order Rank")
-title("First-Spike Order (All Neurons)")
-print(gcf, "Results" + filesep + 'SpikeOrderTogether.pdf', '-dpdf', '-vector', '-r300');
-print(gcf, "Results" + filesep + 'SpikeOrderTogether.png', '-dpng', '-r300');
+figure('Units', 'inches', 'Position', [1 1 8 7], 'Visible', 'on');
+tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 
-%% Similarity Matrix of responses across Trials
-% choose your desired representation measure of the memory
-representation = "spike counts";
+% -- Latency
+nexttile; hold on;
+plot(1:nTrials, conv_delay, 'Color', [0.6 0.7 1 0.4]);
+plot(1:nTrials, conv_delay_s, 'Color', [0.2 0.3 0.8], 'LineWidth', 1.5);
+ylabel('Mean Latency (ms)');
+title('First-Spike Latency');
+xlim([1 nTrials]);
 
-clear data;
-if representation.lower == "spike counts"
-    data = spike_counts;
-    dist_measure = 'correlation';
-elseif representation.lower == "latency"
-    data = delays;
-    dist_measure = 'correlation';
-elseif representation.lower == "spike orders together"
-    data = orders_together;
-    dist_measure = 'spearman';
-elseif representation.lower == "spike orders separate"
-    data = orders_separate;
-    dist_measure = 'spearman';
-end
+% -- Spike Count
+nexttile; hold on;
+plot(1:nTrials, conv_spike, 'Color', [1 0.6 0.6 0.4]);
+plot(1:nTrials, conv_spike_s, 'Color', [0.8 0.2 0.2], 'LineWidth', 1.5);
+ylabel('Mean Spike Count');
+title('Spike Count');
+xlim([1 nTrials]);
 
-corrmat = 1-squareform(pdist(data, dist_measure));
+% -- Spike Order
+nexttile; hold on;
+plot(1:nTrials, conv_order, 'Color', [0.6 0.9 0.6 0.4]);
+plot(1:nTrials, conv_order_s, 'Color', [0.1 0.6 0.1], 'LineWidth', 1.5);
+ylabel('Spearman $\rho$');
+xlabel('Trial Number');
+title('First-Spike Order Correlation with Final Trial');
+xlim([1 nTrials]); ylim([0 1]);
 
-% Create the heatmap
-
-figure('Renderer', 'painters', 'Position', [100 100 1000 1000], 'Visible','on'); % Adjust position and size as needed
-fsize = 25; % font size
-
-
-% Create axes with the desired position and size
-ax = axes('Position', [0.2, 0.2, 0.6, 0.6]); % [left, bottom, width, height]
-
-imagesc(corrmat, 'Parent', ax)
-colormap parula;
-c = colorbar;
-
-% Adjust the position of the colorbar to the left
-c.Units = 'normalized'; % Use normalized units
-c.Position = [0.15, 0.2, 0.03, 0.6]; % [left, bottom, width, height]
-
-c.Label.String = dist_measure;
-c.Label.Rotation = 90; % Rotate the label to be vertical
-c.Label.Position = [-2, 0.3, 0]; % Adjust the position to be centered and beside the colorbar
-% Set the title and axis labels with consistent font properties
-xlabel('Trial');
-ylabel('Trial', 'Rotation', 0);
-
-% Fix the aspect ratio to square
-axis square;
-
-set(gca, 'YDir', 'normal')
-
-xtickangle(-45)
-ytickangle(-45)
-
-% Set x-ticks to top and y-ticks to right
-set(gca, 'XAxisLocation', 'origin', 'YAxisLocation', 'right');
-
-% Adjust paper size and position for saving as PDF
-set(gcf, 'PaperPositionMode', 'auto');
-set(gcf, 'PaperUnits', 'inches');
-set(gcf, 'PaperPosition', [0 0 10 10]); % [left, bottom, width, height]
-set(gcf, 'PaperSize', [10 10]); % [width, height]
-
-
-title(representation + " Similarity Matrix")
-% Save the figure as a PDF with higher resolution
-% print(gcf, "Results" + filesep + 'Spearman_Corr_Matrix.pdf', '-dpdf', '-vector', '-r300');
-% print(gcf, "Results" + filesep + 'Spearman_Corr_Matrix.png', '-dpng', '-r300');
-
-%%
-figure('Renderer', 'painters','Visible','off');
-mean_corr = mean(corrmat, 2); % Average correlation for each trial
-plot(1:length(mean_corr), mean_corr, 'LineWidth', 2);
-xlabel('Trial');
-ylabel('Mean Spearman Correlation');
-title('Average Correlation Over Time');
-grid on;
-% print(gcf, "Results" + filesep + 'aveCorr.pdf', '-dpdf', '-vector', '-r300');
-% print(gcf, "Results" + filesep + 'aveCorr.png', '-dpng', '-r300');
-
-
-%% Consecutive distance converging to zero
-figure('Renderer', 'painters','Visible', 'on'); 
-lag = 1;
-plot(1-diag(corrmat, lag))
-xlabel("Trial Number")
-ylabel(sprintf("D(t+%d, t)", lag))
-title("Distance between Responses with lag")
-print(gcf, "Results" + filesep + 'consecDist.pdf', '-dpdf', '-vector', '-r300');
-print(gcf, "Results" + filesep + 'consecDist.png', '-dpng', '-r300');
-
-% save(net.RecordingDirectory + filesep + "MemoryRepresentations.mat", representation + "_corrmat", '-append')
+print(gcf, 'Results/ConvergenceCurves', '-dpdf', '-vector', '-r300');
+print(gcf, 'Results/ConvergenceCurves', '-dpng', '-r300');

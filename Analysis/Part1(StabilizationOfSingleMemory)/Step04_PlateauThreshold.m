@@ -16,8 +16,9 @@
 %   Data/{scaleFolder}/Trials{X}/N{N}/*/MemoryRepresentations.mat
 %
 % OUTPUTS:
-%   Data/{scaleFolder}/Trials{X}/DelaysThreshold_plateau.mat
-%   Data/{scaleFolder}/Trials{X}/SpikeCountsThreshold_plateau.mat
+%   Results/StabilizationResults/{paramTag}/DelaysThreshold_plateau.mat
+%   Results/StabilizationResults/{paramTag}/SpikeCountsThreshold_plateau.mat
+%   Results/StabilizationResults/{paramTag}/SpikeOrderThreshold_plateau.mat
 % =========================================================================
 
 clc; clear;
@@ -45,6 +46,7 @@ tailFrac    = 0.20;    % last 20% used for plateau estimate
 tailMinPts  = 50;      % minimum tail length
 alphaDelay  = cfg.stabilityFrac;
 alphaSpike  = cfg.stabilityFrac;
+N_representative = cfg.N;  % network size for convergence curves saved to .mat
 
 %% Build parameter-stamped results subfolder
 paramTag = sprintf('frac%03d_smooth%d_hold%d', ...
@@ -57,11 +59,12 @@ end
 %% Load existing threshold structs if they exist
 delayPath = fullfile(resultsDir, 'DelaysThreshold_plateau.mat');
 spikePath = fullfile(resultsDir, 'SpikeCountsThreshold_plateau.mat');
+orderPath = fullfile(resultsDir, 'SpikeOrderThreshold_plateau.mat');
 
 if isfile(delayPath)
-    S = load(delayPath, 'thresholds');
-    if isfield(S, 'thresholds')
-        delayThresholds = S.thresholds;
+    S = load(delayPath, 'delayThresholds');
+    if isfield(S, 'delayThresholds')
+        delayThresholds = S.delayThresholds;
     else
         delayThresholds = struct();
     end
@@ -70,14 +73,25 @@ else
 end
 
 if isfile(spikePath)
-    S = load(spikePath, 'thresholds');
-    if isfield(S, 'thresholds')
-        spikeThresholds = S.thresholds;
+    S = load(spikePath, 'spikeThresholds');
+    if isfield(S, 'spikeThresholds')
+        spikeThresholds = S.spikeThresholds;
     else
         spikeThresholds = struct();
     end
 else
     spikeThresholds = struct();
+end
+
+if isfile(orderPath)
+    S = load(orderPath, 'orderThresholds');
+    if isfield(S, 'orderThresholds')
+        orderThresholds = S.orderThresholds;
+    else
+        orderThresholds = struct();
+    end
+else
+    orderThresholds = struct();
 end
 
 %% Loop over network sizes
@@ -98,6 +112,7 @@ for iN = 1:numel(N_list)
 
     delays_data = nan(nRuns, nTrials, N);
     spike_counts_data = nan(nRuns, nTrials, N);
+    orders_data = nan(nRuns, nTrials, N);
 
     for i = 1:nRuns
         filePath = fullfile(folderPath, sim_folders(i).name, "MemoryRepresentations.mat");
@@ -106,7 +121,7 @@ for iN = 1:numel(N_list)
             continue;
         end
 
-        S = load(filePath, 'delays', 'spike_counts');
+        S = load(filePath, 'delays', 'spike_counts', 'orders_together');
 
         if isfield(S, 'delays')
             delays = S.delays;
@@ -117,11 +132,30 @@ for iN = 1:numel(N_list)
         if isfield(S, 'spike_counts')
             spike_counts_data(i,:,:) = S.spike_counts;
         end
+
+        if isfield(S, 'orders_together')
+            orders_data(i,:,:) = S.orders_together;
+        end
     end
 
     %% Build one curve per run
     Y_delay = squeeze(nanmean(delays_data, 3));        % [nRuns x nTrials]
     Y_spike = squeeze(mean(spike_counts_data, 3));     % [nRuns x nTrials]
+
+    %% Build correlation-with-final curve for spike order
+    %  Non-spiking neurons (order == 0) are assigned rank N+1 ("tied for
+    %  last") so the Spearman correlation captures both neuron recruitment
+    %  and ordering changes.
+    Y_order = nan(nRuns, nTrials);
+    for i = 1:nRuns
+        ord_i = squeeze(orders_data(i, :, :));  % [nTrials x N]
+        if all(isnan(ord_i(:))), continue; end
+        ord_i(ord_i == 0) = N + 1;  % non-spiking → last rank
+        final_ord = ord_i(end, :);
+        for t = 1:nTrials
+            Y_order(i, t) = corr(ord_i(t,:)', final_ord', 'Type', 'Spearman');
+        end
+    end
 
     %% Compute plateau-based stabilization trials
     [stabDelay, plateauDelay, thrDelay] = compute_plateau_thresholds( ...
@@ -129,6 +163,9 @@ for iN = 1:numel(N_list)
 
     [stabSpike, plateauSpike, thrSpike] = compute_plateau_thresholds( ...
         Y_spike, smoothWin, holdWin, tailFrac, tailMinPts, alphaSpike);
+
+    [stabOrder, plateauOrder, thrOrder] = compute_plateau_thresholds( ...
+        Y_order, smoothWin, holdWin, tailFrac, tailMinPts, alphaDelay);
 
     %% Save into structs
     fieldN = sprintf('N%d', N);
@@ -141,6 +178,10 @@ for iN = 1:numel(N_list)
     spikeThresholds.([fieldN '_plateau']) = plateauSpike;
     spikeThresholds.([fieldN '_thr']) = thrSpike;
 
+    orderThresholds.(fieldN) = stabOrder;
+    orderThresholds.([fieldN '_plateau']) = plateauOrder;
+    orderThresholds.([fieldN '_thr']) = thrOrder;
+
     fprintf('  Delay converged: %d / %d\n', sum(~isnan(stabDelay)), numel(stabDelay));
     if any(~isnan(stabDelay))
         fprintf('  Median delay stabilization: %.1f\n', median(stabDelay(~isnan(stabDelay))));
@@ -151,21 +192,45 @@ for iN = 1:numel(N_list)
         fprintf('  Median spike stabilization: %.1f\n', median(stabSpike(~isnan(stabSpike))));
     end
 
+    fprintf('  Order converged: %d / %d\n', sum(~isnan(stabOrder)), numel(stabOrder));
+    if any(~isnan(stabOrder))
+        fprintf('  Median order stabilization: %.1f\n', median(stabOrder(~isnan(stabOrder))));
+    end
+
     %% Optional diagnostic figures
     if strcmpi(show_figs, 'on')
         make_debug_plot(Y_delay, stabDelay, plateauDelay, thrDelay, smoothWin, ...
             sprintf('Delay plateau criterion, N=%d', N));
         make_debug_plot(Y_spike, stabSpike, plateauSpike, thrSpike, smoothWin, ...
             sprintf('Spike-count plateau criterion, N=%d', N));
+        make_debug_plot(Y_order, stabOrder, plateauOrder, thrOrder, smoothWin, ...
+            sprintf('Spike-order plateau criterion, N=%d', N));
+    end
+
+    %% Store convergence curves for representative N (plotted by Step04b)
+    if N == N_representative
+        convCurves.Y_delay = Y_delay;
+        convCurves.Y_spike = Y_spike;
+        convCurves.Y_order = Y_order;
+        convCurves.N       = N;
+        convCurves.nTrials = nTrials;
     end
 end
 
 %% Save output
 save(delayPath, 'delayThresholds');
 save(spikePath, 'spikeThresholds');
+save(orderPath, 'orderThresholds');
+
+if exist('convCurves', 'var')
+    convPath = fullfile(resultsDir, 'ConvergenceCurves.mat');
+    save(convPath, 'convCurves');
+    fprintf('Saved convergence curves for N=%d to:\n%s\n', convCurves.N, convPath);
+end
 
 fprintf('\nSaved plateau-based delay thresholds to:\n%s\n', delayPath);
 fprintf('Saved plateau-based spike-count thresholds to:\n%s\n', spikePath);
+fprintf('Saved plateau-based spike-order thresholds to:\n%s\n', orderPath);
 
 %% ============================================================
 function [stabPoints, plateauVals, threshVals] = compute_plateau_thresholds( ...

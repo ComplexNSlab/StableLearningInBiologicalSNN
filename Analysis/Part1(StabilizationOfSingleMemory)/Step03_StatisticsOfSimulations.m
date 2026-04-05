@@ -39,8 +39,9 @@ folderPath = fullfile(pwd, "Data", scaleFolder, trialsSubfolder, "N" + num2str(N
 sim_folders = dir(folderPath);
 sim_folders = sim_folders(~ismember({sim_folders.name}, {'.', '..'}));
 
-signals = zeros(4, length(sim_folders), 1000-lag);
-mats = zeros(4, length(sim_folders), 1000, 1000);
+nTrials = cfg.nTrials;
+signals = zeros(4, length(sim_folders), nTrials-lag);
+mats = zeros(4, length(sim_folders), nTrials, nTrials);
 
 for i = 1:length(sim_folders)
     load(fullfile(folderPath, sim_folders(i).name, "MemoryRepresentations.mat"));
@@ -55,9 +56,11 @@ for i = 1:length(sim_folders)
             dist_measure = 'correlation';
         elseif representation.lower == "spike orders together"
             data = orders_together;
+            data(data == 0) = N + 1;  % non-spiking → tied for last
             dist_measure = 'spearman';
         elseif representation.lower == "spike orders separate"
             data = orders_separate;
+            data(data == 0) = N + 1;  % non-spiking → tied for last
             dist_measure = 'spearman';
         end
         corrmat = 1 - squareform(pdist(data, dist_measure));

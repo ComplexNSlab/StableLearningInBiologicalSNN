@@ -1,14 +1,15 @@
 % Step05_PlateauBoxplot.m
 % =========================================================================
-% Grouped boxplot of plateau-based stabilisation times (latency vs firing
-% rate) across network sizes.
+% Grouped boxplot of plateau-based stabilisation times (latency, spike
+% count, and spike order) across network sizes.
 %
 % Loads the thresholds produced by Step04_PlateauThreshold and displays
 % side-by-side boxplots for each N, annotated with sample counts.
 %
 % INPUTS:
-%   Data/{scaleFolder}/Trials{X}/DelaysThreshold_plateau.mat
-%   Data/{scaleFolder}/Trials{X}/SpikeCountsThreshold_plateau.mat
+%   Results/StabilizationResults/{paramTag}/DelaysThreshold_plateau.mat
+%   Results/StabilizationResults/{paramTag}/SpikeCountsThreshold_plateau.mat
+%   Results/StabilizationResults/{paramTag}/SpikeOrderThreshold_plateau.mat
 %
 % OUTPUTS:
 %   Figure displayed on screen.
@@ -31,9 +32,12 @@ delayThresholds = S1.delayThresholds;
 S2 = load(fullfile(resultsDir, 'SpikeCountsThreshold_plateau.mat'));
 spikeThresholds = S2.spikeThresholds;
 
+S3 = load(fullfile(resultsDir, 'SpikeOrderThreshold_plateau.mat'));
+orderThresholds = S3.orderThresholds;
+
 %% Settings
-colors = {[0.6 0.7 1], [1 0.6 0.6]};  % Latency (blueish), SpikeCount (reddish)
-labels = {'Latency', 'Spike Count'};
+colors = {[0.6 0.7 1], [1 0.6 0.6], [0.6 0.9 0.6]};  % Latency, SpikeCount, SpikeOrder
+labels = {'Latency', 'Spike Count', 'First-Spike Order'};
 Ns = sort(cfg.networkSizes(:)');
 nGroups = numel(Ns);
 
@@ -42,11 +46,13 @@ all_x = [];
 all_y = [];
 all_g = [];
 
-for g = 1:2
+for g = 1:3
     if g == 1
         data = delayThresholds;
-    else
+    elseif g == 2
         data = spikeThresholds;
+    else
+        data = orderThresholds;
     end
 
     for i = 1:nGroups
@@ -65,13 +71,13 @@ end
 % Convert to categorical x with group offsets
 x_cat = categorical(all_x);
 x_double = double(x_cat);
-x_offset = x_double + (all_g - 1.5) * 0.25;
+x_offset = x_double + (all_g - 2) * 0.22;  % shift left/center/right for 3 groups
 
 %% Plot
-figure('Units', 'inches', 'Position', [1, 1, 7, 4.5], 'Visible', show_figs); hold on;
+figure('Units', 'inches', 'Position', [1, 1, 10, 5], 'Visible', show_figs); hold on;
 
 % Plot each group boxchart
-for g = 1:2
+for g = 1:3
     idx = (all_g == g);
     boxchart(x_offset(idx), all_y(idx), ...
         'BoxFaceColor', colors{g}, ...
@@ -85,13 +91,15 @@ for g = 1:2
 end
 
 % Plot individual data points (with jitter)
-for g = 1:2
+for g = 1:3
     for i = 1:nGroups
-        x_val = i + (g - 1.5) * 0.25;
+        x_val = i + (g - 2) * 0.22;
         if g == 1
             data = delayThresholds;
-        else
+        elseif g == 2
             data = spikeThresholds;
+        else
+            data = orderThresholds;
         end
         field = sprintf('N%d', Ns(i));
         if ~isfield(data, field), continue; end
@@ -108,9 +116,10 @@ for i = 1:nGroups
     field = sprintf('N%d', Ns(i));
     n1 = sum(~isnan(delayThresholds.(field)));
     n2 = sum(~isnan(spikeThresholds.(field)));
-    text(i, max(all_y)+150, sprintf('(%d|%d)', n1, n2), ...
+    n3 = sum(~isnan(orderThresholds.(field)));
+    text(i, max(all_y)+150, sprintf('(%d|%d|%d)', n1, n2, n3), ...
         'HorizontalAlignment', 'center', ...
-        'FontSize', 10, ...
+        'FontSize', 8, ...
         'Interpreter', 'none');
 end
 

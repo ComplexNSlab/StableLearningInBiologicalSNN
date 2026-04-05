@@ -5,28 +5,29 @@
 thesisRoot = fullfile('..', '64e3cd951c6d185e2d3ab4fa', 'Figures', 'Results');
 matlabRoot = fullfile('Analysis');
 
-% --- Configuration (must match config.json) ---
-N_representative = 400;          % Network size used for single-example figures
-scaleFolder      = 'Scaled50';
-trialsSubfolder  = 'Trials1500';
-paramTag         = 'frac010_smooth100_hold100';
+% --- Read configuration from Part1 config.json ---
+cfgFile = fullfile(matlabRoot, 'Part1(StabilizationOfSingleMemory)', 'config.json');
+cfg = jsondecode(fileread(cfgFile));
+N_representative = cfg.N;
+scaleFolder      = cfg.scaleFolder;
+trialsSubfolder  = cfg.trialsSubfolder;
+paramTag         = sprintf('frac%03d_smooth%d_hold%d', ...
+    round(cfg.stabilityFrac*100), cfg.smoothTrials, cfg.holdTrials);
 
 %% ======== Section 1: Single Memory Encoding (Part1) ========
 sec1 = fullfile(thesisRoot, 'Section1-SingleMemoryEncoding');
 part1 = fullfile(matlabRoot, 'Part1(StabilizationOfSingleMemory)');
 
-convergenceDir = fullfile(part1, 'Results', scaleFolder, trialsSubfolder, ...
-    sprintf('N%d', N_representative), 'Convergence');
 stabDir = fullfile(part1, 'Results', 'StabilizationResults', paramTag);
 
 copies_sec1 = {
     % Source (MATLAB)                                         Destination (thesis)
-    fullfile(convergenceDir, 'latency.pdf'),                  fullfile(sec1, 'Statistics', 'latency.pdf')
-    fullfile(convergenceDir, 'latency.png'),                  fullfile(sec1, 'Statistics', 'latency.png')
-    fullfile(convergenceDir, 'spikeCount.pdf'),               fullfile(sec1, 'Statistics', 'spikeCount.pdf')
-    fullfile(convergenceDir, 'spikeCount.png'),               fullfile(sec1, 'Statistics', 'spikeCount.png')
-    fullfile(part1, 'Results', 'SpikeOrderSeparate.png'),     fullfile(sec1, 'Statistics', 'SpikeOrderSeparate.png')
-    fullfile(part1, 'Results', 'SpikeOrderTogether.png'),     fullfile(sec1, 'Statistics', 'SpikeOrderTogether.png')
+    fullfile(part1, 'Results', 'SpikeOrderPanel.pdf'),        fullfile(sec1, 'Statistics', 'SpikeOrderPanel.pdf')
+    fullfile(part1, 'Results', 'SpikeOrderPanel.png'),        fullfile(sec1, 'Statistics', 'SpikeOrderPanel.png')
+    fullfile(part1, 'Results', 'ConvergenceCurves.pdf'),      fullfile(sec1, 'Statistics', 'ConvergenceCurves.pdf')
+    fullfile(part1, 'Results', 'ConvergenceCurves.png'),      fullfile(sec1, 'Statistics', 'ConvergenceCurves.png')
+    fullfile(stabDir, 'ConvergenceTrajectories.pdf'),         fullfile(sec1, 'Statistics', 'ConvergenceTrajectories.pdf')
+    fullfile(stabDir, 'ConvergenceTrajectories.png'),         fullfile(sec1, 'Statistics', 'ConvergenceTrajectories.png')
     fullfile(stabDir, 'Step05_RepresentationalStabilization_Plateau.pdf'),   fullfile(sec1, 'DelaysVsSpikeCounts_Boxplot.pdf')
     fullfile(stabDir, 'Step05_RepresentationalStabilization_Plateau.png'),   fullfile(sec1, 'DelaysVsSpikeCounts_Boxplot.png')
     fullfile(stabDir, 'Step07_DeltaW_SingleRun.pdf'),         fullfile(sec1, 'SingleExample', 'Representative_DeltaW_Trajectory.pdf')
