@@ -32,7 +32,7 @@ ci_hi = (100 + CI) / 2;
 
 colors_median = {[0.2 0.3 0.8], [0.8 0.2 0.2], [0.1 0.6 0.1]};
 colors_ci     = {[0.6 0.7 1],   [1 0.6 0.6],   [0.6 0.9 0.6]};
-gray_alpha    = [0.5 0.5 0.5 0.08];
+gray_alpha    = [0.5 0.5 0.5 0.10];
 
 panels  = {C.Y_delay, C.Y_spike, C.Y_order};
 ylabels = {'Mean Latency (ms)', 'Mean Spike Count', 'Spearman $\rho$'};
