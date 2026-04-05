@@ -61,15 +61,8 @@ stabT    = Results(idxN).stabTrial(goodIdx);
 figure('Visible', show_figs); hold on;
 plot(xRaw, d,  'Color', [0.75 0.75 0.75], 'LineWidth', 1);
 plot(xSm,  ds, 'b',                        'LineWidth', 2);
-yline(thr,      '--r', 'Threshold');
-yline(plateauV, ':k',  'Plateau');
-xline(peakT,    '--m', 'Peak');
-if ~isnan(stabT)
-    xline(stabT, '--g', 'Stability');
-end
 xlabel('Trial');
-ylabel('\Delta W(t)');
-title(sprintf('Plateau-based structural stability', targetN, goodIdx));
+ylabel('$\Delta W(t)$');
 legend('Raw', 'Smoothed', 'Location', 'northeast');
 grid on;
 

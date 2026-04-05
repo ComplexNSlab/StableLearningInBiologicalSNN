@@ -35,6 +35,18 @@ copies_sec1 = {
     fullfile(stabDir, 'Step07_StructuralStabilization.png'),   fullfile(sec1, 'Statistics', 'StructuralStabilization_Boxplot.png')
     fullfile(stabDir, 'Step08_StructuralVsRepresentational_Diff.pdf'),  fullfile(sec1, 'Statistics', 'StructuralMinusDelay_Boxplot.pdf')
     fullfile(stabDir, 'Step08_StructuralVsRepresentational_Diff.png'),  fullfile(sec1, 'Statistics', 'StructuralMinusDelay_Boxplot.png')
+    % Step10: Polar decomposition (radial & angular single-run plots, radial stabilization boxplot)
+    fullfile(stabDir, 'Step10_DeltaR_SingleRun.pdf'),          fullfile(sec1, 'SingleExample', 'Step10_DeltaR_SingleRun.pdf')
+    fullfile(stabDir, 'Step10_DeltaR_SingleRun.png'),          fullfile(sec1, 'SingleExample', 'Step10_DeltaR_SingleRun.png')
+    fullfile(stabDir, 'Step10_DeltaTheta_SingleRun.pdf'),      fullfile(sec1, 'SingleExample', 'Step10_DeltaTheta_SingleRun.pdf')
+    fullfile(stabDir, 'Step10_DeltaTheta_SingleRun.png'),      fullfile(sec1, 'SingleExample', 'Step10_DeltaTheta_SingleRun.png')
+    fullfile(stabDir, 'Step10_RadialStabilization.pdf'),       fullfile(sec1, 'Statistics', 'Step10_RadialStabilization.pdf')
+    fullfile(stabDir, 'Step10_RadialStabilization.png'),       fullfile(sec1, 'Statistics', 'Step10_RadialStabilization.png')
+    % Step11: Radial vs representational comparison
+    fullfile(stabDir, 'Step11_RadialVsRepresentational_Diff.pdf'),  fullfile(sec1, 'Statistics', 'Step11_RadialVsRepresentational_Diff.pdf')
+    fullfile(stabDir, 'Step11_RadialVsRepresentational_Diff.png'),  fullfile(sec1, 'Statistics', 'Step11_RadialVsRepresentational_Diff.png')
+    fullfile(stabDir, 'Step11_RadialVsRepresentational_Ratio.pdf'), fullfile(sec1, 'Statistics', 'Step11_RadialVsRepresentational_Ratio.pdf')
+    fullfile(stabDir, 'Step11_RadialVsRepresentational_Ratio.png'), fullfile(sec1, 'Statistics', 'Step11_RadialVsRepresentational_Ratio.png')
 };
 
 %% ======== Section 1: Frequency Analysis (Part7) ========
