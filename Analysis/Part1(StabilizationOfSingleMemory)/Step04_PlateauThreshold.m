@@ -1,10 +1,10 @@
 % Step04_PlateauThreshold.m
 % =========================================================================
-% Plateau-based stabilisation detection for delay and spike-count
+% Plateau-based stabilisation detection for latency and firing-rate
 % representations across all network sizes.
 %
 % For each N and each simulation run, the script:
-%   1. Computes the mean first-spike delay and mean spike count per trial.
+%   1. Computes the mean first-spike latency and mean spike count per trial.
 %   2. Estimates a plateau value from the last 20% of the smoothed curve.
 %   3. Defines a tolerance band = alpha * |initial_value − plateau|.
 %   4. Finds the first trial where the smoothed curve stays within the

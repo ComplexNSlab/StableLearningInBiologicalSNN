@@ -36,7 +36,7 @@ Results = S1.Results;
 S2 = load(fullfile(resultsDir, 'SpikeCountsThreshold_plateau.mat'));
 thresholds = S2.spikeThresholds;
 
-%% Compare structural vs delay-based stabilization
+%% Compare structural vs latency-based stabilization
 Ns = [Results.N];
 
 allDelay = [];
@@ -55,7 +55,7 @@ for iN = 1:numel(Ns)
     % structural stabilization trials
     structVals = Results(iN).stabTrial(:);
 
-    % delay-based stabilization trials
+    % latency-based stabilization trials
     fieldName = sprintf('N%d', N);
     if ~isfield(thresholds, fieldName)
         warning('Field %s not found in thresholds.', fieldName);
@@ -101,9 +101,9 @@ scatter(allDelay, allStruct, 30, groupN, 'filled');
 mx = max([allDelay; allStruct]);
 plot([0 mx], [0 mx], '--k', 'LineWidth', 1.5);
 
-xlabel('Delay-based stabilization trial');
+xlabel('Latency-based stabilization trial');
 ylabel('Structural stabilization trial');
-title('Paired comparison: delay-based vs structural stabilization');
+title('Paired comparison: latency-based vs structural stabilization');
 cb = colorbar;
 cb.Label.String = 'Network Size N';
 xlim([0 1400]);
@@ -173,8 +173,8 @@ plot(Ns(validN), fracStructLater(validN), 'o-', 'LineWidth', 2);
 yline(0.5, '--k', 'LineWidth', 1.5);
 
 xlabel('Network Size N');
-ylabel('Fraction with structural > delay');
-title('How often structural stabilization is later than delay stabilization');
+ylabel('Fraction with structural > latency');
+title('How often structural stabilization is later than latency stabilization');
 ylim([0 1]);
 grid on;
 
@@ -184,7 +184,7 @@ plot(Ns(validN), medianDiff(validN), 's-', 'LineWidth', 2);
 yline(0, '--k', 'LineWidth', 1.5);
 
 xlabel('Network Size N');
-ylabel('Median(structural - delay)');
+ylabel('Median(structural - latency)');
 title('Median paired difference vs network size');
 grid on;
 

@@ -55,20 +55,20 @@ end
 
 figure;
 imagesc(1-squareform(pdist(orders_separate(new_order, 1:net.Ne), "spearman")));
-title("Spike Order Separate Simmilarity Matrix");
+title("First-Spike Order Separate Simmilarity Matrix");
 cb = colorbar(); cb.Label.String = "Spearman"; 
 set(gca, 'ydir', 'normal');
 
 figure;
 imagesc(1-squareform(pdist(orders_together(new_order, 1:net.Ne), "spearman")));
-title("Spike Order Together Simmilarity Matrix");
+title("First-Spike Order Together Simmilarity Matrix");
 cb = colorbar(); cb.Label.String = "Spearman";
 set(gca, 'ydir', 'normal');
 %% Simmilarity matrix of spike counts and time delays representations 
 
 figure;
 imagesc(1-squareform(pdist(delays(new_order, 1:net.Ne), "correlation")));
-title("time delays Simmilarity Matrix");
+title("Latency Simmilarity Matrix");
 cb = colorbar(); cb.Label.String = "Pearson";
 set(gca, 'ydir', 'normal');
 
@@ -114,11 +114,11 @@ set(gca, 'FontName', 'arial', 'fontsize', 15)
 inter_dist = zeros(5, N_mems*(N_mems-1)/2, 1000);
 
 counter = 1;
-for representation = ["spike counts",  "delays", "spike orders together", "spike orders separate", "assembly"]
+for representation = ["spike counts",  "latency", "spike orders together", "spike orders separate", "assembly"]
      if representation.lower == "spike counts"
         data = spike_counts;
         dist_measure = 'correlation';
-    elseif representation.lower == "delays"
+    elseif representation.lower == "latency"
         data = delays;
         dist_measure = 'correlation';
     elseif representation.lower == "spike orders together"
@@ -148,7 +148,7 @@ end
 figure; hold on;
 lw = 2;
 plot(mean(squeeze(inter_dist(1, :, :)), 1), DisplayName= "spike counts", LineWidth= lw);
-plot(mean(squeeze(inter_dist(2, :, :)), 1), DisplayName= "time delays", LineWidth= lw);
+plot(mean(squeeze(inter_dist(2, :, :)), 1), DisplayName= "latency", LineWidth= lw);
 plot(mean(squeeze(inter_dist(3, :, :)), 1), DisplayName= "orders (together)", LineWidth= lw);
 plot(mean(squeeze(inter_dist(4, :, :)), 1), DisplayName= "orders (separate)", LineWidth= lw);
 plot(mean(squeeze(inter_dist(5, :, :)), 1), DisplayName= "assembly", LineWidth= lw);

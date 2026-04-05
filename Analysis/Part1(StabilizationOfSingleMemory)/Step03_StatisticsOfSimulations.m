@@ -3,7 +3,7 @@
 % Aggregates distance/similarity matrices across multiple simulations for
 % a given network size N and computes convergence statistics.
 %
-% For each of 4 representation types (spike counts, delays, spike orders
+% For each of 4 representation types (spike counts, latency, spike orders
 % together, spike orders separate), the script:
 %   1. Computes the full trial-by-trial distance matrix D = 1 - corr.
 %   2. For every starting trial t0, finds the maximum distance in the
@@ -46,11 +46,11 @@ for i = 1:length(sim_folders)
     load(fullfile(folderPath, sim_folders(i).name, "MemoryRepresentations.mat"));
 
     counter = 1;
-    for representation = ["spike counts", "delays", "spike orders together", "spike orders separate"]
+    for representation = ["spike counts", "latency", "spike orders together", "spike orders separate"]
         if representation.lower == "spike counts"
             data = spike_counts;
             dist_measure = 'correlation';
-        elseif representation.lower == "delays"
+        elseif representation.lower == "latency"
             data = delays;
             dist_measure = 'correlation';
         elseif representation.lower == "spike orders together"
@@ -72,7 +72,7 @@ end
 % distance shrinks as we exclude early (pre-convergence) trials.
 
 counter = 1;
-for representation = ["spike counts", "delays", "spike orders together", "spike orders separate"]
+for representation = ["spike counts", "latency", "spike orders together", "spike orders separate"]
 
     D = 1 - mats;      % D(representation, sim, trial_i, trial_j)
     [~, nIter, nTrials, ~] = size(D);

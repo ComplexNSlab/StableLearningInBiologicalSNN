@@ -39,7 +39,7 @@ Results = S1.Results;
 S2 = load(fullfile(resultsDir, 'SpikeCountsThreshold_plateau.mat'));
 thresholds = S2.spikeThresholds;
 
-%% Compare radial vs delay-based stabilization
+%% Compare radial vs latency-based stabilization
 Ns = [Results.N];
 
 allDelay  = [];
@@ -58,7 +58,7 @@ for iN = 1:numel(Ns)
     % radial stabilization trials
     radialVals = Results(iN).stabTrial(:);
 
-    % delay-based stabilization trials
+    % latency-based stabilization trials
     fieldName = sprintf('N%d', N);
     if ~isfield(thresholds, fieldName)
         warning('Field %s not found in thresholds.', fieldName);
@@ -103,9 +103,9 @@ scatter(allDelay, allRadial, 30, groupN, 'filled');
 mx = max([allDelay; allRadial]);
 plot([0 mx], [0 mx], '--k', 'LineWidth', 1.5);
 
-xlabel('Delay-based stabilization trial');
+xlabel('Latency-based stabilization trial');
 ylabel('Radial stabilization trial');
-title('Paired comparison: delay-based vs radial stabilization');
+title('Paired comparison: latency-based vs radial stabilization');
 cb = colorbar;
 cb.Label.String = 'Network Size N';
 xlim([0 1500]);
@@ -177,8 +177,8 @@ plot(Ns(validN), fracRadialLater(validN), 'o-', 'LineWidth', 2, 'Color', 'r');
 yline(0.5, '--k', 'LineWidth', 1.5);
 
 xlabel('Network Size N');
-ylabel('Fraction with radial > delay');
-title('How often radial stabilization is later than delay stabilization');
+ylabel('Fraction with radial > latency');
+title('How often radial stabilization is later than latency stabilization');
 ylim([0 1]);
 set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
     'Box', 'off', 'TickDir', 'out');
@@ -190,7 +190,7 @@ plot(Ns(validN), medianDiff(validN), 's-', 'LineWidth', 2, 'Color', 'r');
 yline(0, '--k', 'LineWidth', 1.5);
 
 xlabel('Network Size N');
-ylabel('Median(radial - delay)');
+ylabel('Median(radial - latency)');
 title('Median paired difference vs network size');
 set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
     'Box', 'off', 'TickDir', 'out');

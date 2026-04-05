@@ -1,7 +1,7 @@
 data = net.getData();
 
 
-%% Computing memory representations (First Spike Order, Time Delay, Spike count)
+%% Computing memory representations (First-Spike Order, First-Spike Latency, Spike Count)
 
 [orders_together, orders_separate, spike_counts, delays] = computeOrders(net);
 save(net.RecordingDirectory +  filesep +  "MemoryRepresentations", "orders_together", "orders_separate", "spike_counts", "delays");

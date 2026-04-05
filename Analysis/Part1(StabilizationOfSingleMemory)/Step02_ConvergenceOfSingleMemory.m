@@ -7,7 +7,7 @@
 %      — each neuron is a colored line showing its rank drifting over trials.
 %   2. Spike order vs trial (all neurons ranked together).
 %   3. Trial-by-trial similarity (Pearson or Spearman) heatmap for a
-%      chosen representation (spike counts, delays, or spike orders).
+%      chosen representation (spike counts, latency, or spike orders).
 %   4. Mean correlation vs trial.
 %   5. Consecutive-trial distance D(t, t+lag) converging to zero.
 %
@@ -61,7 +61,7 @@ clearvars filePath
 % Network Size
 N = net.N; Ne = net.Ne; Ni = net.Ni;
 
-figure('Renderer', 'painters','Name', "Single Neuron Spike Order", 'Visible','on' )
+figure('Renderer', 'painters','Name', "Single Neuron First-Spike Order", 'Visible','on' )
 fsize = 15;
 temp = orders_separate(1:1:end, :);
 temp(temp == 0) = nan;
@@ -92,14 +92,14 @@ for cell_id = Ne+1:N
 end
 
 xlabel("Trial")
-ylabel("Single Neuron Spike Order")
-title("First to Fire Order Vector")
+ylabel("Single Neuron First-Spike Order")
+title("First-Spike Order Vector")
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
 % print(gcf, "Results" + filesep + 'SpikeOrderSeparate.pdf', '-dpdf', '-vector', '-r300');
 % print(gcf, "Results" + filesep + 'SpikeOrderSeparate.png', '-dpng', '-r300');
 
 %% Spike Order vs Trials (Together)
-figure('Renderer', 'painters','Name', "Single Neuron Spike Order", 'Visible','on' )
+figure('Renderer', 'painters','Name', "Single Neuron First-Spike Order", 'Visible','on' )
 fsize = 15;
 temp = orders_together(1:1:end, :);
 temp(temp == 0) = nan;
@@ -119,8 +119,8 @@ end
 
 
 xlabel("Trial")
-ylabel("Single Neuron Spike Order")
-title("First to Fire Order Vector")
+ylabel("Single Neuron First-Spike Order")
+title("First-Spike Order Vector")
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
 % print(gcf, "Results" + filesep + 'SpikeOrderTogether.pdf', '-dpdf', '-vector', '-r300');
 % print(gcf, "Results" + filesep + 'SpikeOrderTogether.png', '-dpng', '-r300');
@@ -133,7 +133,7 @@ clear data;
 if representation.lower == "spike counts"
     data = spike_counts;
     dist_measure = 'correlation';
-elseif representation.lower == "delays"
+elseif representation.lower == "latency"
     data = delays;
     dist_measure = 'correlation';
 elseif representation.lower == "spike orders together"

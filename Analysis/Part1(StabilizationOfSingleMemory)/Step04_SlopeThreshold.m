@@ -1,6 +1,6 @@
 % Step04_SlopeThreshold.m  (SUPERSEDED by Step04_PlateauThreshold.m)
 % =========================================================================
-% Detects the trial at which delay and spike-count representations
+% Detects the trial at which latency and firing-rate representations
 % stabilise, using a SLOPE-THRESHOLD method (smoothed |dY/dt| < epsilon),
 % across all network sizes specified in config.json.
 %
@@ -18,7 +18,7 @@
 %   6. Repeats steps 3-5 for spike counts.
 %
 % PARAMETERS:
-%   epsilon     — slope threshold (0.001 for delays, 0.002 for spike counts)
+%   epsilon     — slope threshold (0.001 for latency, 0.002 for spike counts)
 %
 % OUTPUTS:
 %   Data/{scaleFolder}/Trials{X}/DelaysThreshold.mat
@@ -139,8 +139,8 @@ for iN = 1:numel(N_list)
     plot(x, median(y), 'Color', [0.85 0.33 0.1], 'LineWidth', 2.5, 'DisplayName', 'Median');
 
     xlabel('Trial', 'Interpreter', 'latex', 'FontSize', 14);
-    ylabel('Time Delay (ms)', 'Interpreter', 'latex', 'FontSize', 14);
-    title(sprintf("Mean First Spike Timing per Trial\n %d simulations, N = %d", nRuns, N))
+    ylabel('First-Spike Latency (ms)', 'Interpreter', 'latex', 'FontSize', 14);
+    title(sprintf("Mean First-Spike Latency per Trial\n %d simulations, N = %d", nRuns, N))
     legend('Location', 'northeast', 'Interpreter', 'latex', 'Box', 'off');
 
     set(gca, 'FontSize', 12, 'TickLabelInterpreter', 'latex');
@@ -148,8 +148,8 @@ for iN = 1:numel(N_list)
     posi = get(gcf, 'Position');
     set(gcf, 'PaperSize', posi(3:4));
 
-    print(fig1, fullfile(savePath, 'timeDelay'), '-dpdf', '-r600');
-    print(fig1, fullfile(savePath, 'timeDelay'), '-dpng', '-r600');
+    print(fig1, fullfile(savePath, 'latency'), '-dpdf', '-r600');
+    print(fig1, fullfile(savePath, 'latency'), '-dpng', '-r600');
 
     %% Finding the delay thresholds
     Y = y;
@@ -185,7 +185,7 @@ for iN = 1:numel(N_list)
     yyaxis right; ylabel("dy smoothed")
     yyaxis left;  ylabel("y")
     xlabel("Trials")
-    title(sprintf('Delay slope threshold, N=%d', N))
+    title(sprintf('Latency slope threshold, N=%d', N))
     hold off;
 
     delayThresholds.(sprintf('N%d', N)) = stabPoints;
@@ -218,7 +218,7 @@ for iN = 1:numel(N_list)
 
     xlabel('Trial', 'Interpreter', 'latex', 'FontSize', 14);
     ylabel('Spike Count', 'Interpreter', 'latex', 'FontSize', 14);
-    title(sprintf("Mean Firing Rate per Trial\n %d simulations, N = %d", nRuns, N))
+    title(sprintf("Mean Spike Count per Trial\n %d simulations, N = %d", nRuns, N))
 
     legend('Location', 'northwest', 'Interpreter', 'latex', 'Box', 'off');
     set(gca, 'FontSize', 12, 'TickLabelInterpreter', 'latex');

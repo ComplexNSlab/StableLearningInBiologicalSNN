@@ -2,7 +2,7 @@
 
 ## Description
 
-Trains a single memory on an Izhikevich spiking neural network and measures how the network's response (memory representation) converges over repeated training trials. Representations are measured in four forms: **time delay** (first spike timing), **spike count**, **assembly participation**, and **spike order**.
+Trains a single memory on an Izhikevich spiking neural network and measures how the network's response (memory representation) converges over repeated training trials. Representations are measured in four forms: **first-spike latency** (first spike timing), **spike count**, **assembly participation**, and **first-spike order**.
 
 ## Research Questions
 

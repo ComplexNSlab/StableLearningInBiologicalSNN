@@ -1,7 +1,7 @@
 % Step05_SlopeBoxplot.m  (SUPERSEDED by Step05_PlateauBoxplot.m)
 % =========================================================================
-% Grouped boxplot of slope-based stabilisation trials (delays vs spike
-% counts) across network sizes, using the thresholds from Step04_SlopeThreshold.
+% Grouped boxplot of slope-based stabilisation trials (latency vs firing
+% rate) across network sizes, using the thresholds from Step04_SlopeThreshold.
 %
 % NOTE: newRepresentationStabilityTrialBoxPlot.m produces the same style
 %       of plot but uses the improved plateau-based thresholds from
@@ -32,8 +32,8 @@ load(file, "thresholds");
 thresholds_spikecounts = thresholds;
 
 % Settings
-colors = {[0.6 0.7 1], [1 0.6 0.6]};  % Delays (blueish), SpikeCounts (reddish)
-labels = {'Delays', 'Spike Counts'};
+colors = {[0.6 0.7 1], [1 0.6 0.6]};  % Latency (blueish), SpikeCount (reddish)
+labels = {'Latency', 'Spike Count'};
 
 % Get all unique Ns
 fields = fieldnames(thresholds_delays);

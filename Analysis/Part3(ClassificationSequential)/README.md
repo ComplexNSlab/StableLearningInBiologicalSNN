@@ -58,7 +58,7 @@ Part3(ClassificationSequential)/
      point that scans existing simulation folders so you can add new
      alpha values without re-training.
 4. **`Step3_ComputeClusterDistances.m`** — Computes full pairwise
-   Euclidean distance matrices on the time-delay representation and
+   Euclidean distance matrices on the first-spike latency representation and
    splits them into intra-/inter-cluster distributions.
    Saves `ClusterDistances.mat`.
 5. **`Step4_plots.m`** — Aggregates `ClusterDistances.mat` across

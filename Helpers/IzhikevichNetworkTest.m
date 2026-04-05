@@ -598,7 +598,7 @@ imagesc(MPM)
 colorbar()
 
 %% Order of spikes analysis (In input mode!)
-figure('Name', "Single Neuron Spike Order")
+figure('Name', "Single Neuron First-Spike Order")
 fsize = 15;
 temp = check_flag_save(1:1:end, :);
 temp(temp == 0) = nan;
@@ -629,8 +629,8 @@ for cell_id = 321:400
 end
 
 xlabel("Trial")
-ylabel("Single Neuron Spike Order")
-title("First to Fire Order Vector")
+ylabel("Single Neuron First-Spike Order")
+title("First-Spike Order Vector")
 set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
 %%
 figure;
@@ -859,7 +859,7 @@ set(gcf, 'PaperSize', [10 10]); % [width, height]
 % line(xlim, [2001 2001], 'Color', 'black', 'LineWidth', 1.5); % Horizontal line at 2000
 % hold off;
 
-title("First to Spike Orders Correlation Matrix", 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold')
+title("First-Spike Orders Correlation Matrix", 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold')
 % Save the figure as a PDF with higher resolution
 % print(gcf, 'Spearman_Corr_Matrix.pdf', '-dpdf', '-vector', '-r300');
 print(gcf, 'Spearman_Corr_Matrix.png', '-dpng', '-r300');

@@ -1,7 +1,7 @@
 % Step05_PlateauBoxplot.m
 % =========================================================================
-% Grouped boxplot of plateau-based stabilisation times (delays vs spike
-% counts) across network sizes.
+% Grouped boxplot of plateau-based stabilisation times (latency vs firing
+% rate) across network sizes.
 %
 % Loads the thresholds produced by Step04_PlateauThreshold and displays
 % side-by-side boxplots for each N, annotated with sample counts.
@@ -32,8 +32,8 @@ S2 = load(fullfile(resultsDir, 'SpikeCountsThreshold_plateau.mat'));
 spikeThresholds = S2.spikeThresholds;
 
 %% Settings
-colors = {[0.6 0.7 1], [1 0.6 0.6]};  % Delays (blueish), SpikeCounts (reddish)
-labels = {'Delays', 'Spike Counts'};
+colors = {[0.6 0.7 1], [1 0.6 0.6]};  % Latency (blueish), SpikeCount (reddish)
+labels = {'Latency', 'Spike Count'};
 Ns = sort(cfg.networkSizes(:)');
 nGroups = numel(Ns);
 
