@@ -133,8 +133,5 @@ legend('Raw', 'Smoothed', 'Location', 'northeast', 'Box', 'off');
 
 % --- Shared formatting ---
 linkaxes([ax1 ax2 ax3], 'x');
-set([ax1 ax2 ax3], 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
 
-sgtitle('Polar Decomposition of Synaptic Weight Trajectory', ...
-    'FontName', 'Times New Roman', 'FontSize', 14, 'FontWeight', 'bold');
+sgtitle('Polar Decomposition of Synaptic Weight Trajectory');

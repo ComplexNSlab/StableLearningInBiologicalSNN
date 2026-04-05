@@ -126,7 +126,6 @@ text(0.70*2*nMems, 0.1, "Post Learning");
 text(0.20*2*nMems, 0.1, "Pre Learning");
 yline(0, '-', 'Color', [0.6 0.6 0.6], 'LineWidth', 0.5, 'HandleVisibility','off');
 ylim([-0.15, 0.25]);
-set(gca, 'fontName', 'Times New Roman', 'fontsize', 16)
 
 set(gcf, 'Color', 'w');
 

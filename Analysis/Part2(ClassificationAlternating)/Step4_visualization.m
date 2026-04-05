@@ -194,19 +194,18 @@ function fig = plotMeanCurveWithCI(x_mems, x_rands, alpha_range, CI, metric_name
     plot(alpha_range, rand_mean, 'Color', [0.8 0 0], 'LineWidth', 2.5);
 
     % --- Labels and styling ---
-    xlabel('Partial Retrieval Ratio, $\alpha$ (\%)', 'Interpreter', 'latex', 'FontSize', 14);
-    ylabel(metric_name, 'FontSize', 14);
+    xlabel('Partial Retrieval Ratio, $\alpha$ (\%)', 'Interpreter', 'latex');
+    ylabel(metric_name);
 
     title(sprintf('%s Performance — SVM Classification\n%d Memories, %d Simulations, %d%% CI', ...
-        metric_name, N_mems, N_sims, CI), 'FontSize', 14);
+        metric_name, N_mems, N_sims, CI));
 
     legend({'Memory Recalls', 'Random Recalls'}, ...
-        'Location', 'SouthEast', 'FontSize', 11, 'Box', 'off');
+        'Location', 'SouthEast', 'Box', 'off');
 
     xlim([min(alpha_range), max(alpha_range)]);
     ylim([0 1]);  % Adjust as needed
 
     grid off;
     box on;
-    set(gca, 'FontSize', 12, 'FontName', 'Times New Roman');
 end

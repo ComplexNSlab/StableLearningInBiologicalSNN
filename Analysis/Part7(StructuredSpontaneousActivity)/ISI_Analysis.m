@@ -86,7 +86,7 @@ xlabel('ISI (ms)');
 ylabel('Probability');
 title('ISI Distributions');
 legend('EdgeColor', 'none'); grid on;
-set(gca, 'XScale', 'log', 'fontname', 'times New Roman', 'Fontsize', 16); 
+set(gca, 'XScale', 'log');
 set(gca, 'YScale', 'log'); ylim([1e-4, 1]);
 
 % === Annotate Post (red) ===
@@ -132,7 +132,7 @@ title('Instantaneous Frequency Distribution')
 legend('EdgeColor', 'none'); grid on;
 % set(gca, 'XScale', 'log', 'fontname', 'times New Roman', 'Fontsize', 16); 
 % set(gca, 'YScale', 'log'); ylim([1e-4, 1]);
-set(gca, 'XScale', 'linear', 'fontname', 'times New Roman', 'Fontsize', 16); 
+set(gca, 'XScale', 'linear');
 xlim([0.05 30]); 
 ylim([0 0.25]);
 

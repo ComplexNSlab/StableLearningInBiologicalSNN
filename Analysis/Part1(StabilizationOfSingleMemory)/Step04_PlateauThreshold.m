@@ -22,14 +22,6 @@
 
 clc; clear;
 
-set(groot, 'DefaultAxesFontName', 'Times New Roman')
-set(groot, 'DefaultTextInterpreter', 'latex');
-set(groot, 'DefaultAxesTickLabelInterpreter', 'latex');
-set(groot, 'DefaultLegendInterpreter', 'latex');
-set(groot, 'DefaultAxesFontSize', 14);
-set(groot, 'DefaultTextFontSize', 14);
-set(groot, 'DefaultLegendFontSize', 13);
-
 %% USER SETTINGS
 cfg = jsondecode(fileread('config.json'));
 N_list      = cfg.networkSizes(:)';

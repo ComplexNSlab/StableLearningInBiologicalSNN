@@ -73,14 +73,14 @@ plot(alphas, S_random_mean, '-o', 'LineWidth', 2.5, ...
 
 yline(1, '--k', 'Overlap Threshold', 'LineWidth', 1.2);
 
-xlabel('\alpha (Recall Precision)', 'FontSize', 14, 'FontWeight', 'bold');
-ylabel('Cluster Separation Score  $S$', 'Interpreter', 'latex', 'FontSize', 13);
+xlabel('\alpha (Recall Precision)', 'FontWeight', 'bold');
+ylabel('Cluster Separation Score  $S$', 'Interpreter', 'latex');
 title('\textbf{Separation Score vs Recall Precision}', ...
-    'Interpreter', 'latex', 'FontSize', 16);
+    'Interpreter', 'latex');
 
 legend({'', '', 'Memory \pm SEM', 'Random \pm SEM', 'Overlap threshold'}, ...
     'Location', 'west');
-set(gca, 'FontSize', 12, 'LineWidth', 1.2);
+set(gca, 'LineWidth', 1.2);
 box on;
 xlim([min(alphas)-0.02, max(alphas)+0.02]);
 yl = ylim; ylim([min(yl(1), 1 - 0.1*range(yl)), max(yl(2), 1 + 0.1*range(yl))]);

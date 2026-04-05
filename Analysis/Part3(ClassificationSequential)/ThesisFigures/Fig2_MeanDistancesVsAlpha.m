@@ -123,12 +123,12 @@ legend([h1 h2 h3 h4 h5], ...
      'Inter: m vs m', 'Inter: m vs rnd', 'Inter: rnd vs rnd'}, ...
     'Location', 'best');
 
-xlabel('\alpha (Recall Precision)', 'FontSize', 14, 'FontWeight', 'bold');
-ylabel('Mean Euclidean Distance', 'FontSize', 13, 'FontWeight', 'bold');
+xlabel('\alpha (Recall Precision)', 'FontWeight', 'bold');
+ylabel('Mean Euclidean Distance', 'FontWeight', 'bold');
 title('\textbf{Cluster Distances vs Recall Precision}', ...
-    'Interpreter', 'latex', 'FontSize', 16);
+    'Interpreter', 'latex');
 
-set(gca, 'FontSize', 12, 'LineWidth', 1.2);
+set(gca, 'LineWidth', 1.2);
 box on;
 xlim([min(alphas)-0.02, max(alphas)+0.02]);
 

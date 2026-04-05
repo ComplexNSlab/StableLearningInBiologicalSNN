@@ -334,7 +334,7 @@ end
 
 set(gca, 'XScale', 'log');
 grid on; box on;
-set(gca,'GridLineStyle',':','LineWidth',1,'FontSize',11);
+set(gca,'GridLineStyle',':','LineWidth',1);
 
 xlabel('Number of stored memories $M$', 'Interpreter','latex');
 ylabel('Mean Macro F1', 'Interpreter','latex');
@@ -388,7 +388,7 @@ end
 
 set(gca, 'XScale', 'log', 'YScale', 'log');
 grid off; box on;
-set(gca,'GridLineStyle',':','LineWidth',1,'FontSize',11);
+set(gca,'GridLineStyle',':','LineWidth',1);
 
 xlabel("Network Size (N)"); ylabel("Capacity (M^*)");
 

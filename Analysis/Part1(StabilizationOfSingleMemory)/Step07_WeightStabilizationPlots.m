@@ -126,20 +126,15 @@ for k = 1:nGroups
     text(k, max(allTrials)+50, sprintf('%d', row(3)), ...
         'HorizontalAlignment', 'center', ...
         'FontSize', 10, ...
-        'FontName', 'Times New Roman', ...
         'Interpreter', 'none');
 end
 
-xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel({'Structural', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex', 'FontSize', 14);
+xlabel('Network Size $N$', 'Interpreter', 'latex');
+ylabel({'Structural', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex');
 
 ax = gca;
 ax.XTick = 1:nGroups;
 ax.XTickLabel = arrayfun(@num2str, uniqueN(:)', 'UniformOutput', false);
-ax.FontSize = 12;
-ax.FontName = 'Times New Roman';
-ax.Box = 'off';
-ax.TickDir = 'out';
 ylim([min(allTrials)-50, max(allTrials)+100]);
 
 % Export

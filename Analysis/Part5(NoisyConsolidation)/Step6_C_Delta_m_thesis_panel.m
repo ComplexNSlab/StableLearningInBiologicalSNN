@@ -88,12 +88,11 @@ for i = 1:nRec
 end
 
 set(gca, 'XScale', 'log', 'YScale', 'log');
-xlabel('$\Delta m + 1$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel('Mean Replay Similarity', 'FontSize', 14);
-title('(a) Replay Decay vs Memory Distance', 'FontSize', 14);
-legend(legendEntries, 'Location', 'southwest', 'Box', 'off', 'FontSize', 10);
+xlabel('$\Delta m + 1$', 'Interpreter', 'latex');
+ylabel('Mean Replay Similarity');
+title('(a) Replay Decay vs Memory Distance');
+legend(legendEntries, 'Location', 'southwest', 'Box', 'off');
 grid on;
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 13);
 
 %% Panel (b): Exponent vs N with error bars
 subplot(1, 2, 2); hold on;
@@ -112,14 +111,13 @@ yline(b_mean, ':', 'Color', [0.2 0.6 0.2], 'LineWidth', 1.5, ...
     'DisplayName', sprintf('Weighted mean = %.2f', b_mean));
 
 set(gca, 'XScale', 'log');
-xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel('Power-Law Exponent $b$', 'Interpreter', 'latex', 'FontSize', 14);
-title('(b) Exponent vs Network Size', 'FontSize', 14);
-legend('Location', 'southeast', 'Box', 'off', 'FontSize', 11, ...
+xlabel('Network Size $N$', 'Interpreter', 'latex');
+ylabel('Power-Law Exponent $b$', 'Interpreter', 'latex');
+title('(b) Exponent vs Network Size');
+legend('Location', 'southeast', 'Box', 'off', ...
     'Interpreter', 'latex');
 grid on;
 ylim([min(exponents) - 0.15, max(exponents) + 0.15]);
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 13);
 
 %% Print summary
 fprintf('\n--- Power-Law Fit Summary ---\n');

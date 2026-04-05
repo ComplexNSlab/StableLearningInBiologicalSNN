@@ -89,16 +89,13 @@ for i = 1:num_groups
 end
 
 % Axis labels
-xlabel('$N$', 'Interpreter', 'latex', 'FontSize', fs);
-ylabel('$\Delta\, \mathrm{delay}$ (ms)', 'Interpreter', 'latex', 'FontSize', fs);
-title('$\Delta\, \mathrm{delay}$ vs $N$', 'Interpreter', 'latex', 'FontSize', fs);
+xlabel('$N$', 'Interpreter', 'latex');
+ylabel('$\Delta\, \mathrm{delay}$ (ms)', 'Interpreter', 'latex');
+title('$\Delta\, \mathrm{delay}$ vs $N$', 'Interpreter', 'latex');
 
 % Aesthetics
 set(gca, ...
-    'FontSize', fs, ...
     'LineWidth', lw, ...
-    'TickDir', 'out', ...
-    'Box', 'off', ...
     'XTickLabelRotation', 0);
 
 
@@ -148,16 +145,13 @@ for i = 1:num_groups
 end
 
 % Axis labels
-xlabel('$N$', 'Interpreter', 'latex', 'FontSize', fs);
-ylabel('Ex Assembly Size Change (\%)', 'Interpreter', 'latex', 'FontSize', fs);
-title('Ex Assembly Size Change vs $N$', 'Interpreter', 'latex', 'FontSize', fs);
+xlabel('$N$', 'Interpreter', 'latex');
+ylabel('Ex Assembly Size Change (\%)', 'Interpreter', 'latex');
+title('Ex Assembly Size Change vs $N$', 'Interpreter', 'latex');
 
 % Aesthetics
 set(gca, ...
-    'FontSize', fs, ...
     'LineWidth', lw, ...
-    'TickDir', 'out', ...
-    'Box', 'off', ...
     'XTickLabelRotation', 0);
 
 % set(gcf, 'PaperPositionMode', 'auto');
@@ -208,16 +202,14 @@ plot(Nlist, tau2, 's--', 'Color', [1 0 0], 'LineWidth', 2, 'DisplayName', 'Assem
 plot(Nlist, tau3, 'h--', 'Color', [0 1 0], 'LineWidth', 2, 'DisplayName', 'Weights');
 
 % Labels and title
-xlabel('$N$', 'Interpreter', 'latex', 'FontSize', fs);
-ylabel('$m_0$ (\# of new memories)', 'Interpreter', 'latex', 'FontSize', fs);
-title('Decay Scale Vs. Network Size', 'Interpreter', 'latex', 'FontSize', fs);
-legend('Location', 'best', 'FontSize', fs*0.5, 'Box','off');
+xlabel('$N$', 'Interpreter', 'latex');
+ylabel('$m_0$ (\# of new memories)', 'Interpreter', 'latex');
+title('Decay Scale Vs. Network Size', 'Interpreter', 'latex');
+legend('Location', 'best', 'Box','off');
 
 % Axes settings
 set(gca, ...
-    'FontSize', fs, ...
     'LineWidth', 1.5, ...
-    'TickDir', 'out', ...
     'XScale', 'log');
 
 xticks(Nlist)

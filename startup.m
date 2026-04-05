@@ -26,4 +26,8 @@ set(0, 'DefaultAxesLineWidth',      0.8);
 % Figure
 set(0, 'DefaultFigureColor',        'w');
 
+% Axes appearance
+set(0, 'DefaultAxesBox',            'off');
+set(0, 'DefaultAxesTickDir',        'out');
+
 disp('Thesis figure defaults loaded.');

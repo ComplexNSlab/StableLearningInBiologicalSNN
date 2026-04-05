@@ -52,10 +52,14 @@ latestData = dataFiles(latestIdx).name;
 net = load(fullfile(filePath, latestData), 'obj'); net = net.obj;
 
 clearvars -except net filePath;
-
+ 
 load(filePath + filesep + "MemoryRepresentations.mat");
 
 clearvars filePath
+
+%% Ensure output directory exists
+if ~isfolder('Results'), mkdir('Results'); end
+
 %% Spike Order vs Trials (Separate)
 
 % Network Size
@@ -92,11 +96,10 @@ for cell_id = Ne+1:N
 end
 
 xlabel("Trial")
-ylabel("Single Neuron First-Spike Order")
-title("First-Spike Order Vector")
-set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
-% print(gcf, "Results" + filesep + 'SpikeOrderSeparate.pdf', '-dpdf', '-vector', '-r300');
-% print(gcf, "Results" + filesep + 'SpikeOrderSeparate.png', '-dpng', '-r300');
+ylabel("First-Spike Order Rank")
+title("First-Spike Order (E/I Separate)")
+print(gcf, "Results" + filesep + 'SpikeOrderSeparate.pdf', '-dpdf', '-vector', '-r300');
+print(gcf, "Results" + filesep + 'SpikeOrderSeparate.png', '-dpng', '-r300');
 
 %% Spike Order vs Trials (Together)
 figure('Renderer', 'painters','Name', "Single Neuron First-Spike Order", 'Visible','on' )
@@ -119,11 +122,10 @@ end
 
 
 xlabel("Trial")
-ylabel("Single Neuron First-Spike Order")
-title("First-Spike Order Vector")
-set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
-% print(gcf, "Results" + filesep + 'SpikeOrderTogether.pdf', '-dpdf', '-vector', '-r300');
-% print(gcf, "Results" + filesep + 'SpikeOrderTogether.png', '-dpng', '-r300');
+ylabel("First-Spike Order Rank")
+title("First-Spike Order (All Neurons)")
+print(gcf, "Results" + filesep + 'SpikeOrderTogether.pdf', '-dpdf', '-vector', '-r300');
+print(gcf, "Results" + filesep + 'SpikeOrderTogether.png', '-dpng', '-r300');
 
 %% Similarity Matrix of responses across Trials
 % choose your desired representation measure of the memory
@@ -166,13 +168,9 @@ c.Position = [0.15, 0.2, 0.03, 0.6]; % [left, bottom, width, height]
 c.Label.String = dist_measure;
 c.Label.Rotation = 90; % Rotate the label to be vertical
 c.Label.Position = [-2, 0.3, 0]; % Adjust the position to be centered and beside the colorbar
-c.Label.FontName = 'Arial'; % Set the font name
-c.Label.FontSize = fsize; % Set the font size
-c.Label.FontWeight = 'bold'; % Set the font weight to bold
-
 % Set the title and axis labels with consistent font properties
-xlabel('Trial', 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold');
-ylabel('Trial', 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold', 'Rotation', 0);
+xlabel('Trial');
+ylabel('Trial', 'Rotation', 0);
 
 % Fix the aspect ratio to square
 axis square;
@@ -180,10 +178,7 @@ axis square;
 set(gca, 'YDir', 'normal')
 
 xtickangle(-45)
-set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold'); % Set for x-tick labels
-
 ytickangle(-45)
-set(gca, 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold'); % Set for y-tick labels
 
 % Set x-ticks to top and y-ticks to right
 set(gca, 'XAxisLocation', 'origin', 'YAxisLocation', 'right');
@@ -195,7 +190,7 @@ set(gcf, 'PaperPosition', [0 0 10 10]); % [left, bottom, width, height]
 set(gcf, 'PaperSize', [10 10]); % [width, height]
 
 
-title(representation + " Similarity Matrix", 'FontName', 'Arial', 'FontSize', fsize, 'FontWeight', 'bold')
+title(representation + " Similarity Matrix")
 % Save the figure as a PDF with higher resolution
 % print(gcf, "Results" + filesep + 'Spearman_Corr_Matrix.pdf', '-dpdf', '-vector', '-r300');
 % print(gcf, "Results" + filesep + 'Spearman_Corr_Matrix.png', '-dpng', '-r300');
@@ -216,26 +211,10 @@ grid on;
 figure('Renderer', 'painters','Visible', 'on'); 
 lag = 1;
 plot(1-diag(corrmat, lag))
-xlabel("Trial Number", 'FontWeight','bold')
-ylabel(sprintf("D(t+%d, t)", lag), 'FontWeight','bold')
+xlabel("Trial Number")
+ylabel(sprintf("D(t+%d, t)", lag))
 title("Distance between Responses with lag")
-set(gca, 'fontsize', 15, 'fontName', 'arial')
 print(gcf, "Results" + filesep + 'consecDist.pdf', '-dpdf', '-vector', '-r300');
 print(gcf, "Results" + filesep + 'consecDist.png', '-dpng', '-r300');
 
 % save(net.RecordingDirectory + filesep + "MemoryRepresentations.mat", representation + "_corrmat", '-append')
-
-%%
-% figure; hold on;
-% coeff = pca(corrmat);
-% cm = jet(1000);
-% for pc = 1:1
-%     scatter(1:1000, coeff(:,pc), 50, cm, 'filled');
-% end
-% cb = colorbar(); cb.Label.String = "Trial Number"; caxis([1 1000]); colormap("jet");
-% xlabel('Trial');
-% ylabel('First Principal Component');
-% title('PCA of Correlation Matrix');
-% grid on;
-% print(gcf, 'Spearman_Corr_Matrix.pdf', '-dpdf', '-vector', '-r300');
-% print(gcf, 'Spearman_Corr_Matrix.png', '-dpng', '-r300');

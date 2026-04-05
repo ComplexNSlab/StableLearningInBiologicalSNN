@@ -29,13 +29,6 @@
 %% Setup
 
 clc; clear;
-set(groot, 'DefaultAxesFontName', 'Times New Roman')
-set(groot, 'DefaultTextInterpreter', 'latex');
-set(groot, 'DefaultAxesTickLabelInterpreter', 'latex');
-set(groot, 'DefaultLegendInterpreter', 'latex');
-set(groot, 'DefaultAxesFontSize', 14);
-set(groot, 'DefaultTextFontSize', 14);
-set(groot, 'DefaultLegendFontSize', 13);
 
 %% USER SETTINGS
 
@@ -138,12 +131,10 @@ for iN = 1:numel(N_list)
 
     plot(x, median(y), 'Color', [0.85 0.33 0.1], 'LineWidth', 2.5, 'DisplayName', 'Median');
 
-    xlabel('Trial', 'Interpreter', 'latex', 'FontSize', 14);
-    ylabel('First-Spike Latency (ms)', 'Interpreter', 'latex', 'FontSize', 14);
-    title(sprintf("Mean First-Spike Latency per Trial\n %d simulations, N = %d", nRuns, N))
-    legend('Location', 'northeast', 'Interpreter', 'latex', 'Box', 'off');
-
-    set(gca, 'FontSize', 12, 'TickLabelInterpreter', 'latex');
+    xlabel('Trial');
+    ylabel('First-Spike Latency (ms)');
+    title(sprintf('First-Spike Latency ($N = %d$)', N), 'Interpreter', 'latex')
+    legend('Location', 'northeast', 'Box', 'off');
 
     posi = get(gcf, 'Position');
     set(gcf, 'PaperSize', posi(3:4));
@@ -216,12 +207,11 @@ for iN = 1:numel(N_list)
 
     plot(x, mean_curve, 'LineWidth', 2, 'Color', 'g', 'DisplayName', 'Median');
 
-    xlabel('Trial', 'Interpreter', 'latex', 'FontSize', 14);
-    ylabel('Spike Count', 'Interpreter', 'latex', 'FontSize', 14);
-    title(sprintf("Mean Spike Count per Trial\n %d simulations, N = %d", nRuns, N))
+    xlabel('Trial');
+    ylabel('Spike Count');
+    title(sprintf('Spike Count ($N = %d$)', N), 'Interpreter', 'latex')
 
-    legend('Location', 'northwest', 'Interpreter', 'latex', 'Box', 'off');
-    set(gca, 'FontSize', 12, 'TickLabelInterpreter', 'latex');
+    legend('Location', 'northwest', 'Box', 'off');
 
     posi = get(gcf, 'Position');
     set(gcf, 'PaperSize', posi(3:4));

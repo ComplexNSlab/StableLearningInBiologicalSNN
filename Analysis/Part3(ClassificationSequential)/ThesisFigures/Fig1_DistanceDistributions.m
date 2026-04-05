@@ -218,18 +218,17 @@ set(gca, 'YDir', 'normal');
 colormap(parula);
 cb = colorbar;
 cb.Label.String = 'Mean Euclidean Distance';
-cb.Label.FontSize = 12;
 
 hold on;
 xline(nMems + 0.5, 'w--', 'LineWidth', 2);
 yline(nMems + 0.5, 'w--', 'LineWidth', 2);
 
 title(sprintf('Cluster-level Recall Geometry, \\alpha = %.1f', alphaTarget), ...
-    'FontSize', 15, 'FontWeight', 'bold');
-xlabel('Cluster index', 'FontSize', 12);
-ylabel('Cluster index', 'FontSize', 12);
+    'FontWeight', 'bold');
+xlabel('Cluster index');
+ylabel('Cluster index');
 
-set(gca, 'FontSize', 11, 'LineWidth', 1.2);
+set(gca, 'LineWidth', 1.2);
 
 % optional text labels for blocks
 text(6, 3, 'Memory vs Memory', 'Color', 'w', 'FontSize', 11, 'FontWeight', 'bold');
@@ -274,18 +273,17 @@ for k = 1:numel(idxShow)
     yline(nMems + 0.5, 'w--', 'LineWidth', 2);
 
     title(sprintf('\\alpha = %.1f', alphaShow(k)), ...
-        'FontSize', 14, 'FontWeight', 'bold');
-    xlabel('Cluster index', 'FontSize', 11);
-    ylabel('Cluster index', 'FontSize', 11);
-    set(gca, 'FontSize', 10, 'LineWidth', 1.2);
+        'FontWeight', 'bold');
+    xlabel('Cluster index');
+    ylabel('Cluster index');
+    set(gca, 'LineWidth', 1.2);
 end
 
 cb = colorbar('Position', [0.92 0.15 0.015 0.7]);
 cb.Label.String = 'Mean Euclidean Distance';
-cb.Label.FontSize = 12;
 
 sgtitle('Cluster-level Recall Geometry Across Recall Precision', ...
-    'FontSize', 16, 'FontWeight', 'bold');
+    'FontWeight', 'bold');
 
 if doSave
     outDir = fullfile(pwd, 'Output');

@@ -115,13 +115,12 @@ for i = 1:nGroups
     text(i, max(all_y)+150, sprintf('(%d|%d)', n1, n2), ...
         'HorizontalAlignment', 'center', ...
         'FontSize', 10, ...
-        'FontName', 'Times New Roman', ...
         'Interpreter', 'none');
 end
 
 % Labels and title
-xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel({'Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex', 'FontSize', 14);
+xlabel('Network Size $N$', 'Interpreter', 'latex');
+ylabel({'Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex');
 % t = title('Stabilization Thresholds: Delays vs Spike Counts', ...
 %     'FontSize', 14, 'Interpreter', 'latex');
 % t.Units = 'normalized';
@@ -131,14 +130,10 @@ ylabel({'Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'late
 ax = gca;
 ax.XTick = 1:nGroups;
 ax.XTickLabel = arrayfun(@num2str, Ns, 'UniformOutput', false);
-ax.FontSize = 12;
-ax.FontName = 'Times New Roman';
-ax.Box = 'off';
-ax.TickDir = 'out';
 ylim([min(all_y)-50, max(all_y)+100]);
 
 % Legend
-legend(labels, 'Location', 'southeast', 'FontSize', 10, 'Box', 'off');
+legend(labels, 'Location', 'southeast', 'Box', 'off');
 
 % Export
 slopeResultsDir = fullfile('Results', 'StabilizationResults', 'slope');

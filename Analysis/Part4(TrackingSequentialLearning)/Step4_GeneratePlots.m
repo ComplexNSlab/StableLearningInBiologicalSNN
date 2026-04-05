@@ -88,11 +88,11 @@ end
 
 % Add labels and settings
 
-ylabel("Response Time (ms)", 'FontWeight', 'normal', 'FontSize', 20);
-text(0, ymin + 0.2, "Pre Learning", 'FontSize',20, 'FontWeight', 'normal')
-text(60 * nTrials, ymin + 0.2, "Post Learning", 'FontSize',20, 'FontWeight', 'normal')
+ylabel("Response Time (ms)");
+text(0, ymin + 0.2, "Pre Learning")
+text(60 * nTrials, ymin + 0.2, "Post Learning")
 
-legend('Location', 'northwest', 'Box', 'off', 'FontSize', 16);
+legend('Location', 'northwest', 'Box', 'off');
 
 ax = gca; % Get the current axes handle
 ax.TickLength = [0, 0];
@@ -101,13 +101,10 @@ ylim([ymin, ymax])
 xlim(20*nTrials* [-1 5])
 % title(sprintf("Single Memory Tracked During Sequential Learning\n N = %d, nSimulations = %d", N, size(norm_A,1)), 'FontSize', 22, 'FontWeight', 'normal');
 title({"Response Time Dynamics of a Single Memory During Sequential Learning", ...
-       sprintf("N = %d, Number of Simulations = %d", N, size(norm_A,1))}, ...
-       'FontSize', 22, 'FontWeight', 'normal');
+       sprintf("N = %d, Number of Simulations = %d", N, size(norm_A,1))});
 
 % xlabel("# New Memories", 'FontWeight', 'normal', 'FontSize', 20);
-xlabel("Index of Sequentially Learned Memories", 'FontWeight', 'normal', 'FontSize', 20);
-
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 20);  % if thesis uses this
+xlabel("Index of Sequentially Learned Memories");
 
 savePath = fullfile(pwd, 'Results', scaleFolder , "N" + num2str(N) );
 if ~exist(savePath, 'dir')
@@ -195,16 +192,15 @@ ylim([ymin, 1]);
 yticks(ymin:0.1:1);
 
 yticklabels(ymin*100:10:100);
-xlabel("# New Memories", 'FontWeight', 'normal', 'FontSize', 20);
+xlabel("# New Memories");
 xticks([]);
-ylabel("Assembly Size (%)", 'FontSize', 20, 'FontWeight', 'normal');
+ylabel("Assembly Size (%)");
 % legend('Location', 'south', 'FontSize', 12, 'Box', 'off');
-legend('Location', 'northwest', 'Box', 'off', 'FontSize', 16);
-text(0, ymin + 0.04, "Pre Learning", 'FontSize', 20, 'FontWeight', 'normal');
-text(60 * nTrials, ymin + 0.04, "Post Learning", 'FontSize', 20, 'FontWeight', 'normal');
-title(sprintf("Single Memory Tracked During Sequential Learning\n N = %d, nSimulations = %d", N, size(norm_A,1)), 'FontSize', 22, 'FontWeight', 'normal');
+legend('Location', 'northwest', 'Box', 'off');
+text(0, ymin + 0.04, "Pre Learning");
+text(60 * nTrials, ymin + 0.04, "Post Learning");
+title(sprintf("Single Memory Tracked During Sequential Learning\n N = %d, nSimulations = %d", N, size(norm_A,1)));
 
-set(gca, 'FontSize', 20);  % Consistent large font
 set(gcf, 'Color', 'w', 'PaperPositionMode', 'auto');    % White background
 
 if saveFig

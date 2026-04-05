@@ -146,20 +146,15 @@ for k = 1:nGroups_diff
     text(k, max(allDiff)+50, sprintf('%d', nMatched(iN)), ...
         'HorizontalAlignment', 'center', ...
         'FontSize', 10, ...
-        'FontName', 'Times New Roman', ...
         'Interpreter', 'none');
 end
 
-xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel({'Structural $-$ Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex', 'FontSize', 14);
+xlabel('Network Size $N$', 'Interpreter', 'latex');
+ylabel({'Structural $-$ Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex');
 
 ax = gca;
 ax.XTick = 1:nGroups_diff;
 ax.XTickLabel = arrayfun(@num2str, uniqueN(:)', 'UniformOutput', false);
-ax.FontSize = 12;
-ax.FontName = 'Times New Roman';
-ax.Box = 'off';
-ax.TickDir = 'out';
 
 % Export
 exportgraphics(gcf, fullfile(resultsDir, 'Step08_StructuralVsRepresentational_Diff.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
@@ -229,20 +224,15 @@ for k = 1:nGroups_ratio
     text(k, max(allRatio)+0.1, sprintf('%d', nMatched(iN)), ...
         'HorizontalAlignment', 'center', ...
         'FontSize', 10, ...
-        'FontName', 'Times New Roman', ...
         'Interpreter', 'none');
 end
 
-xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel({'Structural / Representational', 'Stabilization Time'}, 'Interpreter', 'latex', 'FontSize', 14);
+xlabel('Network Size $N$', 'Interpreter', 'latex');
+ylabel({'Structural / Representational', 'Stabilization Time'}, 'Interpreter', 'latex');
 
 ax = gca;
 ax.XTick = 1:nGroups_ratio;
 ax.XTickLabel = arrayfun(@num2str, uniqueN(:)', 'UniformOutput', false);
-ax.FontSize = 12;
-ax.FontName = 'Times New Roman';
-ax.Box = 'off';
-ax.TickDir = 'out';
 
 % Export
 exportgraphics(gcf, fullfile(resultsDir, 'Step08_StructuralVsRepresentational_Ratio.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');

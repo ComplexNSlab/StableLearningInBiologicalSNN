@@ -86,11 +86,11 @@ is_mem = startsWith(labels, "m");
 scatter(pc1(is_mem), pc2(is_mem), markerSz(is_mem), colours(is_mem,:), ...
     'filled', 'MarkerFaceAlpha', 0.5);
 
-xlabel(sprintf('PC1 (%.1f%%)', explained(1)), 'FontSize', 13, 'FontWeight', 'bold');
-ylabel(sprintf('PC2 (%.1f%%)', explained(2)), 'FontSize', 13, 'FontWeight', 'bold');
+xlabel(sprintf('PC1 (%.1f%%)', explained(1)), 'FontWeight', 'bold');
+ylabel(sprintf('PC2 (%.1f%%)', explained(2)), 'FontWeight', 'bold');
 title(sprintf('(A) All clusters, $\\alpha = %.1f$', alpha), ...
-    'Interpreter', 'latex', 'FontSize', 14);
-set(gca, 'FontSize', 11, 'LineWidth', 1.1); box on;
+    'Interpreter', 'latex');
+set(gca, 'LineWidth', 1.1); box on;
 
 % ---- Panel B: highlighted subset ----
 subplot(1, 2, 2); hold on;
@@ -113,10 +113,10 @@ for m = 1:nMemsToHighlight
     highlighted{m} = mLabel;
 end
 
-xlabel(sprintf('PC1 (%.1f%%)', explained(1)), 'FontSize', 13, 'FontWeight', 'bold');
-ylabel(sprintf('PC2 (%.1f%%)', explained(2)), 'FontSize', 13, 'FontWeight', 'bold');
-title(sprintf('(B) Highlighted memories 1–%d', nMemsToHighlight), 'FontSize', 14);
-set(gca, 'FontSize', 11, 'LineWidth', 1.1); box on;
+xlabel(sprintf('PC1 (%.1f%%)', explained(1)), 'FontWeight', 'bold');
+ylabel(sprintf('PC2 (%.1f%%)', explained(2)), 'FontWeight', 'bold');
+title(sprintf('(B) Highlighted memories 1–%d', nMemsToHighlight));
+set(gca, 'LineWidth', 1.1); box on;
 
 %% Save
 if doSave

@@ -111,14 +111,6 @@ xlim([1, 100]);
 
 %% Save Results
 
-% === Publication Style Settings ===
-set(groot, 'defaultAxesFontName', 'Times New Roman');
-set(groot, 'defaultTextFontName', 'Times New Roman');
-set(groot, 'defaultAxesFontSize', 14);
-set(groot, 'defaultTextFontSize', 14);
-set(groot, 'defaultLineLineWidth', 1.5);
-set(groot, 'defaultFigureColor', 'w');
-
 output_folder = fullfile('Results');
 if ~exist(output_folder, 'dir')
     mkdir(output_folder);

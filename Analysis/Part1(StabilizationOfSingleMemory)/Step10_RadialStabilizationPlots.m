@@ -73,11 +73,8 @@ ylabel('$\Delta r(t)$', 'Interpreter', 'latex');
 title(sprintf('Radial stabilisation — N=%d, sim=%s', targetN, ...
     Results(idxN).folderNames(goodIdx)), 'Interpreter', 'none');
 legend('Raw', 'Smoothed', 'Location', 'northeast', 'Box', 'off');
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
 
-% Export
-exportgraphics(gcf, fullfile(resultsDir, 'Step10_DeltaR_SingleRun.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+% Export, 'ContentType', 'vector', 'BackgroundColor', 'none');
 print(gcf, fullfile(resultsDir, 'Step10_DeltaR_SingleRun'), '-dpng', '-r300');
 
 %% 2. Matching Delta_theta trace
@@ -96,8 +93,6 @@ ylabel('$\Delta\theta(t)$ [deg]', 'Interpreter', 'latex');
 title(sprintf('Angular change — N=%d, sim=%s', targetN, ...
     Results(idxN).folderNames(goodIdx)), 'Interpreter', 'none');
 legend('Raw', 'Smoothed', 'Location', 'northeast', 'Box', 'off');
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
 
 % Export
 exportgraphics(gcf, fullfile(resultsDir, 'Step10_DeltaTheta_SingleRun.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
@@ -151,20 +146,15 @@ for k = 1:nGroups
     text(k, max(allTrials)+50, sprintf('%d', row(3)), ...
         'HorizontalAlignment', 'center', ...
         'FontSize', 10, ...
-        'FontName', 'Times New Roman', ...
         'Interpreter', 'none');
 end
 
-xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel({'Radial', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex', 'FontSize', 14);
+xlabel('Network Size $N$', 'Interpreter', 'latex');
+ylabel({'Radial', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex');
 
 ax = gca;
 ax.XTick = 1:nGroups;
 ax.XTickLabel = arrayfun(@num2str, uniqueN(:)', 'UniformOutput', false);
-ax.FontSize = 12;
-ax.FontName = 'Times New Roman';
-ax.Box = 'off';
-ax.TickDir = 'out';
 ylim([min(allTrials)-50, max(allTrials)+100]);
 
 % Export
@@ -192,8 +182,6 @@ errorbar(Ns, meds, iqrVals/2, 'o-', 'LineWidth', 2, 'Color', 'r');
 xlabel('Network Size N');
 ylabel('Median radial stabilization trial');
 title('Radial stabilization trend with network size');
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
 grid on;
 
 %% 5. Median peak |Delta_r| trial vs N
@@ -215,6 +203,4 @@ plot(Ns, peakMeds, 's-', 'LineWidth', 2, 'Color', 'r');
 xlabel('Network Size N');
 ylabel('Median peak trial');
 title('Peak radial change trial vs network size');
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
 grid on;

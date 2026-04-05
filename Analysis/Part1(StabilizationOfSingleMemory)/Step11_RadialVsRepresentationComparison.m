@@ -110,8 +110,6 @@ cb = colorbar;
 cb.Label.String = 'Network Size N';
 xlim([0 1500]);
 ylim([0 1500]);
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
 grid on;
 axis square;
 
@@ -150,20 +148,15 @@ for k = 1:nGroups_diff
     text(k, max(allDiff)+50, sprintf('%d', nMatched(iN)), ...
         'HorizontalAlignment', 'center', ...
         'FontSize', 10, ...
-        'FontName', 'Times New Roman', ...
         'Interpreter', 'none');
 end
 
-xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel({'Radial $-$ Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex', 'FontSize', 14);
+xlabel('Network Size $N$', 'Interpreter', 'latex');
+ylabel({'Radial $-$ Representational', 'Stabilization Time (Trials)'}, 'Interpreter', 'latex');
 
 ax = gca;
 ax.XTick = 1:nGroups_diff;
 ax.XTickLabel = arrayfun(@num2str, uniqueN(:)', 'UniformOutput', false);
-ax.FontSize = 12;
-ax.FontName = 'Times New Roman';
-ax.Box = 'off';
-ax.TickDir = 'out';
 
 % Export
 exportgraphics(gcf, fullfile(resultsDir, 'Step11_RadialVsRepresentational_Diff.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
@@ -180,8 +173,6 @@ xlabel('Network Size N');
 ylabel('Fraction with radial > latency');
 title('How often radial stabilization is later than latency stabilization');
 ylim([0 1]);
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
 grid on;
 
 %% 4) Median paired difference vs N
@@ -192,8 +183,6 @@ yline(0, '--k', 'LineWidth', 1.5);
 xlabel('Network Size N');
 ylabel('Median(radial - latency)');
 title('Median paired difference vs network size');
-set(gca, 'FontName', 'Times New Roman', 'FontSize', 12, ...
-    'Box', 'off', 'TickDir', 'out');
 grid on;
 
 %% Summary table
@@ -237,20 +226,15 @@ for k = 1:nGroups_ratio
     text(k, max(allRatio)+0.1, sprintf('%d', nMatched(iN)), ...
         'HorizontalAlignment', 'center', ...
         'FontSize', 10, ...
-        'FontName', 'Times New Roman', ...
         'Interpreter', 'none');
 end
 
-xlabel('Network Size $N$', 'Interpreter', 'latex', 'FontSize', 14);
-ylabel({'Radial / Representational', 'Stabilization Time'}, 'Interpreter', 'latex', 'FontSize', 14);
+xlabel('Network Size $N$', 'Interpreter', 'latex');
+ylabel({'Radial / Representational', 'Stabilization Time'}, 'Interpreter', 'latex');
 
 ax = gca;
 ax.XTick = 1:nGroups_ratio;
 ax.XTickLabel = arrayfun(@num2str, uniqueN(:)', 'UniformOutput', false);
-ax.FontSize = 12;
-ax.FontName = 'Times New Roman';
-ax.Box = 'off';
-ax.TickDir = 'out';
 
 % Export
 exportgraphics(gcf, fullfile(resultsDir, 'Step11_RadialVsRepresentational_Ratio.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');

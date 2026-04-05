@@ -76,16 +76,16 @@ for metric_id = 1:nMetrics
 
     imagesc(alpha_range, nMems_range, data);
 
-    xlabel('Partial Recall Ratio $ \alpha $ (\%)', 'Interpreter', 'latex', 'FontSize', 14);
-    ylabel('Number of Memories, M', 'Interpreter', 'latex', 'FontSize', 14);
-    title(sprintf('%s Heatmap (SVM Classification) for Memory Class', metric_names{metric_id}), 'FontSize', 14);
+    xlabel('Partial Recall Ratio $ \alpha $ (\%)', 'Interpreter', 'latex');
+    ylabel('Number of Memories, M', 'Interpreter', 'latex');
+    title(sprintf('%s Heatmap (SVM Classification) for Memory Class', metric_names{metric_id}));
     yticks(nMems_range);
      
     colormap(parula);
     cb = colorbar();
     cb.Label.String = metric_names{metric_id};
     % clim([0.45, 1]);
-    set(gca, 'YDir', 'normal', 'FontSize', 12);
+    set(gca, 'YDir', 'normal');
 
     % % Annotate values
     % for i = 1:size(data,1)
@@ -114,16 +114,16 @@ for metric_id = 1:nMetrics
 
     imagesc(alpha_range, nMems_range, data);
 
-    xlabel('Partial Recall Ratio $ \alpha $ (\%)', 'Interpreter', 'latex', 'FontSize', 14);
-    ylabel('Number of Memories, M', 'Interpreter', 'latex', 'FontSize', 14);
-    title(sprintf('%s Heatmap (SVM Classification) for Random Memory Class', metric_names{metric_id}), 'FontSize', 14);
+    xlabel('Partial Recall Ratio $ \alpha $ (\%)', 'Interpreter', 'latex');
+    ylabel('Number of Memories, M', 'Interpreter', 'latex');
+    title(sprintf('%s Heatmap (SVM Classification) for Random Memory Class', metric_names{metric_id}));
     yticks(nMems_range);
      
     colormap(parula);
     cb = colorbar();
     cb.Label.String = metric_names{metric_id};
     % clim([0.45, 1]);
-    set(gca, 'YDir', 'normal', 'FontSize', 12);
+    set(gca, 'YDir', 'normal');
 
     % % Annotate values
     % for i = 1:size(data,1)

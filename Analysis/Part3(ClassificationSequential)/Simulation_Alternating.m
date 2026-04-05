@@ -85,7 +85,7 @@ assemblies = spike_counts ~= 0;
 
 figure; imagesc(~assemblies(new_order, :)'); colormap('hot');
 xlabel("Tirals", 'FontWeight','bold'); ylabel("Cell index", 'FontWeight','bold'); title("Assembly Representation of Activity");
-set(gca, 'ydir', 'normal', 'FontSize', 15);
+set(gca, 'ydir', 'normal');
 %% Similarity matrix of assembly representation excluding inhibitory cells (because of the bias they cause)
 
 
@@ -93,7 +93,7 @@ mat = 1- squareform(pdist(1*assemblies(new_order, 1:net.Ne), "Hamming"));
 figure; imagesc(mat); cb = colorbar(); cb.Label.String = "Hamming";
 xlabel("Trials", FontWeight="bold"); ylabel("Trials", FontWeight="bold");
 title("Assembly Similarity Distance")
-set(gca, 'ydir', 'normal', 'FontSize', 15);
+set(gca, 'ydir', 'normal');
 
 
 %% Participation Rate of the Population for different memories
@@ -109,7 +109,6 @@ for selected_mem = 1:N_mems
 end
 legend(); xlabel("Trials", 'FontWeight', 'bold'); ylabel("Participation Rate", 'FontWeight', 'bold');
 title("Participation of the Population ")
-set(gca, 'FontName', 'arial', 'fontsize', 15)
 %% Computing Separation of Memories Evolution in Time
 inter_dist = zeros(5, N_mems*(N_mems-1)/2, 1000);
 
@@ -156,7 +155,6 @@ plot(mean(squeeze(inter_dist(5, :, :)), 1), DisplayName= "assembly", LineWidth= 
 xlabel("Trials"); ylabel("Similarity Index");
 title("Pairwise Similarity of Memories Representations during Learning")
 legend(Location='best');
-set(gca, 'FontName', 'arial', 'FontSize', 15, 'FontWeight', 'bold')
 %% Computnig the evolution trajectories pca space
 data = delays;
 [coeff,score,latent,tsquared,explained,mu] = pca(delays(new_order, :));
@@ -170,7 +168,6 @@ colormap(cmap);
 cb = colorbar(); cb.Label.String = "Trial";
 xlabel("PC1"); ylabel("PC2"); zlabel("PC3");
 title("Trajectory of memories representation during alternating learning")
-set(gca, 'FontName', 'Arial', 'FontSize', 15, 'FontWeight', 'bold'); 
 %% Retrieving stimulations from patches
 stims = [];
 for i = 1:N_mems
@@ -392,14 +389,10 @@ cm = confusionchart(confMatrix, classLabels, ...
 
 % Adjust font sizes for labels, title, and numbers
 cm.Title = 'Confusion Matrix: True vs Predicted Labels';
-cm.FontSize = 14;  % Adjusts the overall font size
 cm.XLabel = 'Predicted Class';
 cm.YLabel = 'True Class';
 
 cm.RowSummary
-
-% Adjust title, axis labels, and percentage font sizes
-cm.FontSize = 18;  % Adjusts the overall font size
 
 % Adjust number display in cells
 cm.DiagonalColor = [0.2 0.6 0.8]; % Set color for diagonal (optional)
