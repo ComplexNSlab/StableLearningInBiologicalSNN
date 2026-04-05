@@ -197,21 +197,34 @@ for k = 1:numel(uniqueN)
         100*nCanon/sum(mask));
 end
 
-%% Figure 1: Mean rank per network size
-uniqueN = unique(allGroup);
-nN = numel(uniqueN);
-meanRankByN = nan(nN, nMeasures);
-
-for k = 1:nN
-    mask = allGroup == uniqueN(k);
-    meanRankByN(k, :) = mean(ranks(mask, :), 1);
-end
-
+%% Shared settings
 colors = [0.2 0.7 0.2;   % green — order
           0.9 0.3 0.3;   % red — spike count
           0.3 0.5 0.9;   % blue — latency
           0.6 0.4 0.8];  % purple — radial
 
+uniqueN = unique(allGroup);
+nN = numel(uniqueN);
+meanRankByN = nan(nN, nMeasures);
+for k = 1:nN
+    mask = allGroup == uniqueN(k);
+    meanRankByN(k, :) = mean(ranks(mask, :), 1);
+end
+
+% Compute median and IQR pairwise difference matrices (A − B)
+medDiffMat = nan(nMeasures);
+iqrDiffMat = nan(nMeasures);
+for a = 1:nMeasures
+    for b = 1:nMeasures
+        if a ~= b
+            d = allData(:, a) - allData(:, b);
+            medDiffMat(a, b) = median(d);
+            iqrDiffMat(a, b) = iqr(d);
+        end
+    end
+end
+
+%% Figure 1 (standalone): Mean rank per network size
 figure('Units', 'inches', 'Position', [1, 1, 7, 4], 'Color', 'w', 'Visible', show_figs);
 hold on;
 for m = 1:nMeasures
@@ -230,11 +243,9 @@ grid on;
 exportgraphics(gcf, fullfile(resultsDir, 'Step12_MeanRankByN.pdf'), ...
     'ContentType', 'vector', 'BackgroundColor', 'none');
 
-%% Figure 2: Boxplot of all four stabilization times (pooled across N)
+%% Figure 2 (standalone): Boxplot of all four stabilization times
 figure('Units', 'inches', 'Position', [1, 1, 6, 4.5], 'Color', 'w', 'Visible', show_figs);
 hold on;
-
-positions = 1:nMeasures;
 for m = 1:nMeasures
     boxchart(m * ones(nTotal, 1), allData(:, m), ...
         'BoxFaceColor', colors(m, :), ...
@@ -244,11 +255,9 @@ for m = 1:nMeasures
         'BoxMedianLineColor', colors(m, :), ...
         'LineWidth', 1.2, ...
         'BoxWidth', 0.5);
-
     jitter = (rand(nTotal, 1) - 0.5) * 0.25;
     scatter(m + jitter, allData(:, m), 3, 'k', 'filled', 'MarkerFaceAlpha', 0.15);
 end
-
 set(gca, 'XTick', 1:nMeasures, 'XTickLabel', measureNames);
 ylabel('Stabilization Trial', 'Interpreter', 'latex');
 grid on;
@@ -256,17 +265,7 @@ grid on;
 exportgraphics(gcf, fullfile(resultsDir, 'Step12_FourStabilizationTimes.pdf'), ...
     'ContentType', 'vector', 'BackgroundColor', 'none');
 
-%% Figure 3: Two-panel thesis figure — win fraction + median difference
-% Compute median pairwise difference matrix (A − B)
-medDiffMat = nan(nMeasures);
-for a = 1:nMeasures
-    for b = 1:nMeasures
-        if a ~= b
-            medDiffMat(a, b) = median(allData(:, a) - allData(:, b));
-        end
-    end
-end
-
+%% Figure 3 (standalone): Two-panel heatmap — win fraction + median [IQR]
 figure('Units', 'inches', 'Position', [1, 1, 11, 4.5], 'Color', 'w', 'Visible', show_figs);
 
 % --- Panel A: Win fraction ---
@@ -280,14 +279,12 @@ cb1 = colorbar;
 cb1.Label.String = 'Fraction of runs';
 cb1.Label.FontSize = 10;
 
-% Mask diagonal
 hold on;
 for i = 1:nMeasures
     patch([i-0.5 i+0.5 i+0.5 i-0.5], [i-0.5 i-0.5 i+0.5 i+0.5], ...
         [0.85 0.85 0.85], 'EdgeColor', 'none');
 end
 
-% Annotate cells with fraction + significance
 for a = 1:nMeasures
     for b = 1:nMeasures
         if a == b, continue; end
@@ -299,11 +296,7 @@ for a = 1:nMeasures
         else, sigStr = '';
         end
         txt = sprintf('%.2f%s', wf, sigStr);
-        if wf > 0.6
-            clr = 'k';
-        else
-            clr = 'w';
-        end
+        if wf > 0.6, clr = 'k'; else, clr = 'w'; end
         text(b, a, txt, 'HorizontalAlignment', 'center', ...
             'FontSize', 11, 'FontWeight', 'bold', 'Color', clr);
     end
@@ -317,7 +310,7 @@ ylabel('Measure A');
 title('(a)  P(A stabilizes before B)', 'FontWeight', 'bold');
 axis square;
 
-% --- Panel B: Median difference ---
+% --- Panel B: Median [IQR] difference ---
 ax2 = subplot(1, 2, 2);
 medDiffPlot = medDiffMat;
 medDiffPlot(eye(nMeasures)==1) = NaN;
@@ -325,7 +318,6 @@ maxAbs = max(abs(medDiffMat(:)));
 
 imagesc(medDiffPlot, [-maxAbs maxAbs]);
 
-% Diverging colormap (blue = A earlier, red = A later)
 nCmap = 256;
 blueToWhite = [linspace(0.2, 1, nCmap/2)', linspace(0.4, 1, nCmap/2)', linspace(0.8, 1, nCmap/2)'];
 whiteToRed  = [linspace(1, 0.8, nCmap/2)', linspace(1, 0.2, nCmap/2)', linspace(1, 0.2, nCmap/2)'];
@@ -335,21 +327,20 @@ cb2 = colorbar;
 cb2.Label.String = 'Median difference (trials)';
 cb2.Label.FontSize = 10;
 
-% Mask diagonal
 hold on;
 for i = 1:nMeasures
     patch([i-0.5 i+0.5 i+0.5 i-0.5], [i-0.5 i-0.5 i+0.5 i+0.5], ...
         [0.85 0.85 0.85], 'EdgeColor', 'none');
 end
 
-% Annotate cells with median difference
 for a = 1:nMeasures
     for b = 1:nMeasures
         if a == b, continue; end
         md = medDiffMat(a, b);
-        txt = sprintf('%.0f', md);
+        iq = iqrDiffMat(a, b);
+        txt = sprintf('%.0f [%.0f]', md, iq);
         text(b, a, txt, 'HorizontalAlignment', 'center', ...
-            'FontSize', 11, 'FontWeight', 'bold', 'Color', 'k');
+            'FontSize', 9, 'FontWeight', 'bold', 'Color', 'k');
     end
 end
 
@@ -358,12 +349,59 @@ set(ax2, 'XTick', 1:nMeasures, 'XTickLabel', measureNames, ...
     'TickLabelInterpreter', 'none', 'FontSize', 9);
 xlabel('Measure B');
 ylabel('Measure A');
-title('(b)  Median(A $-$ B) in trials', 'FontWeight', 'bold', 'Interpreter', 'latex');
+title('(b)  Median [IQR] of A $-$ B (trials)', 'FontWeight', 'bold', 'Interpreter', 'latex');
 axis square;
 
 exportgraphics(gcf, fullfile(resultsDir, 'Step12_PairwiseOrdering.pdf'), ...
     'ContentType', 'vector', 'BackgroundColor', 'none');
 print(gcf, fullfile(resultsDir, 'Step12_PairwiseOrdering'), '-dpng', '-r300');
+
+%% Figure 4 (appendix): Two-panel — boxplot + mean rank by N
+%  (a) Boxplot — absolute timescales
+%  (b) Mean rank by N — within-run ordering
+
+figure('Units', 'inches', 'Position', [1, 1, 12, 4.5], 'Color', 'w', 'Visible', show_figs);
+
+% --- Panel (a): Boxplot ---
+axA = subplot(1, 2, 1);
+hold on;
+for m = 1:nMeasures
+    boxchart(m * ones(nTotal, 1), allData(:, m), ...
+        'BoxFaceColor', colors(m, :), ...
+        'MarkerStyle', 'none', ...
+        'BoxEdgeColor', 'none', ...
+        'WhiskerLineColor', colors(m, :), ...
+        'BoxMedianLineColor', colors(m, :), ...
+        'LineWidth', 1.2, ...
+        'BoxWidth', 0.5);
+    jitter = (rand(nTotal, 1) - 0.5) * 0.25;
+    scatter(m + jitter, allData(:, m), 3, 'k', 'filled', 'MarkerFaceAlpha', 0.15);
+end
+set(axA, 'XTick', 1:nMeasures, 'XTickLabel', measureNames);
+ylabel('Stabilization Trial', 'Interpreter', 'latex');
+title('(a)  Stabilization times', 'FontWeight', 'bold');
+grid on;
+
+% --- Panel (b): Mean rank by N ---
+axB = subplot(1, 2, 2);
+hold on;
+for m = 1:nMeasures
+    plot(uniqueN, meanRankByN(:, m), 'o-', ...
+        'LineWidth', 2, 'Color', colors(m, :), ...
+        'MarkerFaceColor', colors(m, :), 'MarkerSize', 6);
+end
+yline(2.5, '--k', 'LineWidth', 0.5);
+xlabel('Network Size $N$', 'Interpreter', 'latex');
+ylabel('Mean Rank (1 = earliest)', 'Interpreter', 'latex');
+legend(measureNames, 'Location', 'best');
+ylim([0.5 4.5]);
+set(axB, 'YTick', 1:4);
+title('(b)  Within-run rank by network size', 'FontWeight', 'bold');
+grid on;
+
+exportgraphics(gcf, fullfile(resultsDir, 'Step12_AppendixOrdering.pdf'), ...
+    'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step12_AppendixOrdering'), '-dpng', '-r300');
 
 fprintf('\nFriedman test: chi-sq = %.2f, p = %.2e\n', tblFriedman{2,5}, pFriedman);
 fprintf('Done.\n');

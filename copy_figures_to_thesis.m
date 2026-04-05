@@ -50,11 +50,14 @@ copies_sec1 = {
     % Step12: Stabilization ordering (two-panel figure)
     fullfile(stabDir, 'Step12_PairwiseOrdering.pdf'),               fullfile(sec1, 'Statistics', 'Step12_PairwiseOrdering.pdf')
     fullfile(stabDir, 'Step12_PairwiseOrdering.png'),               fullfile(sec1, 'Statistics', 'Step12_PairwiseOrdering.png')
+    % Step12: Appendix figure (boxplot + mean rank)
+    fullfile(stabDir, 'Step12_AppendixOrdering.pdf'),               fullfile(thesisRoot, '..', 'appendix', 'Step12_AppendixOrdering.pdf')
+    fullfile(stabDir, 'Step12_AppendixOrdering.png'),               fullfile(thesisRoot, '..', 'appendix', 'Step12_AppendixOrdering.png')
     % Step08/Step11: Scatter plots (for appendix)
-    fullfile(stabDir, 'Step08_StructuralVsRepresentational_Scatter.pdf'), fullfile(thesisRoot, '..', 'Figures', 'appendix', 'Structural_vs_Delay_Scatter.pdf')
-    fullfile(stabDir, 'Step08_StructuralVsRepresentational_Scatter.png'), fullfile(thesisRoot, '..', 'Figures', 'appendix', 'Structural_vs_Delay_Scatter.png')
-    fullfile(stabDir, 'Step11_RadialVsRepresentational_Scatter.pdf'),     fullfile(thesisRoot, '..', 'Figures', 'appendix', 'Radial_vs_Delay_Scatter.pdf')
-    fullfile(stabDir, 'Step11_RadialVsRepresentational_Scatter.png'),     fullfile(thesisRoot, '..', 'Figures', 'appendix', 'Radial_vs_Delay_Scatter.png')
+    fullfile(stabDir, 'Step08_StructuralVsRepresentational_Scatter.pdf'), fullfile(thesisRoot, '..', 'appendix', 'Structural_vs_Delay_Scatter.pdf')
+    fullfile(stabDir, 'Step08_StructuralVsRepresentational_Scatter.png'), fullfile(thesisRoot, '..', 'appendix', 'Structural_vs_Delay_Scatter.png')
+    fullfile(stabDir, 'Step11_RadialVsRepresentational_Scatter.pdf'),     fullfile(thesisRoot, '..', 'appendix', 'Radial_vs_Delay_Scatter.pdf')
+    fullfile(stabDir, 'Step11_RadialVsRepresentational_Scatter.png'),     fullfile(thesisRoot, '..', 'appendix', 'Radial_vs_Delay_Scatter.png')
 };
 
 %% ======== Section 1: Frequency Analysis (Part7) ========
