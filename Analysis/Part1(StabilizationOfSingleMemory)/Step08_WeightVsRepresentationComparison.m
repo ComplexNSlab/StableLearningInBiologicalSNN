@@ -111,6 +111,10 @@ ylim([0 1400]);
 grid on;
 axis square;
 
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step08_StructuralVsRepresentational_Scatter.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step08_StructuralVsRepresentational_Scatter'), '-dpng', '-r300');
+
 %% 2) Boxplot of paired differences: structural - delay
 uniqueN = unique(groupN);
 nGroups_diff = numel(uniqueN);

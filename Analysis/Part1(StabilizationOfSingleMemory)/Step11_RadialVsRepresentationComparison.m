@@ -113,6 +113,10 @@ ylim([0 1500]);
 grid on;
 axis square;
 
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step11_RadialVsRepresentational_Scatter.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
+print(gcf, fullfile(resultsDir, 'Step11_RadialVsRepresentational_Scatter'), '-dpng', '-r300');
+
 %% 2) Boxplot of paired differences: radial - delay
 uniqueN = unique(groupN);
 nGroups_diff = numel(uniqueN);
