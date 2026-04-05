@@ -233,24 +233,26 @@ for iN = 1:numel(N_list)
         validMask(k) = true;
     end
 
-    % Store results for this network size
+    % Store results for this network size (keep ALL runs to preserve index
+    % alignment with Step04; invalid runs remain as NaN).
     Results(iN).N           = N;
-    Results(iN).folderNames = folderNames(validMask);
+    Results(iN).folderNames = folderNames;
 
-    Results(iN).stabTrial    = stabTrial(validMask);
-    Results(iN).stabIdxSaved = stabIdxSaved(validMask);
-    Results(iN).threshold    = threshUsed(validMask);
-    Results(iN).peakAbsDr    = peakAbsDr(validMask);
-    Results(iN).peakTrial    = peakTrial(validMask);
-    Results(iN).plateauValue = plateauUsed(validMask);
+    Results(iN).stabTrial    = stabTrial;
+    Results(iN).stabIdxSaved = stabIdxSaved;
+    Results(iN).threshold    = threshUsed;
+    Results(iN).peakAbsDr    = peakAbsDr;
+    Results(iN).peakTrial    = peakTrial;
+    Results(iN).plateauValue = plateauUsed;
 
-    Results(iN).drRaw        = {drCurvesRaw{validMask}};
-    Results(iN).drSmooth     = {drCurvesSmooth{validMask}};
-    Results(iN).dthetaRaw    = {dthetaCurvesRaw{validMask}};
-    Results(iN).dthetaSmooth = {dthetaCurvesSmooth{validMask}};
-    Results(iN).norms        = {normCurves{validMask}};
-    Results(iN).nActiveSyn   = nActiveSyn(validMask);
+    Results(iN).drRaw        = drCurvesRaw;
+    Results(iN).drSmooth     = drCurvesSmooth;
+    Results(iN).dthetaRaw    = dthetaCurvesRaw;
+    Results(iN).dthetaSmooth = dthetaCurvesSmooth;
+    Results(iN).norms        = normCurves;
+    Results(iN).nActiveSyn   = nActiveSyn;
 
+    Results(iN).validMask = validMask;
     Results(iN).nValid = sum(validMask);
     Results(iN).nTotal = nItems;
 

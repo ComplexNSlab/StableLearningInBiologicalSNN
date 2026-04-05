@@ -70,11 +70,11 @@ if ~isnan(stabT)
 end
 xlabel('Trial');
 ylabel('$\Delta r(t)$', 'Interpreter', 'latex');
-title(sprintf('Radial stabilisation — N=%d, sim=%s', targetN, ...
-    Results(idxN).folderNames(goodIdx)), 'Interpreter', 'none');
+
 legend('Raw', 'Smoothed', 'Location', 'northeast', 'Box', 'off');
 
-% Export, 'ContentType', 'vector', 'BackgroundColor', 'none');
+% Export
+exportgraphics(gcf, fullfile(resultsDir, 'Step10_DeltaR_SingleRun.pdf'), 'ContentType', 'vector', 'BackgroundColor', 'none');
 print(gcf, fullfile(resultsDir, 'Step10_DeltaR_SingleRun'), '-dpng', '-r300');
 
 %% 2. Matching Delta_theta trace
@@ -90,8 +90,7 @@ if ~isnan(stabT)
 end
 xlabel('Trial');
 ylabel('$\Delta\theta(t)$ [deg]', 'Interpreter', 'latex');
-title(sprintf('Angular change — N=%d, sim=%s', targetN, ...
-    Results(idxN).folderNames(goodIdx)), 'Interpreter', 'none');
+
 legend('Raw', 'Smoothed', 'Location', 'northeast', 'Box', 'off');
 
 % Export
