@@ -78,6 +78,9 @@ classdef IzhikevichNetwork < handle
         %% External Stimulation (Kick Stimulus) Parameters
         stimulation = false   % Toggle for external stimulation
         stims                 % Array for external stimulation instances
+        
+        %% UI Options
+        showProgress = true   % Toggle for waitbar display in run()
     end
 
     methods (Access = public)
@@ -122,99 +125,137 @@ classdef IzhikevichNetwork < handle
                 obj.w = sparse(obj.w);
            end
 
-           if obj.stimulation
+           % --- Cache constants to avoid repeated property access ---
+           dt_      = obj.dt;
+           Ne_      = obj.Ne;
+           Ni_      = obj.Ni;
+           tau_syn_ = obj.tau_syn;
+           cj_      = obj.current_jump;
+           par_a    = obj.a;
+           par_b    = obj.b;
+           par_c    = obj.c;
+           par_d    = obj.d;
+           use_noise = obj.noise;
+           use_stdp  = obj.STDP;
+           use_stim  = obj.stimulation;
+           use_samp  = obj.sampling;
+           use_scale = obj.scaling;
+           srate_    = obj.sampling_rate;
+           show      = obj.showProgress && T > 100;
+           decay     = 1 - dt_ / tau_syn_;
+
+           if use_noise
+               sig_ex_     = obj.sigma_ex;
+               sig_inh_    = obj.sigma_inh;
+               inv_sqrt_dt = 1 / sqrt(dt_);
+           end
+
+           if use_stim
                I_stim = zeros(obj.N, length(obj.stims));
-               for i = 1:numel(obj.stims)
-                    I_stim(:, i) = obj.stims(i).I_stim;
+               for j = 1:numel(obj.stims)
+                    I_stim(:, j) = obj.stims(j).I_stim;
                end
                I_stim_end = I_stim;
                I_stim_end(I_stim ~=0) = I_stim(I_stim ~= 0) + 2;
+               stim_interval_  = obj.stims(1).interval;
+               stim_amplitude_ = obj.stims(1).amplitude;
            end
 
-           % if obj.saveSimulation
-           if T > 100
+           if show
                 f = waitbar(0,'Please wait...', 'Interpreter', 'none');
            end
-           % end
 
-           n_t = round(T/obj.dt); % total integration step
+           n_t = round(T/dt_);
           
            obj.Constructor_RecordingContainers(n_t)
-           obj.spike_counter = 1;
+
+           % --- Cache mutable state vectors ---
+           v_     = obj.v;
+           u_     = obj.u;
+           I_syn_ = obj.I_syn;
+           t_now  = obj.t;
+           sc     = 1;
+           fr     = obj.firings;
+           if use_stdp
+               tv = obj.timer_vector;
+           end
             
-           for i=1:n_t % simulation of T in ms
+           for i=1:n_t
                 
-                obj.t = obj.t + obj.dt;
+                t_now = t_now + dt_;
                 
-                obj.v(obj.v > 30) = 30;
+                v_(v_ > 30) = 30;
                 
-                if obj.sampling && mod(i, obj.sampling_rate) == 0    
-                    obj.A_save(:, round(i/obj.sampling_rate)) = obj.A;
-                    % obj.v_save(:, round(i/obj.sampling_rate)) = obj.v;
-                    % obj.u_save(:, round(i/obj.sampling_rate)) = obj.u;
-                    if obj.scaling || obj.STDP
-                        obj.w_save(:, :, round(i/obj.sampling_rate)) = obj.w;
+                if use_samp && mod(i, srate_) == 0    
+                    si = round(i/srate_);
+                    obj.A_save(:, si) = obj.A;
+                    if use_scale || use_stdp
+                        obj.w_save(:, :, si) = obj.w;
                     end
                 end
                 
-                % finding fired cells
-                fired = find(obj.v >= 30); % indices of spikes
+                fired = find(v_ >= 30);
                 
                 if ~isempty(fired)
-                    %obj.spike_trains(fired, i) = 1;
-                    obj.firings(obj.spike_counter: obj.spike_counter + length(fired) - 1, :) = [obj.t + 0*fired, fired];
-                    obj.spike_counter = obj.spike_counter + length(fired);
-                    if obj.STDP
+                    nf = length(fired);
+                    fr(sc:sc + nf - 1, :) = [t_now + 0*fired, fired];
+                    sc = sc + nf;
+                    if use_stdp
+                        obj.timer_vector = tv;
                         obj.applySTDP(fired)
+                        tv = obj.timer_vector;
                     end
                 end
                 
-                if obj.STDP
-                    obj.timer_vector = obj.timer_vector - obj.dt;
-                    obj.timer_vector(obj.timer_vector < 0) = 0; 
+                if use_stdp
+                    tv = tv - dt_;
+                    tv(tv < 0) = 0; 
                 end
     
-                obj.I_syn = obj.I_syn - obj.I_syn*obj.dt/obj.tau_syn + obj.current_jump*(obj.v >= 30);
+                I_syn_ = I_syn_ * decay + cj_ * (v_ >= 30);
                 
-                obj.v(fired) = obj.c(fired);
-                obj.u(fired) = obj.u(fired)+obj.d(fired);
+                v_(fired) = par_c(fired);
+                u_(fired) = u_(fired) + par_d(fired);
                 
-                I = obj.w * obj.I_syn;
-                % I = obj.w * obj.I_syn;
+                I = obj.w * I_syn_;
 
-                if obj.noise
-                    I_noise = [obj.sigma_ex*randn(obj.Ne,1); obj.sigma_inh*randn(obj.Ni,1)]/sqrt(obj.dt);
-                    I = I + I_noise;
+                if use_noise
+                    I = I + [sig_ex_*randn(Ne_,1); sig_inh_*randn(Ni_,1)] * inv_sqrt_dt;
                 end
     
-                if obj.stimulation
-                   t_relative = mod(obj.t, obj.stims(1).interval);
+                if use_stim
+                   t_relative = mod(t_now, stim_interval_);
                    active_stim_idx = floor(t_relative/100)+1;
                    stim_mask = (t_relative >= I_stim(:,active_stim_idx)) & (t_relative <= I_stim_end(:,active_stim_idx));
-                   I = I + stim_mask * obj.stims(1).amplitude;
+                   I = I + stim_mask * stim_amplitude_;
                 end
                 
-                obj.v = obj.v + obj.dt*(0.04*obj.v.^2 + 5*obj.v + 140 - obj.u + I); 
-                obj.u = obj.u + obj.a.*(obj.b.*obj.v - obj.u)*obj.dt;
+                v_ = v_ + dt_*(0.04*v_.^2 + 5*v_ + 140 - u_ + I); 
+                u_ = u_ + par_a.*(par_b.*v_ - u_)*dt_;
                 
-                % updates the waitbar status
-                % if obj.saveSimulation
-                if T > 100 
-                    if  mod(i, 10000) == 0      
-                        waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s, Ratio : %0.2f', round(100*i/n_t), obj.t/1000, T/1000, toc, i*obj.dt/1000/toc));
-                    end
+                if show && mod(i, 10000) == 0      
+                    waitbar(i/n_t,f, sprintf('please wait : %d%% \n Simulation t/T : %0.1f / %0.1f \n Real time %0.1f s, Ratio : %0.2f', round(100*i/n_t), t_now/1000, T/1000, toc, i*dt_/1000/toc));
                 end
-                % end
             end
             
-           obj.firings = obj.firings(1:obj.spike_counter-1, :);
-           
+           % --- Write back mutable state ---
+           obj.v = v_;
+           obj.u = u_;
+           obj.I_syn = I_syn_;
+           obj.t = t_now;
+           obj.spike_counter = sc;
+           obj.firings = fr(1:sc-1, :);
+           if use_stdp
+               obj.timer_vector = tv;
+           end
            
            if obj.saveSimulation
-               waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
+               if show
+                   waitbar(1, f,sprintf('Saving ... \n Real time %0.1f s', toc))
+               end
                obj.SaveRecordings
            end
-           if T > 100
+           if show
                 close(f);
            end
       end
@@ -359,14 +400,14 @@ classdef IzhikevichNetwork < handle
             [row, col] = find(obj.Adjacency_matrix);
             obj.connections = [row, col]; 
     
-            obj.in_cells = containers.Map('KeyType', 'double', 'ValueType', 'any');
-            obj.out_cells = containers.Map('KeyType', 'double', 'ValueType', 'any');
+            obj.in_cells = cell(obj.N, 1);
+            obj.out_cells = cell(obj.N, 1);
     
             for i = 1:obj.N
-                obj.in_cells(i) = find(obj.Adjacency_matrix(i, :));
+                obj.in_cells{i} = find(obj.Adjacency_matrix(i, :));
             end
             for i = 1:obj.N
-                obj.out_cells(i) = find(obj.Adjacency_matrix(:, i)).';
+                obj.out_cells{i} = find(obj.Adjacency_matrix(:, i)).';
             end
         end
     
@@ -375,7 +416,11 @@ classdef IzhikevichNetwork < handle
             obj.firings = zeros(3*n_t, 2);
             obj.time = obj.t / 1000 + (1:obj.sampling_rate:n_t) * obj.dt / 1000;
             % obj.spike_trains = zeros(obj.Ne + obj.Ni, n_t);
-            obj.w_save = zeros(obj.Ne + obj.Ni, obj.Ne + obj.Ni, round(n_t / obj.sampling_rate));             
+            if obj.sampling
+                obj.w_save = zeros(obj.Ne + obj.Ni, obj.Ne + obj.Ni, round(n_t / obj.sampling_rate));
+            else
+                obj.w_save = [];
+            end             
             % obj.I_syn_save = zeros(obj.Ne + obj.Ni, n_t);
             % obj.v_save = zeros(obj.Ne + obj.Ni, round(n_t / obj.sampling_rate));
             % obj.u_save = zeros(obj.Ne + obj.Ni, round(n_t / obj.sampling_rate));
@@ -385,41 +430,64 @@ classdef IzhikevichNetwork < handle
         function applySTDP(obj, fired)
             % Update timer for all newly fired neurons
             obj.timer_vector(fired) = 50;
-            % obj.w = full(obj.w);
-            for fired_neuron = fired.'  % Keep outer loop: neurons fire in order
-                if fired_neuron <= obj.Ne
-                    % ----- LTP -----
-                    input_cells = obj.in_cells(fired_neuron);
-                    input_cells = input_cells(input_cells <= obj.Ne);  % Excitatory only
 
-                    delta_t_in = 50 - obj.timer_vector(input_cells);
-                    valid_in = delta_t_in < 50;
+            ex_fired = fired(fired <= obj.Ne);
+            if isempty(ex_fired), return; end
 
-                    if any(valid_in)
-                        in_idx = input_cells(valid_in);
-                        delta_t_valid = delta_t_in(valid_in);
-                        w_current = obj.w(fired_neuron, in_idx);
-                        dw = IzhikevichNetwork.STDP_kernel(w_current, delta_t_valid);
-                        obj.w(fired_neuron, in_idx) = w_current + dw';
+            Ne_ = obj.Ne;
+            tv  = obj.timer_vector;
+
+            % Gather all (row, col, delta_t) pairs for LTP and LTD
+            ltp_r = zeros(1,0); ltp_c = zeros(1,0); ltp_dt = zeros(1,0);
+            ltd_r = zeros(1,0); ltd_c = zeros(1,0); ltd_dt = zeros(1,0);
+
+            for k = 1:numel(ex_fired)
+                fn = ex_fired(k);
+
+                % ----- LTP: presynaptic excitatory inputs -----
+                ic = obj.in_cells{fn};
+                ic = ic(ic <= Ne_);
+                if ~isempty(ic)
+                    dt_in = 50 - tv(ic(:)');
+                    valid = dt_in < 50;
+                    if any(valid)
+                        ic_v = ic(valid);
+                        ltp_r  = [ltp_r,  repmat(fn, 1, numel(ic_v))];
+                        ltp_c  = [ltp_c,  ic_v(:)'];
+                        ltp_dt = [ltp_dt, dt_in(valid(:))'];
                     end
+                end
 
-                    % ----- LTD -----
-                    output_cells = obj.out_cells(fired_neuron);
-                    output_cells = output_cells(output_cells <= obj.Ne);  % Excitatory only
-
-                    delta_t_out = 50 - obj.timer_vector(output_cells);
-                    valid_out = delta_t_out < 50;
-
-                    if any(valid_out)
-                        out_idx = output_cells(valid_out);
-                        delta_t_valid = -delta_t_out(valid_out);  % Note sign for LTD
-                        w_current = obj.w(out_idx, fired_neuron);
-                        dw = IzhikevichNetwork.STDP_kernel(w_current, delta_t_valid);
-                        obj.w(out_idx, fired_neuron) = w_current + dw;
+                % ----- LTD: postsynaptic excitatory outputs -----
+                oc = obj.out_cells{fn};
+                oc = oc(oc <= Ne_);
+                if ~isempty(oc)
+                    dt_out = 50 - tv(oc(:)');
+                    valid = dt_out < 50;
+                    if any(valid)
+                        oc_v = oc(valid);
+                        ltd_r  = [ltd_r,  oc_v(:)'];
+                        ltd_c  = [ltd_c,  repmat(fn, 1, numel(oc_v))];
+                        ltd_dt = [ltd_dt, -dt_out(valid(:))'];
                     end
                 end
             end
-            % obj.w = sparse(obj.w);
+
+            % Batch LTP weight update
+            if ~isempty(ltp_r)
+                idx = sub2ind(size(obj.w), ltp_r, ltp_c);
+                w_cur = full(obj.w(idx(:)));
+                dw = IzhikevichNetwork.STDP_kernel(w_cur, ltp_dt(:));
+                obj.w(idx) = w_cur + dw;
+            end
+
+            % Batch LTD weight update
+            if ~isempty(ltd_r)
+                idx = sub2ind(size(obj.w), ltd_r, ltd_c);
+                w_cur = full(obj.w(idx(:)));
+                dw = IzhikevichNetwork.STDP_kernel(w_cur, ltd_dt(:));
+                obj.w(idx) = w_cur + dw;
+            end
         end
         
         function SaveRecordings(obj)

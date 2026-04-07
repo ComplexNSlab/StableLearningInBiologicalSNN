@@ -37,7 +37,7 @@ classdef Stimulation < handle
             if connected
                 obj.pattern_indices = [randsample(obj.network.Ne, 1)];
                 for i = 1:nNeurons-1
-                    connected_to = obj.network.out_cells(obj.pattern_indices(end));
+                    connected_to = obj.network.out_cells{obj.pattern_indices(end)};
                     for j = 1:length(connected_to)
                         if ~ismember(connected_to(j), obj.pattern_indices)
                             obj.pattern_indices = [obj.pattern_indices, connected_to(j)];
