@@ -45,7 +45,7 @@ orderThr = S3.orderThresholds;
 Results  = S4.Results;
 
 Ns = [Results.N];
-measureNames = {'Spike Order', 'Spike Count', 'Latency', 'Radial'};
+measureNames = {'Spike Order', 'Spike Count', 'Latency', 'Structural'};
 nMeasures = 4;
 
 %% Collect all four stabilization times per run
